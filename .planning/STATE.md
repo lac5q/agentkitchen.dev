@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.7
 milestone_name: Progressive Tool Gateway Runtime
 status: in_progress
-stopped_at: Phase 30 Plan 01 complete — outcome-aware tool selection shipped locally
-last_updated: "2026-05-01T00:00:00Z"
-last_activity: 2026-05-01
+stopped_at: Phase 33 complete — gateway hardening shipped; lint exits 0, pytest 18 tests pass, category field live
+last_updated: "2026-05-04T00:00:00Z"
+last_activity: 2026-05-04
 progress:
-  total_phases: 4
-  completed_phases: 1
-  total_plans: 4
-  completed_plans: 2
-  percent: 40
+  total_phases: 5
+  completed_phases: 4
+  total_plans: 9
+  completed_plans: 9
+  percent: 85
 ---
 
 # State: Agent Kitchen
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-01 for v1.7)
 
 ## Current Position
 
-Phase: 30 (memory-aware-tool-selection) — IN PROGRESS
-Plan: 1 of 2 complete
-Status: Outcome-aware ranking complete; similar-task memory recommendations pending
-Last activity: 2026-05-01
+Phase: 33 (gateway-hardening) — COMPLETE
+Plan: 1 of 1 complete
+Status: Lint exits 0, NFT warning documented, pytest coverage 18 tests, category field in tool_discover
+Last activity: 2026-05-04
 
-Progress: [████------] 40%
+Progress: [████████--] 85%
 
 ## Performance Metrics
 
@@ -81,6 +81,8 @@ Progress: [████------] 40%
 - [Phase 28]: CI validates the monorepo layout with Kitchen tests/build and Python service smoke tests.
 - [Phase 29]: Knowledge MCP exposes top-level `tool_*` gateway tools while keeping the `tool-attention` workspace route intact.
 - [Phase 30 Plan 01]: Outcome summaries count uses/successes/failures/score by capability and do not expose private task text.
+- [Phase 32]: contextMatchSignal multipliers: task_type×2, repo×2, agent_id×1, tags×1. overallScore = textMatchScore*10 + outcomeSummary.score + contextMatchScore*3. task field NEVER read.
+- [Phase 33 OPSGW-02]: NFT warning is structural — turbopack.root covers full monorepo + process.env.HOME = full-project trace. Isolated with code comment only.
 
 ### Pending Todos
 
@@ -89,12 +91,11 @@ None.
 ### Blockers/Concerns
 
 - Voice server is a standalone Python Pipecat service — not embedded in Next.js; requires separate process management
-- Production build has a non-blocking Turbopack NFT warning involving `/api/apo` path tracing.
-- Full-repo `npm run lint` still fails on pre-existing unrelated lint debt; v1.7 Phase 32 is reserved for cleanup.
+- Production build has a non-blocking Turbopack NFT warning involving `/api/apo` — documented in code comment (OPSGW-02), non-resolvable without moving APO storage to a static subfolder.
 
 ## Session Continuity
 
-Last session: 2026-05-01T00:00:00.000Z
-Stopped at: Completed Phase 30 Plan 01 outcome-aware tool selection
+Last session: 2026-05-04T00:00:00.000Z
+Stopped at: Phase 33 gateway hardening complete; all commits pushed
 Resume file: None
-Next action: `/gsd-plan-phase 30 --skip-research --gaps` for similar-task memory recommendations
+Next action: Phase 31 UI gateway operations view (UIGW-01/02/03) or next milestone planning

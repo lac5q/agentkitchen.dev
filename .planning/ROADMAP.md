@@ -89,12 +89,13 @@ Full archive: `.planning/milestones/v1.6-ROADMAP.md`
 </details>
 
 <details open>
-<summary>🚧 v1.7 Progressive Tool Gateway Runtime (Phases 29-32) — IN PROGRESS</summary>
+<summary>🚧 v1.7 Progressive Tool Gateway Runtime (Phases 29-33) — IN PROGRESS</summary>
 
 - [x] Phase 29: Top-Level Tool Gateway MCP Tools (1/1 plans) — completed 2026-05-01
-- [ ] Phase 30: Memory-Aware Tool Selection (1/2 plans)
+- [x] Phase 30: Memory-Aware Tool Selection (2/2 plans) — completed 2026-05-04
 - [ ] Phase 31: Kitchen Tool Gateway Operations UI (0/1 plans)
-- [ ] Phase 32: Gateway Hardening and Lint Cleanup (0/1 plans)
+- [x] Phase 32: Wire Python Tool Intelligence to Kitchen UI (4/4 plans) — completed 2026-05-04
+- [x] Phase 33: Gateway Hardening (1/1 plans) — completed 2026-05-04
 
 Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 
@@ -133,9 +134,10 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 | 27 | v1.6 | 1/1 | Complete | 2026-04-30 |
 | 28 | v1.6 | 1/1 | Complete | 2026-04-30 |
 | 29 | v1.7 | 1/1 | Complete | 2026-05-01 |
-| 30 | v1.7 | 1/2 | In Progress | — |
+| 30 | v1.7 | 2/2 | Complete | 2026-05-04 |
 | 31 | v1.7 | 0/1 | Planned | — |
-| 32 | v1.7 | 0/1 | Planned | — |
+| 32 | v1.7 | 4/4 | Complete | 2026-05-04 |
+| 33 | v1.7 | 1/1 | Complete | 2026-05-04 |
 
 ---
 
