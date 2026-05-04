@@ -4,7 +4,7 @@ import os from "os";
 import path from "path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { getToolAttention } from "@/lib/tool-attention";
+import { getToolAttention, getSimilarTaskRecommendations } from "@/lib/tool-attention";
 
 let tempRoot: string | undefined;
 
@@ -17,10 +17,114 @@ afterEach(() => {
 });
 
 describe("contextMatchSignal", () => {
-  it.todo("scores task_type match * 2");
-  it.todo("scores repo match * 2");
-  it.todo("scores agent_id match * 1");
-  it.todo("never reads task field");
+  function makeOutcomeFile(root: string, records: object[]): string {
+    const p = path.join(root, "outcomes.jsonl");
+    fs.writeFileSync(p, records.map((r) => JSON.stringify(r)).join("\n") + "\n");
+    return p;
+  }
+
+  function makeCatalogFile(root: string, toolId: string): string {
+    const p = path.join(root, "catalog.json");
+    fs.writeFileSync(
+      p,
+      JSON.stringify({
+        capabilities: [
+          { id: toolId, name: toolId, type: "mcp-tool", source: "test", description: "d",
+            status: "available", tags: [], useWhen: [], topLevel: false, loadCommand: null },
+        ],
+        sources: [],
+      })
+    );
+    return p;
+  }
+
+  it("scores task_type match * 2", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "ctx-"));
+    const outcomesPath = makeOutcomeFile(root, [
+      { timestamp: "t", toolId: "skill:foo", outcome: "helped", metadata: { task_type: "code-review" } },
+    ]);
+    const catalogPath = makeCatalogFile(root, "skill:foo");
+    vi.stubEnv("AGENT_KITCHEN_ROOT", root);
+    vi.stubEnv("TOOL_ATTENTION_CATALOG", catalogPath);
+    vi.stubEnv("TOOL_ATTENTION_OUTCOMES", outcomesPath);
+    vi.stubEnv("SKILLS_PATH", path.join(root, "no-skills"));
+
+    const result = getSimilarTaskRecommendations({ task_type: "code-review" });
+    const rec = result.recommendations.find((r) => r.capabilityId === "skill:foo");
+    expect(rec).toBeDefined();
+    expect(rec!.contextScore).toBeGreaterThanOrEqual(2);
+
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it("scores repo match * 2", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "ctx-"));
+    const outcomesPath = makeOutcomeFile(root, [
+      { timestamp: "t", toolId: "skill:bar", outcome: "helped", metadata: { repo: "my-repo" } },
+    ]);
+    const catalogPath = makeCatalogFile(root, "skill:bar");
+    vi.stubEnv("AGENT_KITCHEN_ROOT", root);
+    vi.stubEnv("TOOL_ATTENTION_CATALOG", catalogPath);
+    vi.stubEnv("TOOL_ATTENTION_OUTCOMES", outcomesPath);
+    vi.stubEnv("SKILLS_PATH", path.join(root, "no-skills"));
+
+    const result = getSimilarTaskRecommendations({ repo: "my-repo" });
+    const rec = result.recommendations.find((r) => r.capabilityId === "skill:bar");
+    expect(rec).toBeDefined();
+    expect(rec!.contextScore).toBeGreaterThanOrEqual(2);
+
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it("scores agent_id match * 1", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "ctx-"));
+    const outcomesPath = makeOutcomeFile(root, [
+      { timestamp: "t", toolId: "skill:baz", outcome: "helped", metadata: { agent_id: "claude-1" } },
+    ]);
+    const catalogPath = makeCatalogFile(root, "skill:baz");
+    vi.stubEnv("AGENT_KITCHEN_ROOT", root);
+    vi.stubEnv("TOOL_ATTENTION_CATALOG", catalogPath);
+    vi.stubEnv("TOOL_ATTENTION_OUTCOMES", outcomesPath);
+    vi.stubEnv("SKILLS_PATH", path.join(root, "no-skills"));
+
+    const result = getSimilarTaskRecommendations({ agent_id: "claude-1" });
+    const rec = result.recommendations.find((r) => r.capabilityId === "skill:baz");
+    expect(rec).toBeDefined();
+    expect(rec!.contextScore).toBeGreaterThanOrEqual(1);
+
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+
+  it("never reads task field", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "ctx-"));
+    const toolId = "skill:secret-test";
+    const catalog = makeCatalogFile(root, toolId);
+
+    const outcomesWithTask = makeOutcomeFile(root, [
+      { timestamp: "t", toolId, task: "top secret task text", outcome: "helped",
+        metadata: { task_type: "analysis" } },
+    ]);
+    vi.stubEnv("AGENT_KITCHEN_ROOT", root);
+    vi.stubEnv("TOOL_ATTENTION_CATALOG", catalog);
+    vi.stubEnv("TOOL_ATTENTION_OUTCOMES", outcomesWithTask);
+    vi.stubEnv("SKILLS_PATH", path.join(root, "no-skills"));
+    const resultWithTask = getSimilarTaskRecommendations({ task_type: "analysis" });
+
+    const outcomesWithoutTask = makeOutcomeFile(root, [
+      { timestamp: "t", toolId, outcome: "helped", metadata: { task_type: "analysis" } },
+    ]);
+    vi.stubEnv("TOOL_ATTENTION_OUTCOMES", outcomesWithoutTask);
+    const resultWithoutTask = getSimilarTaskRecommendations({ task_type: "analysis" });
+
+    const recWith = resultWithTask.recommendations.find((r) => r.capabilityId === toolId);
+    const recWithout = resultWithoutTask.recommendations.find((r) => r.capabilityId === toolId);
+    expect(recWith).toBeDefined();
+    expect(recWithout).toBeDefined();
+    expect(recWith!.contextScore).toEqual(recWithout!.contextScore);
+    expect(recWith!.overallScore).toEqual(recWithout!.overallScore);
+
+    fs.rmSync(root, { recursive: true, force: true });
+  });
 });
 
 describe("getToolAttention", () => {

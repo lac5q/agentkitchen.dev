@@ -3,15 +3,102 @@ import path from "path";
 import { resolveFromRepoRoot } from "@/lib/paths";
 import type {
   ToolAttentionCapability,
+  ToolAttentionContextPack,
   ToolAttentionOutcome,
+  ToolAttentionOutcomeSummary,
   ToolAttentionRecommendation,
   ToolAttentionResponse,
   ToolAttentionSource,
   ToolAttentionSummary,
+  SimilarTaskRecommendation,
+  SimilarTaskResponse,
 } from "@/types";
 
 function now() {
   return new Date().toISOString();
+}
+
+const SUCCESS_OUTCOMES = new Set(["helped", "success", "successful", "useful", "pass", "passed", "worked"]);
+const FAILURE_OUTCOMES = new Set(["failed", "failure", "not_helpful", "not helpful", "miss", "error", "blocked"]);
+
+function contextMatchSignal(outcome: ToolAttentionOutcome, context: ToolAttentionContextPack): number {
+  let score = 0;
+  const meta = outcome.metadata ?? {};
+  if (context.task_type && meta.task_type === context.task_type) score += 2;
+  if (context.repo && meta.repo === context.repo) score += 2;
+  if (context.agent_id && meta.agent_id === context.agent_id) score += 1;
+  for (const tag of context.tags ?? []) {
+    if ((meta.tags as string[] ?? []).includes(tag)) score += 1;
+  }
+  return score;
+}
+
+function buildOutcomeSummaries(outcomes: ToolAttentionOutcome[]): Map<string, ToolAttentionOutcomeSummary> {
+  const map = new Map<string, ToolAttentionOutcomeSummary>();
+  for (const outcome of outcomes) {
+    const toolId = String(outcome.toolId ?? "");
+    if (!toolId) continue;
+    const label = String(outcome.outcome ?? "").trim().toLowerCase();
+    let entry = map.get(toolId);
+    if (!entry) {
+      entry = { toolId, uses: 0, successes: 0, failures: 0, score: 0, lastOutcome: "", lastUsedAt: "" };
+      map.set(toolId, entry);
+    }
+    entry.uses += 1;
+    if (SUCCESS_OUTCOMES.has(label)) { entry.successes += 1; entry.score += 2; }
+    else if (FAILURE_OUTCOMES.has(label)) { entry.failures += 1; entry.score -= 2; }
+    else { entry.score += 1; }
+    if (!entry.lastUsedAt) {
+      entry.lastUsedAt = String(outcome.timestamp ?? "");
+      entry.lastOutcome = String(outcome.outcome ?? "");
+    }
+  }
+  return map;
+}
+
+export function getSimilarTaskRecommendations(
+  context: ToolAttentionContextPack,
+  limit = 10,
+): SimilarTaskResponse {
+  const data = getToolAttention("", 100);
+  const outcomes = data.recentOutcomes;
+  const outcomeSummaries = buildOutcomeSummaries(outcomes);
+
+  const contextScoreByTool = new Map<string, number>();
+  for (const outcome of outcomes) {
+    const toolId = String(outcome.toolId ?? "");
+    if (!toolId) continue;
+    const delta = contextMatchSignal(outcome, context);
+    contextScoreByTool.set(toolId, (contextScoreByTool.get(toolId) ?? 0) + delta);
+  }
+
+  const recommendations: SimilarTaskRecommendation[] = [];
+  for (const cap of data.capabilities) {
+    const contextScore = contextScoreByTool.get(cap.id) ?? 0;
+    const summary = outcomeSummaries.get(cap.id);
+    const outcomeScore = summary?.score ?? 0;
+    if (contextScore === 0 && outcomeScore <= 0) continue;
+    const overallScore = outcomeScore + contextScore * 3;
+    const reasonParts: string[] = [];
+    if (contextScore > 0) reasonParts.push(`context match score ${contextScore}`);
+    if (summary?.uses) reasonParts.push(`${summary.uses} recorded outcome(s) with score ${outcomeScore}`);
+    recommendations.push({
+      capabilityId: cap.id,
+      name: cap.name,
+      description: cap.description,
+      type: cap.type,
+      contextScore,
+      overallScore,
+      reason: reasonParts.join("; ") || "Outcome signal present.",
+    });
+  }
+
+  recommendations.sort((a, b) => b.overallScore - a.overallScore);
+  return {
+    context,
+    recommendations: recommendations.slice(0, Math.max(1, Math.min(limit, 100))),
+    timestamp: now(),
+  };
 }
 
 function catalogPath() {

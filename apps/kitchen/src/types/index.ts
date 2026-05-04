@@ -163,6 +163,39 @@ export interface PaperclipFleetResponse {
   timestamp: string;
 }
 
+export interface ToolAttentionContextPack {
+  task_type?: string;
+  repo?: string;
+  agent_id?: string;
+  tags?: string[];
+}
+
+export interface ToolAttentionOutcomeSummary {
+  toolId: string;
+  uses: number;
+  successes: number;
+  failures: number;
+  score: number;
+  lastOutcome: string;
+  lastUsedAt: string;
+}
+
+export interface SimilarTaskRecommendation {
+  capabilityId: string;
+  name: string;
+  description: string;
+  type: string;
+  contextScore: number;
+  overallScore: number;
+  reason: string;
+}
+
+export interface SimilarTaskResponse {
+  context: ToolAttentionContextPack;
+  recommendations: SimilarTaskRecommendation[];
+  timestamp: string;
+}
+
 export interface ToolAttentionCapability {
   id: string;
   name: string;
@@ -174,6 +207,7 @@ export interface ToolAttentionCapability {
   useWhen: string[];
   topLevel: boolean;
   loadCommand: string | null;
+  outcomeSummary?: ToolAttentionOutcomeSummary;
 }
 
 export interface ToolAttentionSource {
