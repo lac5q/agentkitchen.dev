@@ -6,6 +6,7 @@ import { CookbooksAnalyticsPanel } from "@/components/cookbooks/analytics-panel"
 import { SkillHeatmap } from "@/components/skill-heatmap";
 import { SkillsList } from "@/components/cookbooks/skills-list";
 import { ToolAttentionPanel } from "@/components/cookbooks/tool-attention-panel";
+import { SimilarTaskPanel } from "@/components/cookbooks/similar-task-panel";
 import { InfoTip } from "@/components/ui/info-tip";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -64,6 +65,14 @@ export default function CookbooksPage() {
           <InfoTip text="Progressive MCP discovery catalog. Shows which tools, workspaces, and skills can be loaded on demand instead of putting every definition into startup context." />
         </h2>
         <ToolAttentionPanel />
+      </section>
+
+      <section>
+        <h2 className="flex items-center text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+          Similar Task Intelligence
+          <InfoTip text="Shows tools used in historically similar tasks based on recorded outcome metadata (task_type, repo, agent_id, tags). Task text is never read — only public metadata signals are used." />
+        </h2>
+        <SimilarTaskPanel />
       </section>
 
       {/* Usage Trends */}

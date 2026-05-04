@@ -29,8 +29,9 @@ function StatCard({ icon: Icon, label, value }: {
 }
 
 function CapabilityRow({ capability }: { capability: ToolAttentionCapability }) {
+  const outcomeSummary = capability.outcomeSummary;
   return (
-    <div className="grid gap-3 border-b border-slate-800 py-3 last:border-0 md:grid-cols-[1fr_120px_120px]">
+    <div className="grid gap-3 border-b border-slate-800 py-3 last:border-0 md:grid-cols-[1fr_120px_120px_80px]">
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <p className="truncate text-sm font-semibold text-slate-200">{capability.name}</p>
@@ -51,6 +52,16 @@ function CapabilityRow({ capability }: { capability: ToolAttentionCapability }) 
         <span className={`rounded-md border px-2 py-1 text-xs ${statusClass(capability.status)}`}>
           {capability.status}
         </span>
+      </div>
+      <div className="flex items-start md:justify-end">
+        {outcomeSummary && (
+          <span
+            className="rounded border border-sky-700/30 bg-sky-900/20 px-2 py-1 text-xs text-sky-300"
+            title={`${outcomeSummary.uses} use(s)`}
+          >
+            score {outcomeSummary.score}
+          </span>
+        )}
       </div>
     </div>
   );
