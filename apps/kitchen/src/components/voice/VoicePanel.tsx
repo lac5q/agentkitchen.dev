@@ -230,6 +230,7 @@ export function VoicePanel() {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rec.onresult = (event: any) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const results = Array.from(event.results) as any[];
       const interim = results.map((r) => r[0].transcript).join("");
       setInterimText(interim);

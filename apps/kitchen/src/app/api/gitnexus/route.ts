@@ -18,7 +18,7 @@ interface GitNexusRepo {
 }
 
 export async function GET() {
-  let repos: GitNexusRepo[] = [];
+  const repos: GitNexusRepo[] = [];
 
   try {
     const registry = JSON.parse(await readFile(GITNEXUS_REGISTRY, "utf-8"));

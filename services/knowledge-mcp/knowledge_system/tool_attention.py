@@ -172,11 +172,13 @@ def _capability(
     use_when: Optional[list[str]] = None,
     top_level: bool = False,
     load_command: Optional[str] = None,
+    category: str = "",
 ) -> dict[str, Any]:
     return {
         "id": capability_id,
         "name": name,
         "type": capability_type,
+        "category": category,
         "source": source,
         "description": description,
         "status": status,
@@ -217,6 +219,7 @@ def _mcp_server_capabilities(root: Path) -> tuple[list[dict[str, Any]], list[dic
                 use_when=[f"Need tools exposed by the {server_id} MCP server."],
                 top_level=True,
                 load_command=f"Use MCP server `{server_id}`",
+                category="mcp-server",
             )
         )
     return capabilities, [source]
@@ -233,6 +236,7 @@ def _knowledge_capabilities() -> list[dict[str, Any]]:
             tags=["knowledge", "core", "mcp"],
             top_level=True,
             load_command=tool,
+            category="mcp-tool",
         )
         for tool in CORE_TOOLS
     ]
@@ -247,6 +251,7 @@ def _knowledge_capabilities() -> list[dict[str, Any]]:
                 tags=["knowledge", "workspace", "progressive"],
                 use_when=list(data.get("use_when", [])),
                 load_command=f'knowledge_open_workspace("{workspace}")',
+                category="workspace",
             )
         )
     return capabilities
@@ -287,14 +292,27 @@ def _skill_capabilities() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
                 tags=["skill", "agent-context"],
                 use_when=[f"Need the {child.name} reusable agent skill."],
                 load_command=f"Read skill {child.name}",
+                category="skill",
             )
         )
     return capabilities, [source]
 
 
+_UNAVAILABLE_STATUSES = {"missing", "invalid", "degraded"}
+
+
 def _external_catalog_capabilities() -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     data = _read_json(catalog_path())
-    return list(data.get("capabilities", [])), list(data.get("sources", []))
+    raw_caps: list[dict[str, Any]] = list(data.get("capabilities", []))
+    # Annotate category for external catalog entries unless already set.
+    annotated = []
+    for cap in raw_caps:
+        if not cap.get("category"):
+            status = str(cap.get("status", "available"))
+            cap = dict(cap)
+            cap["category"] = "unavailable" if status in _UNAVAILABLE_STATUSES else "reference"
+        annotated.append(cap)
+    return annotated, list(data.get("sources", []))
 
 
 def build_catalog() -> dict[str, Any]:
@@ -403,6 +421,14 @@ def _health() -> dict[str, Any]:
     }
 
 
+def _category_summary(capabilities: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for cap in capabilities:
+        cat = str(cap.get("category") or "other")
+        counts[cat] = counts.get(cat, 0) + 1
+    return counts
+
+
 def discover(query: str = "", limit: int = 25) -> dict[str, Any]:
     catalog = build_catalog()
     normalized = query.lower().strip()
@@ -436,6 +462,7 @@ def discover(query: str = "", limit: int = 25) -> dict[str, Any]:
         )
     catalog["capabilities"] = capabilities[: max(1, min(limit, 100))]
     catalog["summary"] = _summary(catalog["capabilities"], catalog["sources"], catalog["recentOutcomes"])
+    catalog["categories"] = _category_summary(catalog["capabilities"])
     return catalog
 
 

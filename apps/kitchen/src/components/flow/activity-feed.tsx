@@ -46,6 +46,7 @@ export function ActivityFeed({ events, onNodeHover, highlightedNode }: ActivityF
         {events.slice(0, 10).map((event) => {
           const color = TYPE_COLORS[event.type] || "#64748b";
           const icon = TYPE_ICONS[event.type] || "•";
+          // eslint-disable-next-line react-hooks/purity -- intentional: current time for relative display
           const minsAgo = Math.round((Date.now() - new Date(event.timestamp).getTime()) / 60000);
           const timeLabel = minsAgo < 1 ? "just now" : minsAgo < 60 ? `${minsAgo}m ago` : `${Math.round(minsAgo / 60)}h ago`;
           const isHighlighted = highlightedNode === event.node;

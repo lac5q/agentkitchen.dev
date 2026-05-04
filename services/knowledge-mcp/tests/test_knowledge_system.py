@@ -248,3 +248,155 @@ def test_tool_attention_top_level_mcp_tools(monkeypatch):
         assert stats["summary"]["recentOutcomes"] == 1
         assert stats["outcomesByTool"]["mcp-server:gitnexus"]["score"] == 2
         assert str(root) not in json.dumps(recorded)
+
+
+# ---------------------------------------------------------------------------
+# OPSGW-03: Dedicated coverage for each top-level Knowledge MCP gateway tool
+# ---------------------------------------------------------------------------
+
+def _setup_minimal_root(tmp: Path, monkeypatch) -> Path:
+    """Write a minimal env so tool_attention functions work in isolation."""
+    (tmp / ".mcp.json").write_text(json.dumps({"mcpServers": {"test-server": {"command": "test"}}}))
+    monkeypatch.setenv("AGENT_KITCHEN_ROOT", str(tmp))
+    monkeypatch.setenv("TOOL_ATTENTION_CATALOG", str(tmp / "missing-catalog.json"))
+    monkeypatch.setenv("TOOL_ATTENTION_OUTCOMES", str(tmp / "outcomes.jsonl"))
+    monkeypatch.setenv("SKILLS_PATH", str(tmp / "missing-skills"))
+    return tmp
+
+
+def test_tool_catalog_returns_capabilities_and_sources(monkeypatch):
+    """tool_catalog exposes all capabilities and sources without raw task text."""
+    with TemporaryDirectory() as tmp:
+        root = _setup_minimal_root(Path(tmp), monkeypatch)
+        catalog = tool_attention.build_catalog()
+        assert "capabilities" in catalog
+        assert "sources" in catalog
+        assert "summary" in catalog
+        assert "status" in catalog
+        # Privacy: no raw task text visible — task field only appears in recentOutcomes by design
+        payload = json.dumps(catalog)
+        assert str(root) not in payload
+
+
+def test_tool_discover_returns_ranked_results(monkeypatch):
+    """tool_discover returns capabilities sorted by score, limited to requested count."""
+    with TemporaryDirectory() as tmp:
+        _setup_minimal_root(Path(tmp), monkeypatch)
+        result = tool_attention.discover(query="knowledge", limit=5)
+        assert result["status"] == "ok"
+        assert isinstance(result["capabilities"], list)
+        assert len(result["capabilities"]) <= 5
+        # All returned capabilities match the query
+        for cap in result["capabilities"]:
+            haystack = " ".join([
+                cap.get("id", ""), cap.get("name", ""), cap.get("description", ""),
+                cap.get("source", ""), " ".join(cap.get("tags", [])),
+            ]).lower()
+            assert "knowledge" in haystack
+
+
+def test_tool_load_returns_capability_by_id(monkeypatch):
+    """tool_load returns a single capability by ID with instructions."""
+    with TemporaryDirectory() as tmp:
+        _setup_minimal_root(Path(tmp), monkeypatch)
+        result = tool_attention.load_capability("knowledge-workspace:tool-attention")
+        assert result["status"] == "ok"
+        assert result["capability"]["id"] == "knowledge-workspace:tool-attention"
+        assert "instructions" in result
+        not_found = tool_attention.load_capability("nonexistent:capability")
+        assert not_found["status"] == "not_found"
+
+
+def test_tool_record_outcome_writes_jsonl(monkeypatch, tmp_path):
+    """tool_record_outcome appends a well-formed record to the outcomes log."""
+    outcomes_path = tmp_path / "outcomes.jsonl"
+    monkeypatch.setenv("TOOL_ATTENTION_OUTCOMES", str(outcomes_path))
+    monkeypatch.setenv("AGENT_KITCHEN_ROOT", str(tmp_path))
+    monkeypatch.setenv("TOOL_ATTENTION_CATALOG", str(tmp_path / "missing-catalog.json"))
+    monkeypatch.setenv("SKILLS_PATH", str(tmp_path / "missing-skills"))
+
+    result = tool_attention.record_outcome(
+        tool_id="skill:test-tool",
+        task="implement feature X",
+        outcome="helped",
+        metadata={"task_type": "coding", "repo": "my-repo"},
+    )
+    assert result["status"] == "ok"
+    assert outcomes_path.exists()
+    lines = [json.loads(line) for line in outcomes_path.read_text().splitlines() if line.strip()]
+    assert len(lines) == 1
+    rec = lines[0]
+    assert rec["toolId"] == "skill:test-tool"
+    assert rec["outcome"] == "helped"
+    assert rec["metadata"]["task_type"] == "coding"
+    assert "timestamp" in rec
+    # task is stored in JSONL (intentional — stats layer never exposes it)
+    assert "task" in rec
+
+
+def test_tool_stats_omits_raw_task_text(monkeypatch, tmp_path):
+    """tool_stats aggregate output never exposes raw task text."""
+    outcomes_path = tmp_path / "outcomes.jsonl"
+    outcomes_path.write_text(
+        json.dumps({
+            "timestamp": "2026-05-04T00:00:00Z",
+            "toolId": "skill:sensitive",
+            "task": "top secret task description that must not leak",
+            "outcome": "helped",
+            "metadata": {"task_type": "review"},
+        }) + "\n"
+    )
+    monkeypatch.setenv("TOOL_ATTENTION_OUTCOMES", str(outcomes_path))
+    monkeypatch.setenv("AGENT_KITCHEN_ROOT", str(tmp_path))
+    monkeypatch.setenv("TOOL_ATTENTION_CATALOG", str(tmp_path / "missing-catalog.json"))
+    monkeypatch.setenv("SKILLS_PATH", str(tmp_path / "missing-skills"))
+
+    result = tool_attention.stats()
+    payload = json.dumps(result)
+    assert "top secret task description" not in payload
+    assert result["status"] == "ok"
+    assert "outcomesByTool" in result
+    assert "skill:sensitive" in result["outcomesByTool"]
+    assert result["outcomesByTool"]["skill:sensitive"]["successes"] == 1
+
+
+# ---------------------------------------------------------------------------
+# TOOLGW-03: category field distinguishes capability types in tool_discover
+# ---------------------------------------------------------------------------
+
+def test_tool_discover_categories_distinguish_types(monkeypatch, tmp_path):
+    """tool_discover includes a categories summary distinguishing MCP servers, workspaces, skills."""
+    # Set up a root with at least an MCP server and a skills dir
+    (tmp_path / ".mcp.json").write_text(json.dumps({"mcpServers": {"my-server": {"command": "cmd"}}}))
+    skills_dir = tmp_path / "skills" / "my-skill"
+    skills_dir.mkdir(parents=True)
+    (skills_dir / "SKILL.md").write_text("# my-skill\ndescription: A test skill\n")
+
+    monkeypatch.setenv("AGENT_KITCHEN_ROOT", str(tmp_path))
+    monkeypatch.setenv("TOOL_ATTENTION_CATALOG", str(tmp_path / "missing-catalog.json"))
+    monkeypatch.setenv("TOOL_ATTENTION_OUTCOMES", str(tmp_path / "outcomes.jsonl"))
+    monkeypatch.setenv("SKILLS_PATH", str(tmp_path / "skills"))
+
+    result = tool_attention.discover()
+    assert "categories" in result, "discover() must include a 'categories' summary"
+    cats = result["categories"]
+    assert isinstance(cats, dict)
+    assert "mcp-server" in cats, f"Expected mcp-server category, got: {cats}"
+    assert "workspace" in cats, f"Expected workspace category, got: {cats}"
+    assert "skill" in cats, f"Expected skill category, got: {cats}"
+    # Each returned capability must have a non-empty category field
+    for cap in result["capabilities"]:
+        assert cap.get("category"), f"Capability {cap.get('id')} missing category field"
+
+
+def test_capability_category_field_set_on_all_types(monkeypatch, tmp_path):
+    """Every capability returned by build_catalog has a category field."""
+    (tmp_path / ".mcp.json").write_text(json.dumps({"mcpServers": {"srv": {}}}))
+    monkeypatch.setenv("AGENT_KITCHEN_ROOT", str(tmp_path))
+    monkeypatch.setenv("TOOL_ATTENTION_CATALOG", str(tmp_path / "missing-catalog.json"))
+    monkeypatch.setenv("TOOL_ATTENTION_OUTCOMES", str(tmp_path / "outcomes.jsonl"))
+    monkeypatch.setenv("SKILLS_PATH", str(tmp_path / "missing-skills"))
+
+    catalog = tool_attention.build_catalog()
+    for cap in catalog["capabilities"]:
+        assert cap.get("category"), f"Capability {cap.get('id')} has no category"

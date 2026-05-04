@@ -31,6 +31,7 @@ interface HealthPanelProps {
 }
 
 export function HealthPanel({ collections, totalDocs }: HealthPanelProps) {
+  // eslint-disable-next-line react-hooks/purity -- intentional: freshness check at render time
   const now = Date.now();
 
   const coverageGaps = collections.filter((c) => c.docCount < 10);

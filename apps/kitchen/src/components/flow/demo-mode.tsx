@@ -38,6 +38,7 @@ export function DemoMode({ onHighlight }: DemoModeProps) {
     if (!running) return;
 
     if (stepIndex >= DEMO_STEPS.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting state on completion boundary is intentional
       stop();
       return;
     }

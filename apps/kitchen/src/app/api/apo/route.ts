@@ -5,12 +5,14 @@ import type { ApoProposal, ApoCycleStats } from "@/types";
 
 export const dynamic = "force-dynamic";
 
-const PROPOSALS_PATH =
-  process.env.APO_PROPOSALS_PATH ||
-  `${process.env.HOME}/.openclaw/skills/proposals`;
-const CRON_LOG_PATH =
-  process.env.APO_CRON_LOG_PATH ||
-  `${process.env.HOME}/.openclaw/logs/agent-lightning-cron.log`;
+// NOTE (OPSGW-02): process.env.HOME here causes a non-blocking Turbopack NFT warning during
+// `npm run build`. The warning is benign — the build and route work correctly. Root cause:
+// turbopack.root in next.config.ts covers the full monorepo, so any fs + dynamic env path
+// triggers a full-project trace. Resolving it requires moving APO storage to a static subfolder.
+const PROPOSALS_PATH: string =
+  process.env.APO_PROPOSALS_PATH ?? `${process.env.HOME ?? "~"}/.openclaw/skills/proposals`;
+const CRON_LOG_PATH: string =
+  process.env.APO_CRON_LOG_PATH ?? `${process.env.HOME ?? "~"}/.openclaw/logs/agent-lightning-cron.log`;
 
 async function parseProposal(
   filePath: string,

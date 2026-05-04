@@ -19,7 +19,8 @@ interface FlowEdgeProps {
 export function FlowEdgeComponent({ edge }: FlowEdgeProps) {
   const color = EDGE_COLORS[edge.type] ?? EDGE_COLORS.request;
 
-  // Randomize particle travel duration per edge (stable via useMemo)
+  // Stable random seed per edge mount — intentionally impure but memoized.
+  // eslint-disable-next-line react-hooks/purity
   const duration = useMemo(() => 1.5 + Math.random() * 2, []);
 
   const particleKeyframes = {
