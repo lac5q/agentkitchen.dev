@@ -1,18 +1,18 @@
 # Project: Agent Kitchen
 
-*Last updated: 2026-05-01 — v1.7 Progressive Tool Gateway Runtime started*
+*Last updated: 2026-05-04 — v1.7 Progressive Tool Gateway Runtime shipped*
 
 ---
 
-## Current Milestone: v1.7 Progressive Tool Gateway Runtime
+## Previous Milestone: v1.7 Progressive Tool Gateway Runtime — SHIPPED 2026-05-04
 
-**Goal:** Turn Tool Attention from a visible catalog into a runtime gateway that agents can call directly, learn from outcomes, and operate from Kitchen.
+**What shipped:** Top-level MCP gateway tools, outcome-aware tool selection, Python contextMatchSignal algorithm ported to TypeScript, SimilarTaskPanel UI, outcome score badges, gateway hardening (lint + pytest coverage).
 
 ---
 
-## Current State: v1.7 In Progress
+## Current State: v1.7 Complete — Planning Next Milestone
 
-v1.7 in progress — Phase 29 complete with top-level Knowledge MCP gateway tools, and Phase 30 Plan 01 complete with outcome-aware discovery ranking. Remaining work: similar-task memory recommendations, Kitchen ops UI, and cleanup/hardening.
+All 5 phases (29-33) shipped. Codebase is at ~21,800 LOC. Ready for v1.8 planning.
 
 ---
 
@@ -49,8 +49,11 @@ Every agent and knowledge system is visible, connected, and self-improving.
 - ✓ Tool Attention catalog/discover/load/outcome/stats actions — v1.6 (TOOL-01/02)
 - ✓ Tool Attention API, Cookbooks panel, Flow node, and node detail stats — v1.6 (UI-01/02/03/04)
 - ✓ Monorepo production build, LaunchAgent deploy, and CI hardening — v1.6 (OPS-01/02/03)
-- ✓ Top-level progressive tool gateway MCP tools — v1.7 (TOOLGW-01)
+- ✓ Top-level progressive tool gateway MCP tools (`tool_catalog`, `tool_discover`, `tool_load`, `tool_record_outcome`, `tool_stats`) — v1.7 (TOOLGW-01/02)
 - ✓ Outcome-aware Tool Attention stats and discovery ranking — v1.7 (MEMGW-01/02)
+- ✓ Similar-task memory recommendations via contextMatchSignal (Python→TypeScript port) — v1.7 (MEMGW-03)
+- ✓ Kitchen Tool Gateway ops UI: SimilarTaskPanel, outcome score badges, context filters — v1.7 (UIGW-01/02/03)
+- ✓ tool_discover category field + pytest coverage 11→18 tests + lint enforced in CI — v1.7 (TOOLGW-03/OPSGW-01/02/03)
 - ✓ Knowledge base collections browsable with doc counts and freshness — v1.1
 - ✓ Live agent heartbeat visible in Flow diagram — v1.2
 - ✓ Bidirectional Obsidian ↔ mem0 knowledge sync — v1.2
@@ -86,8 +89,8 @@ Every agent and knowledge system is visible, connected, and self-improving.
 
 - [ ] Update flow trigger button (kick off `qmd update` from UI)
 - [ ] Library freshness: force-touch or show "last indexed" timestamp vs file mtime
-- [ ] Outcome-aware tool recommendation and memory-backed selection signals
-- [ ] Kitchen Tool Gateway operations view with loaded/skipped/outcome trends
+- [ ] Update flow trigger button (kick off `qmd update` from UI)
+- [ ] Library freshness: force-touch or show "last indexed" timestamp vs file mtime
 
 ### Out of Scope
 
@@ -100,7 +103,7 @@ Every agent and knowledge system is visible, connected, and self-improving.
 ## Context
 
 **Tech stack:** Next.js (App Router), React Flow, TypeScript, Tailwind, Vitest  
-**Codebase:** ~7,700 LOC TypeScript/TSX across `src/`  
+**Codebase:** ~21,800 LOC TypeScript/TSX + Python across `apps/kitchen/src/` and `services/`  
 **Production:** Port 3002, `npm start`, LaunchAgent auto-start, Cloudflare tunnel  
 **Known debt:**
 - GitNexus embeddings partial (285/473) — crash bug upstream
@@ -131,6 +134,9 @@ Every agent and knowledge system is visible, connected, and self-improving.
 | Tool Attention as progressive discovery layer | ✓ No blanket runtime dependency on mcp-agent | v1.6 |
 | Monorepo CI validates Kitchen and Python service surfaces | ✓ Added CI workflow | v1.6 |
 | Tool gateway is callable directly from MCP clients | ✓ Top-level `tool_*` tools added | v1.7 |
+| contextMatchSignal algorithm ported Python→TypeScript | ✓ Exact multipliers (task_type×2, repo×2, agent_id×1, tags×1); task field never read | v1.7 |
+| SimilarTaskPanel on Cookbooks page | ✓ Context-ranked recommendations below ToolAttentionPanel | v1.7 |
+| Gateway hardening: lint enforced | ✓ Test file ESLint override; `npm run lint` exits 0 in CI | v1.7 |
 
 ---
 

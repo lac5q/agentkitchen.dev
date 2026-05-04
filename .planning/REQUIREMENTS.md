@@ -6,7 +6,7 @@
 
 ## Status
 
-v1.7 is in progress. Phases 29, 32 (contextMatchSignal UI), and 33 (hardening) are complete.
+v1.7 is complete. All 5 phases (29-33) shipped 2026-05-04.
 
 See `.planning/milestones/v1.6-REQUIREMENTS.md` for the archived v1.6 checklist.
 
@@ -28,9 +28,9 @@ See `.planning/milestones/v1.6-REQUIREMENTS.md` for the archived v1.6 checklist.
 
 ### Kitchen Operations UI
 
-- [ ] **UIGW-01** — Show gateway-level stats, recent outcomes, and degraded sources in a dedicated Tool Gateway operations view.
-- [ ] **UIGW-02** — Add source/capability filters for type, status, and top-level/runtime availability.
-- [ ] **UIGW-03** — Surface loaded/skipped/recorded outcome trends in the Flow Tool Gateway node detail panel.
+- [x] **UIGW-01** — Show gateway-level stats, recent outcomes, and degraded sources in a dedicated Tool Gateway operations view.
+- [x] **UIGW-02** — Add source/capability filters for type, status, and top-level/runtime availability.
+- [x] **UIGW-03** — Surface loaded/skipped/recorded outcome trends in the Flow Tool Gateway node detail panel.
 
 ### Hardening
 
@@ -70,9 +70,9 @@ See `.planning/milestones/v1.6-REQUIREMENTS.md` for the archived v1.6 checklist.
 | MEMGW-01 | 30 | Complete |
 | MEMGW-02 | 30 | Complete |
 | MEMGW-03 | 32 | Complete |
-| UIGW-01 | 31 | Pending |
-| UIGW-02 | 31 | Pending |
-| UIGW-03 | 31 | Pending |
+| UIGW-01 | 31 | Complete |
+| UIGW-02 | 31 | Complete |
+| UIGW-03 | 31 | Complete |
 | OPSGW-01 | 33 | Complete |
 | OPSGW-02 | 33 | Complete |
 | OPSGW-03 | 33 | Complete |

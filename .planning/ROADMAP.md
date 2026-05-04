@@ -8,7 +8,7 @@
 - ✅ **v1.4 Cookbooks** — Phase 18 (shipped 2026-04-15)
 - ✅ **v1.5 Agent Coordination + Voice** — Phases 19-25 (shipped 2026-04-20)
 - ✅ **v1.6 Monorepo + Progressive MCP Tool Attention** — Phases 26-28 (shipped 2026-04-30)
-- 🚧 **v1.7 Progressive Tool Gateway Runtime** — Phases 29-32 (in progress)
+- ✅ **v1.7 Progressive Tool Gateway Runtime** — Phases 29-33 (shipped 2026-05-04)
 
 ## Phases
 
@@ -88,16 +88,18 @@ Full archive: `.planning/milestones/v1.6-ROADMAP.md`
 
 </details>
 
-<details open>
-<summary>🚧 v1.7 Progressive Tool Gateway Runtime (Phases 29-33) — IN PROGRESS</summary>
+<details>
+<summary>✅ v1.7 Progressive Tool Gateway Runtime (Phases 29-33) — SHIPPED 2026-05-04</summary>
 
 - [x] Phase 29: Top-Level Tool Gateway MCP Tools (1/1 plans) — completed 2026-05-01
 - [x] Phase 30: Memory-Aware Tool Selection (2/2 plans) — completed 2026-05-04
-- [ ] Phase 31: Kitchen Tool Gateway Operations UI (0/1 plans)
+- [x] Phase 31: Kitchen Tool Gateway Operations UI (1/1 plans) — completed 2026-05-04
 - [x] Phase 32: Wire Python Tool Intelligence to Kitchen UI (4/4 plans) — completed 2026-05-04
 - [x] Phase 33: Gateway Hardening (1/1 plans) — completed 2026-05-04
 
 Full archive: `.planning/milestones/v1.7-ROADMAP.md`
+
+
 
 </details>
 
@@ -135,7 +137,7 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 | 28 | v1.6 | 1/1 | Complete | 2026-04-30 |
 | 29 | v1.7 | 1/1 | Complete | 2026-05-01 |
 | 30 | v1.7 | 2/2 | Complete | 2026-05-04 |
-| 31 | v1.7 | 0/1 | Planned | — |
+| 31 | v1.7 | 1/1 | Complete | 2026-05-04 |
 | 32 | v1.7 | 4/4 | Complete | 2026-05-04 |
 | 33 | v1.7 | 1/1 | Complete | 2026-05-04 |
 

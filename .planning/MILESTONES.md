@@ -1,5 +1,38 @@
 # Milestones
 
+## v1.7 Progressive Tool Gateway Runtime (Shipped: 2026-05-04)
+
+**Phases completed:** 22 phases, 36 plans, 19 tasks
+
+**Key accomplishments:**
+
+- One-liner:
+- One-liner:
+- Path:
+- 1. [Rule 1 - Bug] failureCount/topErrorType declared after nodeStats useCallback
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- Status
+- better-sqlite3 DB layer with WAL mode, FTS5 external-content table (messages_fts), incremental ingest tracking table (ingest_meta), and meta key-value table — all initialized via singleton getDb()
+- FTS5-backed JSONL ingestion engine with incremental mtime+size skip logic, phrase-match recall query, and three API routes: GET /api/recall, POST /api/recall/ingest, GET /api/recall/stats
+- SqliteHealthPanel component with 4 KPI cards (Conversations, DB Size, Last Ingest, Last Recall) and Run Ingest button wired into the Ledger page, backed by useRecallStats hook querying /api/recall/stats
+- One-liner:
+- One-liner:
+- 1. [Rule 1 - Bug] Module-scope PAPERCLIP_BASE_URL captured before test env set
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- useAuditLog hook
+- One-liner:
+- One-liner:
+
+---
+
 ## v1.7 Progressive Tool Gateway Runtime (In Progress)
 
 **Phases:** 29-32 | **Plans:** 2/5 complete
