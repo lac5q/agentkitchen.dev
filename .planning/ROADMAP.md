@@ -145,4 +145,17 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 
 ## Backlog
 
-Next milestone after v1.7 remains TBD.
+### v1.8 Ideas (not yet planned)
+
+Core features:
+- **Flow trigger button** — kick off `qmd update` pipeline from Kitchen UI (long-standing Active item)
+- **Library freshness** — show QMD index recency timestamp vs file mtime on Library page
+- **LLM-powered recall scoring** — upgrade BM25 lexical recall in SQLite conversation store to semantic/embedding-based ranking
+- **Cross-project recall** — extend similar-task recommendations across multiple local repos, not just the current one
+- **Voice meeting bot** — Pipecat-based meeting participant that writes transcripts to SQLite and surfaces highlights in Kitchen
+
+Deferred from v1.7:
+- GitNexus embeddings (blocked by node-llama-cpp arm64 crash — abhigyanpatwari/GitNexus#824)
+- Memory export/import between agent instances
+
+Run `/gsd-new-milestone` to formally scope v1.8.

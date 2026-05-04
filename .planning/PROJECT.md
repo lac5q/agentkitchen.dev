@@ -85,10 +85,13 @@ Every agent and knowledge system is visible, connected, and self-improving.
 - ✓ SQLite audit_log table + AuditLogPanel — v1.5 (SEC-02/03, DASH-03)
 - ✓ Usage analytics (6 metrics, 3 windows) on Ledger/Library/Cookbooks — v1.5 (ANA-01/02/03/04)
 
-### Active
+### Active (v1.8 candidates)
 
-- [ ] Update flow trigger button (kick off `qmd update` from UI)
-- [ ] Library freshness: force-touch or show "last indexed" timestamp vs file mtime
+- [ ] Flow trigger button — kick off `qmd update` pipeline from Kitchen UI
+- [ ] Library freshness — show QMD index recency timestamp vs file mtime
+- [ ] LLM-powered recall scoring — semantic/embedding upgrade to BM25 lexical recall
+- [ ] Cross-project recall — similar-task recommendations across multiple local repos
+- [ ] Voice meeting bot — Pipecat meeting participant writing transcripts to SQLite with Kitchen highlights panel
 - [ ] Update flow trigger button (kick off `qmd update` from UI)
 - [ ] Library freshness: force-touch or show "last indexed" timestamp vs file mtime
 
