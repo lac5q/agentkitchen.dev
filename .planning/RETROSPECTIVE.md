@@ -111,6 +111,45 @@
 
 ---
 
+## Milestone: v1.7 — Progressive Tool Gateway Runtime
+
+**Shipped:** 2026-05-04
+**Phases:** 5 (29–33) | **Plans:** 9 | **~21,800 LOC total** | **4 days (May 1–4)**
+
+### What Was Built
+
+- Top-level gateway MCP tools (Phase 29) — `tool_catalog`, `tool_discover`, `tool_load`, `tool_record_outcome`, `tool_stats` callable directly from any MCP client
+- Outcome-aware selection (Phase 30) — success/failure scoring by capability, contextSignals aggregated from outcome metadata
+- Kitchen Gateway Ops UI (Phase 31/32-04) — outcome score badges, SimilarTaskPanel, collapsible context filter form on Cookbooks page
+- Python contextMatchSignal ported to TypeScript (Phase 32) — exact multipliers (task_type×2, repo×2, agent_id×1, tags×1); task field never read; `GET /api/tool-attention/similar` route + `useSimilarTaskRecommendations` hook
+- Gateway hardening (Phase 33) — lint exits 0, pytest coverage 11→18 tests, `tool_discover` category field + categories summary dict
+
+### What Worked
+
+- **Remote CCR agent at 3:30 AM** — autonomous execution of Phases 32 + 33 while user slept; returned all 5 plans with summaries, tests, and commits
+- **Wave-based TDD (Wave 0 stubs first)** — contextMatchSignal stubs written before any production code; caught field naming inconsistency (`successCount` vs `successes`) before it reached tests
+- **Algorithm port documentation in plan** — exact multipliers + privacy constraint stated in PLAN.md before implementation; plan checker caught missing `*2` multipliers in code block
+
+### What Was Inefficient
+
+- **Phase 31 absorbed into Phase 32** — originally scoped as standalone phase; remote agent folded it into Wave 3 without creating Phase 31 directory; required retroactive backfill at close
+- **Branch proliferation** — 3 feature branches created during the milestone needed manual merge/cherry-pick; some work duplicated across branches due to concurrent execution
+- **gsd-tools parser failure** — `roadmap analyze` returned empty throughout the session; all routing had to be done by reading files directly
+
+### Patterns Established
+
+- Remote CCR agent prompt must be fully self-contained (skills live on local machine, not in remote env)
+- Phase plan checker pass requires: field names consistent between interface + behaviors + test stubs; open questions marked RESOLVED
+- Wave-0 test stubs before Wave-1 production code = effective discipline for multi-wave implementations
+
+### Key Lessons
+
+- **Create phase directory before agent runs** — had Phase 31 directory existed, remote agent would have produced artifacts in the right place
+- **gsd-tools `roadmap analyze` is unreliable on this ROADMAP.md format** — always have fallback to `grep -E "^\-"` on ROADMAP.md directly
+- **Pre-close REQUIREMENTS.md audit** — UIGW-01/02/03 were still marked Pending at close even though Phase 31 delivered them; update requirements as phases ship, not at close
+
+---
+
 ## Cross-Milestone Trends
 
 | Milestone | Phases | Plans | Days | LOC Added | Key Theme |
@@ -120,3 +159,4 @@
 | v1.3 | 6 | 8 | 2 | +6,553 | Observability depth + canvas UX |
 | v1.4 | 1 | 1 | 1 | ~500 | Cookbooks page + model usage tracking |
 | v1.5 | 7 | 15 | 4 | ~8,000 | Agent coordination + voice |
+| v1.7 | 5 | 9 | 4 | ~5,000 | Tool gateway runtime + Python→TS algorithm port |
