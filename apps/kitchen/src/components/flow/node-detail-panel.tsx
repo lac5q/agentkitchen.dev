@@ -26,6 +26,20 @@ interface NodeDetailPanelProps {
   onClose: () => void;
   paperclipFleet?: PaperclipFleetResponse | null;
   paperclipLoading?: boolean;
+  registeredAgents?: RegisteredFlowAgent[];
+}
+
+interface RegisteredFlowAgent {
+  id: string;
+  name: string;
+  status: string;
+  latencyMs: number | null;
+  location: string;
+  protocol?: string;
+  platform?: string;
+  metadata?: Record<string, unknown>;
+  capabilities?: Array<{ id: string; name: string; description: string; tags: string[] }>;
+  currentTask?: string | null;
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -36,11 +50,84 @@ const TYPE_COLORS: Record<string, string> = {
   apo: "#8b5cf6",
 };
 
-export function NodeDetailPanel({ nodeId, nodeLabel, nodeIcon, nodeStats, events, onClose, paperclipFleet = null, paperclipLoading = false }: NodeDetailPanelProps) {
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function a2aMetadata(agent: RegisteredFlowAgent | null): Record<string, unknown> {
+  const metadata = agent?.metadata?.a2a;
+  return isRecord(metadata) ? metadata : {};
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function urlHost(rawUrl: unknown): string {
+  if (typeof rawUrl !== "string") return "unknown";
+  try {
+    const url = new URL(rawUrl);
+    url.username = "";
+    url.password = "";
+    return url.host;
+  } catch {
+    return rawUrl.replace(/\/\/[^/@\s]+@/, "//");
+  }
+}
+
+function stringList(value: unknown): string {
+  return Array.isArray(value) ? value.filter((item) => typeof item === "string").join(", ") : "unknown";
+}
+
+function securitySummary(value: unknown): string {
+  if (!isRecord(value)) return "unknown";
+  const labels = Object.values(value)
+    .filter(isRecord)
+    .map((scheme) => {
+      const type = stringValue(scheme.type) ?? "scheme";
+      const detail = stringValue(scheme.scheme) ?? stringValue(scheme.in);
+      return detail ? `${type} ${detail}` : type;
+    });
+  return labels.length > 0 ? labels.join(", ") : "unknown";
+}
+
+function streamingLabel(value: unknown): string {
+  if (typeof value === "boolean") return value ? "supported" : "not declared";
+  return "unknown";
+}
+
+function sourceLabel(value: unknown): string {
+  return value === "adk" ? "ADK" : stringValue(value)?.toUpperCase() ?? "A2A";
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded bg-slate-900 p-2">
+      <p className="text-xs text-slate-500">{label}</p>
+      <p className="break-words text-sm font-bold text-slate-200">{value}</p>
+    </div>
+  );
+}
+
+export function NodeDetailPanel({
+  nodeId,
+  nodeLabel,
+  nodeIcon,
+  nodeStats,
+  events,
+  onClose,
+  paperclipFleet = null,
+  paperclipLoading = false,
+  registeredAgents = [],
+}: NodeDetailPanelProps) {
   const nodeEvents = matchEventsForNode(nodeId ?? "", events).slice(0, 10);
   const { data: skillsData } = useSkills();
   const { data: toolAttentionData } = useToolAttention();
   const [renderNowMs] = useState(() => Date.now());
+  const selectedAgent = nodeId?.startsWith("agent-")
+    ? registeredAgents.find((agent) => agent.id === nodeId.replace("agent-", "")) ?? null
+    : null;
+  const a2a = a2aMetadata(selectedAgent);
 
   // For cookbooks node, use live skills data instead of click-time snapshot
   const effectiveStats: Record<string, string | number> = nodeId === "cookbooks" && skillsData
@@ -137,6 +224,33 @@ export function NodeDetailPanel({ nodeId, nodeLabel, nodeIcon, nodeStats, events
             <div className="p-4 border-b border-slate-800">
               <p className="text-xs font-medium text-slate-500 mb-2">Fleet</p>
               <PaperclipFleetPanel fleet={paperclipFleet ?? null} isLoading={paperclipLoading ?? false} />
+            </div>
+          )}
+
+          {selectedAgent?.protocol === "a2a" && (
+            <div className="p-4 border-b border-slate-800">
+              <div className="mb-2 flex items-center gap-2">
+                <p className="text-xs font-medium text-sky-400">A2A connection</p>
+                {a2a.source === "adk" && (
+                  <span className="rounded border border-sky-700 px-2 py-0.5 text-[10px] font-medium text-sky-300">ADK</span>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <DetailRow label="Endpoint host" value={urlHost(a2a.endpointUrl)} />
+                <DetailRow label="Version" value={stringValue(a2a.version) ?? "unknown"} />
+                <DetailRow label="Security" value={securitySummary(a2a.securitySchemes)} />
+                <DetailRow label="Streaming" value={streamingLabel(a2a.streaming)} />
+                <DetailRow label="Last validation" value={stringValue(a2a.lastFetchedAt) ?? "unknown"} />
+                <DetailRow label="Source" value={sourceLabel(a2a.source)} />
+                <DetailRow label="Input modes" value={stringList(a2a.inputModes)} />
+                <DetailRow label="Output modes" value={stringList(a2a.outputModes)} />
+                {selectedAgent.currentTask && (
+                  <DetailRow label="Current task" value={selectedAgent.currentTask} />
+                )}
+                {typeof a2a.latestTaskState === "string" && (
+                  <DetailRow label="Latest task" value={a2a.latestTaskState} />
+                )}
+              </div>
             </div>
           )}
 

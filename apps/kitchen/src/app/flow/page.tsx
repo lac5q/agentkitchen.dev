@@ -41,6 +41,9 @@ export default function FlowPage() {
     location: a.location ?? "local",
     protocol: a.protocol,
     platform: a.platform,
+    metadata: a.metadata,
+    capabilities: a.capabilities,
+    currentTask: a.currentTask,
   }));
   const localActiveCount = agentsData?.agents.filter((a: { status: string }) => a.status === "active").length || 0;
   const localTotalCount = agentsData?.agents.length || 0;
@@ -89,6 +92,7 @@ export default function FlowPage() {
           onClose={() => setSelectedNode(null)}
           paperclipFleet={paperclipFleet ?? null}
           paperclipLoading={paperclipLoading}
+          registeredAgents={registeredAgents}
         />
       </div>
 

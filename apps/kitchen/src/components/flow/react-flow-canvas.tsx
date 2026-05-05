@@ -17,6 +17,57 @@ import "@xyflow/react/dist/style.css";
 import type { HealthStatus } from "@/types";
 import { applyCollapseToNodes, applyCollapseToEdges, aggregateHealthColor } from "@/lib/flow/collapse-logic";
 
+interface RegisteredFlowAgent {
+  id: string;
+  name: string;
+  status: string;
+  latencyMs: number | null;
+  location: string;
+  protocol?: string;
+  platform?: string;
+  metadata?: Record<string, unknown>;
+  capabilities?: Array<{ id: string; name: string; description: string; tags: string[] }>;
+  currentTask?: string | null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function a2aMetadata(agent: RegisteredFlowAgent): Record<string, unknown> {
+  const metadata = agent.metadata?.a2a;
+  return isRecord(metadata) ? metadata : {};
+}
+
+function isAdkAgent(agent: RegisteredFlowAgent): boolean {
+  return a2aMetadata(agent).source === "adk";
+}
+
+function agentSubtitle(agent: RegisteredFlowAgent): string {
+  const labels = [
+    agent.protocol === "a2a" ? "A2A" : agent.protocol,
+    isAdkAgent(agent) ? "ADK" : null,
+    a2aMetadata(agent).streaming === true ? "streaming" : null,
+    agent.location,
+  ].filter(Boolean);
+  return labels.join(" · ");
+}
+
+function agentStats(agent: RegisteredFlowAgent): Record<string, string | number> {
+  const metadata = a2aMetadata(agent);
+  return {
+    "Protocol": agent.protocol === "a2a" ? "A2A" : agent.protocol ?? "unknown",
+    "Source": isAdkAgent(agent) ? "ADK" : String(metadata.source ?? agent.platform ?? "unknown"),
+    "Status": agent.status,
+    "Location": agent.location,
+    "Capabilities": agent.capabilities?.length ?? 0,
+    ...(typeof metadata.version === "string" ? { "Version": metadata.version } : {}),
+    ...(typeof metadata.lastFetchedAt === "string" ? { "Last validation": metadata.lastFetchedAt } : {}),
+    ...(typeof metadata.latestTaskState === "string" ? { "Latest task": metadata.latestTaskState } : {}),
+    ...(agent.currentTask ? { "Current task": agent.currentTask } : {}),
+  };
+}
+
 // Custom node component
 function FlowNode({ data }: {
   data: {
@@ -143,15 +194,7 @@ interface ReactFlowCanvasProps {
   topFailureAgent?: string | null;
   nodeActivity: Record<string, number>;
   highlightedNode?: string | null;
-  registeredAgents?: Array<{
-    id: string;
-    name: string;
-    status: string;
-    latencyMs: number | null;
-    location: string;
-    protocol?: string;
-    platform?: string;
-  }>;
+  registeredAgents?: RegisteredFlowAgent[];
   localActiveCount?: number;
   localTotalCount?: number;
   onNodeClick: (nodeId: string, nodeLabel: string, nodeIcon: string, nodeStats: Record<string, string | number>) => void;
@@ -294,7 +337,7 @@ export function ReactFlowCanvas({
       position: { x: 15 + i * agentSpacing, y: 32 },
       data: {
         label: agent.name,
-        subtitle: agent.protocol ? `${agent.protocol} · ${agent.location}` : agent.location,
+        subtitle: agentSubtitle(agent),
         icon: agent.name.slice(0, 2).toUpperCase(),
         status: agent.status === "active" ? "active" : "dormant",
         highlighted: highlightedNode === `agent-${agent.id}`,
@@ -386,7 +429,8 @@ export function ReactFlowCanvas({
     // Group box node clicks are handled by the node's own onClick (onToggleCollapse in data)
     if (node.type === "groupBoxNode") return;
     const statsId = node.id.startsWith("agent-") ? node.id.replace("agent-", "") : node.id;
-    const stats = nodeStats(statsId);
+    const agent = node.id.startsWith("agent-") ? visibleAgents.find((candidate) => candidate.id === statsId) : null;
+    const stats = agent ? agentStats(agent) : nodeStats(statsId);
     onNodeClick(node.id, node.data.label as string, node.data.icon as string, stats);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onNodeClick]);
