@@ -22,6 +22,22 @@ export interface RegisterA2aAgentCardInput {
   issueApiKey?: boolean;
 }
 
+export interface OrchestrationHilDecision {
+  id: string;
+  runId: string;
+  taskSummary: string;
+  selectedAgentId: string | null;
+  correlationId: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+  resolvedAt?: string | null;
+}
+
+export interface ResolveOrchestrationHilInput {
+  id: string;
+  decision: "approve" | "reject";
+}
+
 async function fetchJSON<T>(url: string): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${url}: ${res.status}`);
@@ -270,6 +286,36 @@ export function useActivity() {
       timestamp: string;
     }>("/api/activity"),
     refetchInterval: 15000, // refresh every 15s
+  });
+}
+
+export function useOrchestrationHil() {
+  return useQuery({
+    queryKey: ["orchestration-hil"],
+    queryFn: () =>
+      fetchJSON<{
+        decisions: OrchestrationHilDecision[];
+        timestamp: string;
+      }>("/api/orchestration/hil"),
+    refetchInterval: 10000,
+    retry: false,
+  });
+}
+
+export function resolveOrchestrationHil(input: ResolveOrchestrationHilInput) {
+  return mutateJSON<OrchestrationHilDecision & { ok: boolean; resumed?: boolean; timestamp: string }>(
+    `/api/orchestration/hil/${encodeURIComponent(input.id)}`,
+    { method: "POST", body: JSON.stringify({ decision: input.decision }) }
+  );
+}
+
+export function useResolveOrchestrationHilMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: resolveOrchestrationHil,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orchestration-hil"] });
+    },
   });
 }
 

@@ -5,6 +5,7 @@ import { useHealth, useAgents, useKnowledge, useMemory, useActivity, useSkills, 
 import { ReactFlowCanvas } from "@/components/flow/react-flow-canvas";
 import { ActivityFeed } from "@/components/flow/activity-feed";
 import { NodeDetailPanel } from "@/components/flow/node-detail-panel";
+import { OrchestrationHilPanel } from "@/components/orchestration/orchestration-hil-panel";
 import { VoicePanel } from "@/components/voice/VoicePanel";
 
 interface SelectedNode {
@@ -97,6 +98,8 @@ export default function FlowPage() {
       </div>
 
       <VoicePanel />
+
+      <OrchestrationHilPanel />
 
       <div className="rounded-xl border border-slate-800 bg-slate-900/30 px-4 py-3">
         <div className="flex items-center justify-between mb-2">

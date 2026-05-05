@@ -152,7 +152,7 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
   3. A graph node configured for HIL pauses execution and shows a pending approve/reject decision in the Kitchen UI; user approval resumes the graph from checkpoint
   4. A correlation ID generated at task ingress is attached at every hop (Kitchen → LangGraph → agent A → agent B) and is queryable end-to-end
   5. A failing agent task is retried up to N times before surfacing as a failed HIL decision; the A2A adapter / LangGraph boundary contract (ORCH-07) is documented and respected by the implementation
-**Plans**: TBD
+**Plans**: 1/? complete — orchestration foundation landed; actual LangGraph `StateGraph` + `SqliteSaver` runtime proof remains
 **UI hint**: yes
 
 ### Phase 37: Unified Memory — mem0 Graph Layer + Neo4j
