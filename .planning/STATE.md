@@ -1,36 +1,34 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.7
-milestone_name: Progressive Tool Gateway Runtime
-status: Lint exits 0, NFT warning documented, pytest coverage 18 tests, category field in tool_discover
-stopped_at: context exhaustion at 79% (2026-05-04)
-last_updated: "2026-05-04T18:34:56.082Z"
+milestone: v2.0
+milestone_name: A2A Hub — Open Source
+status: Defining requirements
+stopped_at: —
+last_updated: "2026-05-04T00:00:00.000Z"
 last_activity: 2026-05-04
 progress:
-  total_phases: 22
-  completed_phases: 22
-  total_plans: 36
-  completed_plans: 36
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # State: Agent Kitchen
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-01 for v1.7)
+See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
-**Core value:** Every agent and knowledge system is visible, connected, and self-improving.
-**Current focus:** v1.7 progressive tool gateway runtime
+**Core value:** Any agent framework plugs into Kitchen — and every agent, knowledge system, and skill becomes visible, connected, and self-improving.
+**Current focus:** v2.0 A2A Hub — Open Source
 
 ## Current Position
 
-Phase: 33 (gateway-hardening) — COMPLETE
-Plan: 1 of 1 complete
-Status: Lint exits 0, NFT warning documented, pytest coverage 18 tests, category field in tool_discover
-Last activity: 2026-05-04
-
-Progress: [████████--] 85%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-04 — Milestone v2.0 started
 
 ## Performance Metrics
 
@@ -39,17 +37,6 @@ Progress: [████████--] 85%
 - Total plans completed: 0
 - Average duration: —
 - Total execution time: —
-
-**By Phase:**
-
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| — | — | — | — |
-| Phase 21 P02 | 25 | 2 tasks | 7 files |
-| Phase 24-security-audit P02 | 12m | 2 tasks | 4 files |
-| Phase 25 P01 | 6m | 2 tasks | 6 files |
-| Phase 25-usage-analytics P02 | 12m | 2 tasks | 8 files |
-| Phase 22-voice-server P02 | 525602 | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -61,28 +48,9 @@ Progress: [████████--] 85%
 - **Security:** No `execSync`/`exec` — use `execFileSync` or pure `fs/promises` only
 - **mem0 writes:** Only via `POST http://localhost:3201/memory/add` — never touch `agent_memory` Qdrant directly
 - **Group children:** Use `parentId` + `extent:'parent'` pattern (Phase 17 — already in codebase)
-- [v1.5 roadmap]: DASH requirements woven into feature phases — DASH-01→P19, DASH-02→P20, DASH-03→P21, DASH-04→P22
-- [v1.5 roadmap]: Voice (Phase 22) depends on Phase 19 (SQLDB) for transcript storage, not on Phase 21 (PAPER) — parallel track
-- [v1.5 roadmap]: Security (Phase 24) depends on Phase 20 (HIVE) — audit log needs hive_mind table established first
-- [v1.5 roadmap]: SQLite DB = single shared file; all tables (hive_mind, memories, audit_log, warroom_transcript) in one DB
-- [Phase 21]: group-paperclip placed below main request path at y=560; dynamic group width prevents overflow
-- [Phase 21]: PaperclipFleetPanel conditional render in NodeDetailPanel: only when nodeId==='manager'
-- [Phase 24-security-audit]: useAuditLog uses queryKey ['audit-log', limit] to support multiple limit values simultaneously
-- [Phase 24-security-audit]: AuditLogPanel severity DEFAULT_COLOR falls back to slate for unknown severity values
-- [Phase 25]: SQLite datetime expressions embedded in SQL (not bound parameters) for window boundaries — hardcoded allowlist constants, not user input
-- [Phase 25]: TimeSeriesMetric and TimeSeriesWindow exported as named types from api-client.ts for Plan 02 component reuse
-- [Phase 25-usage-analytics]: Window toggle state lives in analytics panel (not shared chart) — all charts share one toggle via coordinated state lift
-- [Phase 25-usage-analytics]: TimeSeriesChart is pure presentational — receives data as props, no hook calls inside
-- [Phase 22-voice-server]: agent_id-only recall uses direct SELECT on messages table (not FTS) to support transcript retrieval without keyword search
-- [Phase 22-voice-server]: VoicePanel scrollIntoView guarded with typeof check for jsdom compatibility
-- [v1.6 roadmap]: Keep private Knowledge Hub content outside this repo; import only service/runtime code needed for MCP.
-- [Phase 26]: Root scripts delegate to `apps/kitchen`; runtime data stays rooted under `data/`.
-- [Phase 27]: Tool Attention is a progressive discovery layer, not a blanket runtime dependency on `mcp-agent`.
-- [Phase 28]: CI validates the monorepo layout with Kitchen tests/build and Python service smoke tests.
-- [Phase 29]: Knowledge MCP exposes top-level `tool_*` gateway tools while keeping the `tool-attention` workspace route intact.
-- [Phase 30 Plan 01]: Outcome summaries count uses/successes/failures/score by capability and do not expose private task text.
-- [Phase 32]: contextMatchSignal multipliers: task_type×2, repo×2, agent_id×1, tags×1. overallScore = textMatchScore*10 + outcomeSummary.score + contextMatchScore*3. task field NEVER read.
-- [Phase 33 OPSGW-02]: NFT warning is structural — turbopack.root covers full monorepo + process.env.HOME = full-project trace. Isolated with code comment only.
+- **Qdrant stays cloud:** Never add local Qdrant to Docker compose — configured via QDRANT_URL + QDRANT_API_KEY env vars
+- **Docker compose is for OSS users only:** Luis keeps native workflow (npm start, LaunchAgent, port 3002)
+- **Memory stack is fixed for v2.0:** mem0 + Qdrant Cloud (vector) + Neo4j (graph, new) + SQLite (episodic). No pluggability until v3.0.
 
 ### Pending Todos
 
@@ -91,11 +59,12 @@ None.
 ### Blockers/Concerns
 
 - Voice server is a standalone Python Pipecat service — not embedded in Next.js; requires separate process management
-- Production build has a non-blocking Turbopack NFT warning involving `/api/apo` — documented in code comment (OPSGW-02), non-resolvable without moving APO storage to a static subfolder.
+- Production build has a non-blocking Turbopack NFT warning involving `/api/apo` — documented in code comment (OPSGW-02)
+- GitNexus embeddings partial (285/473) — upstream crash bug (abhigyanpatwari/GitNexus#824)
 
 ## Session Continuity
 
-Last session: 2026-05-04T18:04:42.505Z
-Stopped at: context exhaustion at 79% (2026-05-04)
+Last session: 2026-05-04
+Stopped at: —
 Resume file: None
-Next action: Phase 31 UI gateway operations view (UIGW-01/02/03) or next milestone planning
+Next action: Define requirements for v2.0 then spawn roadmapper

@@ -1,18 +1,28 @@
 # Project: Agent Kitchen
 
-*Last updated: 2026-05-04 — v1.7 Progressive Tool Gateway Runtime shipped*
+*Last updated: 2026-05-04 — v2.0 A2A Hub — Open Source started*
+
+---
+
+## Current Milestone: v2.0 A2A Hub — Open Source
+
+**Goal:** Transform Kitchen from a personal agent dashboard into an open-source A2A protocol hub with a unified three-tier memory architecture that any agent framework can plug into.
+
+**Target features:**
+- A2A Hub — `/.well-known/agent.json`, A2A task API, agent discovery & delegation
+- Google ADK support — ADK agents register via A2A, surface in Flow
+- Universal REST API — Framework-agnostic heartbeat, skills, memory, tool-attention endpoints
+- Unified Memory — mem0 graph layer + Neo4j; unified `/api/memory/*` covering vector (Qdrant Cloud) + graph (Neo4j) + episodic (SQLite)
+- Env-driven config — Zero hardcoding, `.env.example` covers all ports/paths/keys
+- Docker full-stack — `docker-compose up` for OSS users (Kitchen + Knowledge MCP + mem0 + Neo4j; Qdrant stays cloud)
+- Documentation — README rewrite, architecture diagram, per-framework guides, API reference, memory architecture guide
+- OSS polish — MIT license, CONTRIBUTING.md, security policy, issue templates, public CI
 
 ---
 
 ## Previous Milestone: v1.7 Progressive Tool Gateway Runtime — SHIPPED 2026-05-04
 
 **What shipped:** Top-level MCP gateway tools, outcome-aware tool selection, Python contextMatchSignal algorithm ported to TypeScript, SimilarTaskPanel UI, outcome score badges, gateway hardening (lint + pytest coverage).
-
----
-
-## Current State: v1.7 Complete — Planning Next Milestone
-
-All 5 phases (29-33) shipped. Codebase is at ~21,800 LOC. Ready for v1.8 planning.
 
 ---
 
@@ -30,11 +40,11 @@ v1.5 complete — 7 phases (19-25), 15 plans, 55/55 requirements satisfied. Shar
 
 ## What This Is
 
-A Next.js dashboard (port 3002, Cloudflare tunnel at `kitchen.example.com`) that makes every agent, knowledge system, and skill visible, connected, and self-improving. It surfaces live agent health, bidirectional knowledge sync, skill contribution analytics, and collapsible flow diagrams in a single UI.
+An open-source A2A protocol hub and agent operations dashboard. Kitchen speaks Google's Agent-to-Agent (A2A) protocol natively — any A2A-compatible agent (Google ADK, Claude Code, LangChain, CrewAI, AutoGen) plugs in automatically; non-A2A agents get a thin REST shim. It ships with a unified three-tier memory architecture (vector via Qdrant Cloud, graph via Neo4j, episodic via SQLite) and a Next.js dashboard that makes every agent, knowledge system, and skill visible, connected, and self-improving.
 
 ## Core Value
 
-Every agent and knowledge system is visible, connected, and self-improving.
+Any agent framework plugs into Kitchen — and every agent, knowledge system, and skill becomes visible, connected, and self-improving.
 
 ---
 
@@ -85,21 +95,37 @@ Every agent and knowledge system is visible, connected, and self-improving.
 - ✓ SQLite audit_log table + AuditLogPanel — v1.5 (SEC-02/03, DASH-03)
 - ✓ Usage analytics (6 metrics, 3 windows) on Ledger/Library/Cookbooks — v1.5 (ANA-01/02/03/04)
 
-### Active (v1.8 candidates)
+### Active (v2.0)
+
+- [ ] A2A Hub: `/.well-known/agent.json` agent card + A2A task API
+- [ ] A2A Hub: agent discovery and delegation
+- [ ] Google ADK agent registration via A2A, surfaced in Flow
+- [ ] Universal REST API: `/api/heartbeat`, `/api/skills/report`, `/api/memory/add`, `/api/tool-attention/record`
+- [ ] Dynamic agent roster (remove all hardcoding)
+- [ ] Unified memory: mem0 graph layer activated with Neo4j backend
+- [ ] Unified memory: `/api/memory/*` API covering vector + graph + episodic tiers
+- [ ] Env-driven config: `.env.example` covering all ports, paths, keys, backends
+- [ ] Docker full-stack: Kitchen + Knowledge MCP + mem0 + Neo4j (Qdrant stays cloud)
+- [ ] Developer setup: `setup.sh`, prereq detection, first-run wizard
+- [ ] Documentation: README rewrite, architecture diagram, per-framework integration guides
+- [ ] OSS polish: MIT license, CONTRIBUTING.md, security policy, issue templates, public CI
+
+### Deferred (v2.1+ candidates)
 
 - [ ] Flow trigger button — kick off `qmd update` pipeline from Kitchen UI
 - [ ] Library freshness — show QMD index recency timestamp vs file mtime
 - [ ] LLM-powered recall scoring — semantic/embedding upgrade to BM25 lexical recall
 - [ ] Cross-project recall — similar-task recommendations across multiple local repos
 - [ ] Voice meeting bot — Pipecat meeting participant writing transcripts to SQLite with Kitchen highlights panel
-- [ ] Update flow trigger button (kick off `qmd update` from UI)
-- [ ] Library freshness: force-touch or show "last indexed" timestamp vs file mtime
+- [ ] Memory pluggability beyond mem0+Qdrant+Neo4j (v3.0 concern)
 
 ### Out of Scope
 
 - Mobile app — web-first, desktop dashboard
-- Multi-user auth — single-user local tool
+- Multi-user auth — single-user local tool (for now; OSS users run their own instance)
 - GitNexus embeddings — blocked by node-llama-cpp macOS arm64 bug (abhigyanpatwari/GitNexus#824)
+- Memory backend pluggability — mem0 + Qdrant Cloud + Neo4j is the fixed stack; swappability is v3.0
+- Local Qdrant in Docker — Qdrant stays cloud; env-configured via `QDRANT_URL` + `QDRANT_API_KEY`
 
 ---
 
@@ -140,6 +166,10 @@ Every agent and knowledge system is visible, connected, and self-improving.
 | contextMatchSignal algorithm ported Python→TypeScript | ✓ Exact multipliers (task_type×2, repo×2, agent_id×1, tags×1); task field never read | v1.7 |
 | SimilarTaskPanel on Cookbooks page | ✓ Context-ranked recommendations below ToolAttentionPanel | v1.7 |
 | Gateway hardening: lint enforced | ✓ Test file ESLint override; `npm run lint` exits 0 in CI | v1.7 |
+| A2A as the inter-agent protocol standard | — Pending | v2.0 |
+| mem0 graph layer + Neo4j for entity/graph memory | — Pending | v2.0 |
+| Qdrant stays cloud — not in Docker compose | ✓ Env-configured via QDRANT_URL/KEY | v2.0 |
+| Docker compose for OSS users only — Luis keeps native workflow | — Pending | v2.0 |
 
 ---
 
