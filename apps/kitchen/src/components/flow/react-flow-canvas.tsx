@@ -207,6 +207,28 @@ const EDGE_COLORS = {
   apo: "#8b5cf6",
 };
 
+function minimapNodeColor(node: Node): string {
+  if (node.type === "groupBoxNode") return "transparent";
+  const status = (node.data as { status?: string }).status;
+  return status === "active"
+    ? "#34d399"
+    : status === "error"
+      ? "#fb7185"
+      : status === "idle"
+        ? "#fbbf24"
+        : "#64748b";
+}
+
+function minimapNodeStrokeColor(node: Node): string {
+  if (node.type === "groupBoxNode") return "transparent";
+  const status = (node.data as { status?: string }).status;
+  return status === "active"
+    ? "#a7f3d0"
+    : status === "error"
+      ? "#fecdd3"
+      : "#cbd5e1";
+}
+
 export function ReactFlowCanvas({
   services,
   agentCount,
@@ -452,10 +474,24 @@ export function ReactFlowCanvas({
         <Background color="#1e293b" gap={24} variant={BackgroundVariant.Dots} />
         <Controls className="bg-slate-900 border border-slate-800" />
         <MiniMap
-          style={{ background: "#0f172a", border: "1px solid #1e293b" }}
-          nodeColor={(node) => {
-            const status = (node.data as { status: string }).status;
-            return status === "active" ? "#10b981" : status === "error" ? "#f43f5e" : "#475569";
+          ariaLabel="Flow overview minimap"
+          pannable
+          zoomable
+          bgColor="#020617"
+          maskColor="rgba(15, 23, 42, 0.35)"
+          maskStrokeColor="#f59e0b"
+          maskStrokeWidth={2}
+          nodeColor={minimapNodeColor}
+          nodeStrokeColor={minimapNodeStrokeColor}
+          nodeStrokeWidth={3}
+          nodeBorderRadius={10}
+          offsetScale={10}
+          style={{
+            width: 220,
+            height: 160,
+            border: "1px solid #334155",
+            borderRadius: 8,
+            boxShadow: "0 0 0 1px rgba(245, 158, 11, 0.12), 0 18px 40px rgba(0, 0, 0, 0.45)",
           }}
         />
       </ReactFlow>

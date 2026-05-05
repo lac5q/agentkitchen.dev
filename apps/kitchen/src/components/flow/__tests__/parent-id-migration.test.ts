@@ -87,4 +87,13 @@ describe("parentId migration invariants — react-flow-canvas.tsx", () => {
     expect(SRC).toContain("collapsed:");
     expect(SRC).toContain("onToggleCollapse");
   });
+
+  it("Test 9: minimap hides group boxes and renders high-contrast viewport controls", () => {
+    expect(SRC).toContain('if (node.type === "groupBoxNode") return "transparent"');
+    expect(SRC).toContain("nodeColor={minimapNodeColor}");
+    expect(SRC).toContain("nodeStrokeColor={minimapNodeStrokeColor}");
+    expect(SRC).toContain("maskStrokeColor=\"#f59e0b\"");
+    expect(SRC).toContain("pannable");
+    expect(SRC).toContain("zoomable");
+  });
 });
