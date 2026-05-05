@@ -1,9 +1,8 @@
-import { parseAgents } from "@/lib/parsers";
-import { AGENT_CONFIGS_PATH } from "@/lib/constants";
+import { listRegisteredAgents } from "@/lib/agent-registry";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const agents = await parseAgents(AGENT_CONFIGS_PATH);
+export function GET() {
+  const agents = listRegisteredAgents();
   return Response.json({ agents, timestamp: new Date().toISOString() });
 }

@@ -1,0 +1,43 @@
+import { authenticateAgentHeaders, recordMemoryWrite } from "@/lib/agent-registry";
+import { MEM0_URL } from "@/lib/constants";
+
+export const dynamic = "force-dynamic";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+export async function POST(request: Request) {
+  const body = (await request.json().catch(() => null)) as unknown;
+  const agentIdHint = isRecord(body) && typeof body.agentId === "string" ? body.agentId : undefined;
+  const agent = authenticateAgentHeaders(request.headers, agentIdHint);
+  if (!agent) {
+    return Response.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+  }
+  if (!isRecord(body)) {
+    return Response.json({ ok: false, error: "Invalid memory payload" }, { status: 400 });
+  }
+
+  const mem0Response = await fetch(`${MEM0_URL}/memory/add`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(5000),
+  });
+  const result = (await mem0Response.json().catch(() => ({}))) as Record<string, unknown>;
+  if (!mem0Response.ok) {
+    return Response.json({ ok: false, error: "Memory backend unavailable" }, { status: 502 });
+  }
+
+  recordMemoryWrite(
+    agent.id,
+    {
+      type: typeof body.type === "string" ? body.type : undefined,
+      content: typeof body.content === "string" ? body.content : undefined,
+      metadata: isRecord(body.metadata) ? body.metadata : {},
+    },
+    result
+  );
+
+  return Response.json({ ok: true, result, timestamp: new Date().toISOString() });
+}

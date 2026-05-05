@@ -187,6 +187,12 @@ function readOutcomes(filePath: string, limit = 20): ToolAttentionOutcome[] {
   }
 }
 
+export function appendToolAttentionOutcome(outcome: ToolAttentionOutcome): void {
+  const filePath = outcomesPath();
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.appendFileSync(filePath, `${JSON.stringify(outcome)}\n`, "utf-8");
+}
+
 function capability(input: ToolAttentionCapability): ToolAttentionCapability {
   return input;
 }

@@ -334,6 +334,13 @@ export function authenticateAgentKey(rawKey: string, agentIdHint?: string): Regi
   return agent;
 }
 
+export function authenticateAgentHeaders(headers: Headers, agentIdHint?: string): RegisteredAgent | null {
+  const authorization = headers.get("authorization");
+  const match = authorization?.match(/^Bearer\s+(.+)$/i);
+  if (!match) return null;
+  return authenticateAgentKey(match[1], agentIdHint);
+}
+
 export function recordHeartbeat(agentId: string, payload: AgentHeartbeatInput): RegisteredAgent {
   const existing = getAgentRow(agentId);
   if (!existing) {
