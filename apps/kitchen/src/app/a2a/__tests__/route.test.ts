@@ -17,6 +17,7 @@ async function loadRoutes() {
   const taskRoute = await import("../../tasks/[id]/route");
   const cancelRoute = await import("../../tasks/[id]:cancel/route");
   const subscribeRoute = await import("../../tasks/[id]:subscribe/route");
+  const a2aRoute = await import("../route");
   const registry = await import("@/lib/agent-registry");
   const store = await import("@/lib/a2a/task-store");
   const dbModule = await import("@/lib/db");
@@ -27,6 +28,7 @@ async function loadRoutes() {
     taskRoute,
     cancelRoute,
     subscribeRoute,
+    a2aRoute,
     ...registry,
     ...store,
     closeDb: dbModule.closeDb,
@@ -167,5 +169,79 @@ describe("A2A HTTP+JSON routes", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/event-stream");
     expect(text).toContain("event: task.update");
+  });
+});
+
+describe("A2A JSON-RPC compatibility route", () => {
+  beforeEach(() => {
+    fs.rmSync(TEST_DB_DIR, { recursive: true, force: true });
+    fs.mkdirSync(TEST_DB_DIR, { recursive: true });
+  });
+
+  afterEach(async () => {
+    const { closeDb } = await loadRoutes();
+    closeDb();
+    fs.rmSync(TEST_DB_DIR, { recursive: true, force: true });
+    delete process.env.SQLITE_DB_PATH;
+  });
+
+  function rpcRequest(method: string, params: Record<string, unknown>, apiKey: string, id: string | number = "rpc-1") {
+    return postRequest("http://localhost/a2a", { jsonrpc: "2.0", id, method, params }, apiKey);
+  }
+
+  it("dispatches message/send", async () => {
+    const { routes, apiKey } = await createAgentAndKey();
+
+    const response = await routes.a2aRoute.POST(
+      rpcRequest("message/send", { message: message("rpc send") }, apiKey)
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.jsonrpc).toBe("2.0");
+    expect(body.result.id).toBeTruthy();
+  });
+
+  it("dispatches tasks/get", async () => {
+    const { routes, apiKey } = await createAgentAndKey();
+    const sendResponse = await routes.a2aRoute.POST(
+      rpcRequest("message/send", { message: message("rpc lookup") }, apiKey, "send")
+    );
+    const sent = await sendResponse.json();
+
+    const response = await routes.a2aRoute.POST(
+      rpcRequest("tasks/get", { id: sent.result.id }, apiKey, "get")
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.id).toBe("get");
+    expect(body.result.id).toBe(sent.result.id);
+  });
+
+  it("returns -32601 for unsupported methods", async () => {
+    const { routes, apiKey } = await createAgentAndKey();
+
+    const response = await routes.a2aRoute.POST(
+      rpcRequest("tasks/unknown", {}, apiKey, "unknown")
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.error.code).toBe(-32601);
+  });
+
+  it("rejects streaming methods with the exact fallback message", async () => {
+    const { routes, apiKey } = await createAgentAndKey();
+
+    const response = await routes.a2aRoute.POST(
+      rpcRequest("message/stream", { message: message("stream") }, apiKey, "stream")
+    );
+    const body = await response.json();
+
+    expect(body.error).toMatchObject({
+      code: -32000,
+      message: "Streaming methods use /message:stream or /tasks/{id}:subscribe",
+    });
   });
 });
