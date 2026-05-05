@@ -263,4 +263,110 @@ export function initSchema(db: Database.Database): void {
     );
     CREATE INDEX IF NOT EXISTS recall_log_ts ON recall_log(timestamp);
   `);
+
+  // registered_agents: canonical v2.0 agent registry (REST, UI, future A2A adapters)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS registered_agents (
+      id                TEXT PRIMARY KEY,
+      name              TEXT    NOT NULL,
+      role              TEXT    NOT NULL,
+      company           TEXT,
+      platform          TEXT    NOT NULL,
+      protocol          TEXT    NOT NULL
+                        CHECK(protocol IN ('rest','a2a','ui','local')),
+      status            TEXT    NOT NULL DEFAULT 'dormant'
+                        CHECK(status IN ('active','idle','dormant','error')),
+      current_task      TEXT,
+      last_heartbeat_at TEXT,
+      location          TEXT    NOT NULL DEFAULT 'local'
+                        CHECK(location IN ('local','tailscale','cloudflare')),
+      host              TEXT,
+      port              INTEGER,
+      health_endpoint   TEXT,
+      tunnel_url        TEXT,
+      latency_ms        INTEGER,
+      metadata          TEXT    NOT NULL DEFAULT '{}',
+      created_at        TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+      updated_at        TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+      deregistered_at   TEXT
+    );
+    CREATE INDEX IF NOT EXISTS registered_agents_status
+      ON registered_agents(status, last_heartbeat_at DESC);
+    CREATE INDEX IF NOT EXISTS registered_agents_protocol
+      ON registered_agents(protocol);
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agent_api_keys (
+      id           INTEGER PRIMARY KEY,
+      agent_id     TEXT    NOT NULL REFERENCES registered_agents(id) ON DELETE CASCADE,
+      key_prefix   TEXT    NOT NULL,
+      key_hash     TEXT    NOT NULL UNIQUE,
+      created_at   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+      last_used_at TEXT,
+      revoked_at   TEXT
+    );
+    CREATE INDEX IF NOT EXISTS agent_api_keys_hash
+      ON agent_api_keys(key_hash);
+    CREATE INDEX IF NOT EXISTS agent_api_keys_agent
+      ON agent_api_keys(agent_id, revoked_at);
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agent_capabilities (
+      id          INTEGER PRIMARY KEY,
+      agent_id    TEXT    NOT NULL REFERENCES registered_agents(id) ON DELETE CASCADE,
+      capability_id TEXT  NOT NULL,
+      name        TEXT    NOT NULL,
+      description TEXT    NOT NULL DEFAULT '',
+      tags        TEXT    NOT NULL DEFAULT '[]',
+      created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+      updated_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+      UNIQUE(agent_id, capability_id)
+    );
+    CREATE INDEX IF NOT EXISTS agent_capabilities_lookup
+      ON agent_capabilities(capability_id, agent_id);
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agent_skill_reports (
+      id          INTEGER PRIMARY KEY,
+      agent_id    TEXT    NOT NULL REFERENCES registered_agents(id) ON DELETE CASCADE,
+      skill_id    TEXT    NOT NULL,
+      action      TEXT    NOT NULL,
+      metadata    TEXT    NOT NULL DEFAULT '{}',
+      reported_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS agent_skill_reports_agent_ts
+      ON agent_skill_reports(agent_id, reported_at DESC);
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agent_memory_writes (
+      id          INTEGER PRIMARY KEY,
+      agent_id    TEXT    NOT NULL REFERENCES registered_agents(id) ON DELETE CASCADE,
+      memory_type TEXT,
+      content_hash TEXT,
+      metadata    TEXT    NOT NULL DEFAULT '{}',
+      result      TEXT    NOT NULL DEFAULT '{}',
+      written_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS agent_memory_writes_agent_ts
+      ON agent_memory_writes(agent_id, written_at DESC);
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agent_tool_outcomes (
+      id          INTEGER PRIMARY KEY,
+      agent_id    TEXT    NOT NULL REFERENCES registered_agents(id) ON DELETE CASCADE,
+      tool_id     TEXT    NOT NULL,
+      outcome     TEXT    NOT NULL,
+      metadata    TEXT    NOT NULL DEFAULT '{}',
+      recorded_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS agent_tool_outcomes_agent_ts
+      ON agent_tool_outcomes(agent_id, recorded_at DESC);
+    CREATE INDEX IF NOT EXISTS agent_tool_outcomes_tool
+      ON agent_tool_outcomes(tool_id, recorded_at DESC);
+  `);
 }

@@ -1,5 +1,6 @@
 export type AgentStatus = "active" | "idle" | "dormant" | "error";
 export type AgentPlatform = "claude" | "codex" | "qwen" | "gemini" | "opencode" | "hermes" | "openclaw";
+export type AgentProtocol = "rest" | "a2a" | "ui" | "local";
 
 export interface Agent {
   id: string;
@@ -99,6 +100,55 @@ export interface RemoteAgentConfig {
   healthEndpoint: string;
   tunnelUrl?: string;
   skills?: AgentCardSkill[];
+}
+
+export interface RegisteredAgentCapability {
+  id: string;
+  name: string;
+  description: string;
+  tags: string[];
+}
+
+export interface RegisteredAgent extends Agent {
+  protocol: AgentProtocol;
+  capabilities: RegisteredAgentCapability[];
+  metadata: Record<string, unknown>;
+  host: string | null;
+  port: number | null;
+  healthEndpoint: string | null;
+  tunnelUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  deregisteredAt: string | null;
+}
+
+export interface RegisterAgentInput {
+  id: string;
+  name: string;
+  role: string;
+  platform: AgentPlatform;
+  protocol: AgentProtocol;
+  company?: string;
+  location?: AgentLocation;
+  host?: string | null;
+  port?: number | null;
+  healthEndpoint?: string | null;
+  tunnelUrl?: string | null;
+  capabilities?: RegisteredAgentCapability[];
+  metadata?: Record<string, unknown>;
+  issueApiKey?: boolean;
+}
+
+export interface RegisterAgentResult {
+  agent: RegisteredAgent;
+  apiKey?: string;
+}
+
+export interface AgentHeartbeatInput {
+  status?: AgentStatus;
+  currentTask?: string | null;
+  latencyMs?: number | null;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ApoProposal {

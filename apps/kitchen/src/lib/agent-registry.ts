@@ -1,22 +1,444 @@
-import { readFileSync } from "fs";
-import type { RemoteAgentConfig } from "@/types";
-import { findConfigFile } from "@/lib/paths";
+import crypto from "crypto";
+import type {
+  AgentCardSkill,
+  AgentHeartbeatInput,
+  AgentLocation,
+  AgentPlatform,
+  AgentProtocol,
+  AgentStatus,
+  RegisterAgentInput,
+  RegisterAgentResult,
+  RegisteredAgent,
+  RegisteredAgentCapability,
+  RemoteAgentConfig,
+} from "@/types";
+import { getDb } from "@/lib/db";
 
-function loadAgentRegistry(): RemoteAgentConfig[] {
-  const configPath =
-    process.env.AGENTS_CONFIG_PATH ||
-    findConfigFile("agents.config.json");
+interface RegisteredAgentRow {
+  id: string;
+  name: string;
+  role: string;
+  company: string | null;
+  platform: AgentPlatform;
+  protocol: AgentProtocol;
+  status: AgentStatus;
+  current_task: string | null;
+  last_heartbeat_at: string | null;
+  location: AgentLocation;
+  host: string | null;
+  port: number | null;
+  health_endpoint: string | null;
+  tunnel_url: string | null;
+  latency_ms: number | null;
+  metadata: string;
+  created_at: string;
+  updated_at: string;
+  deregistered_at: string | null;
+}
+
+interface AgentCapabilityRow {
+  capability_id: string;
+  name: string;
+  description: string;
+  tags: string;
+}
+
+interface AgentApiKeyRow {
+  agent_id: string;
+  key_hash: string;
+}
+
+interface ListAgentsOptions {
+  includeDeregistered?: boolean;
+}
+
+interface SkillReportInput {
+  skillId: string;
+  action: string;
+  metadata?: Record<string, unknown>;
+}
+
+interface MemoryWriteInput {
+  type?: string;
+  content?: string;
+  metadata?: Record<string, unknown>;
+}
+
+interface ToolOutcomeInput {
+  toolId: string;
+  outcome: string;
+  metadata?: Record<string, unknown>;
+}
+
+const DEFAULT_HEALTH_ENDPOINT = "/health";
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function stringifyJson(value: Record<string, unknown> | unknown[]): string {
+  return JSON.stringify(value);
+}
+
+function parseObject(raw: string | null): Record<string, unknown> {
+  if (!raw) return {};
   try {
-    const raw = readFileSync(configPath, "utf-8");
-    const config = JSON.parse(raw);
-    return config.remoteAgents ?? [];
+    const parsed = JSON.parse(raw) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function parseTags(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.map(String) : [];
   } catch {
     return [];
   }
 }
 
+function hashKey(key: string): string {
+  return crypto.createHash("sha256").update(key).digest("hex");
+}
+
+function generateApiKey(agentId: string): string {
+  return `ak_${agentId}_${crypto.randomBytes(32).toString("base64url")}`;
+}
+
+function contentHash(content: string | undefined): string | null {
+  if (!content) return null;
+  return crypto.createHash("sha256").update(content).digest("hex");
+}
+
+function capabilitiesForAgent(agentId: string): RegisteredAgentCapability[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT capability_id, name, description, tags
+       FROM agent_capabilities
+       WHERE agent_id = ?
+       ORDER BY name COLLATE NOCASE`
+    )
+    .all(agentId) as AgentCapabilityRow[];
+
+  return rows.map((row) => ({
+    id: row.capability_id,
+    name: row.name,
+    description: row.description,
+    tags: parseTags(row.tags),
+  }));
+}
+
+function rowToRegisteredAgent(row: RegisteredAgentRow): RegisteredAgent {
+  return {
+    id: row.id,
+    name: row.name,
+    role: row.role,
+    company: row.company ?? undefined,
+    platform: row.platform,
+    protocol: row.protocol,
+    status: row.status,
+    lastHeartbeat: row.last_heartbeat_at,
+    currentTask: row.current_task,
+    lessonsCount: 0,
+    todayMemoryCount: 0,
+    location: row.location,
+    isRemote: row.location !== "local",
+    latencyMs: row.latency_ms,
+    capabilities: capabilitiesForAgent(row.id),
+    metadata: parseObject(row.metadata),
+    host: row.host,
+    port: row.port,
+    healthEndpoint: row.health_endpoint,
+    tunnelUrl: row.tunnel_url,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    deregisteredAt: row.deregistered_at,
+  };
+}
+
+function getAgentRow(agentId: string, includeDeregistered = false): RegisteredAgentRow | null {
+  const row = getDb()
+    .prepare(
+      `SELECT *
+       FROM registered_agents
+       WHERE id = ?
+       ${includeDeregistered ? "" : "AND deregistered_at IS NULL"}`
+    )
+    .get(agentId) as RegisteredAgentRow | undefined;
+  return row ?? null;
+}
+
+function replaceCapabilities(agentId: string, capabilities: RegisteredAgentCapability[]): void {
+  const db = getDb();
+  db.prepare("DELETE FROM agent_capabilities WHERE agent_id = ?").run(agentId);
+
+  const insert = db.prepare(
+    `INSERT INTO agent_capabilities
+       (agent_id, capability_id, name, description, tags, updated_at)
+     VALUES
+       (@agentId, @capabilityId, @name, @description, @tags, @updatedAt)`
+  );
+
+  for (const capability of capabilities) {
+    insert.run({
+      agentId,
+      capabilityId: capability.id,
+      name: capability.name,
+      description: capability.description,
+      tags: stringifyJson(capability.tags ?? []),
+      updatedAt: nowIso(),
+    });
+  }
+}
+
+export function registerAgent(input: RegisterAgentInput): RegisterAgentResult {
+  const db = getDb();
+  const timestamp = nowIso();
+  const metadata = input.metadata ?? {};
+  const location = input.location ?? "local";
+  const healthEndpoint = input.healthEndpoint ?? (location === "local" ? null : DEFAULT_HEALTH_ENDPOINT);
+
+  const tx = db.transaction(() => {
+    db.prepare(
+      `INSERT INTO registered_agents (
+         id, name, role, company, platform, protocol, status, current_task,
+         last_heartbeat_at, location, host, port, health_endpoint, tunnel_url,
+         latency_ms, metadata, created_at, updated_at, deregistered_at
+       )
+       VALUES (
+         @id, @name, @role, @company, @platform, @protocol, 'dormant', NULL,
+         NULL, @location, @host, @port, @healthEndpoint, @tunnelUrl,
+         NULL, @metadata, @timestamp, @timestamp, NULL
+       )
+       ON CONFLICT(id) DO UPDATE SET
+         name = excluded.name,
+         role = excluded.role,
+         company = excluded.company,
+         platform = excluded.platform,
+         protocol = excluded.protocol,
+         location = excluded.location,
+         host = excluded.host,
+         port = excluded.port,
+         health_endpoint = excluded.health_endpoint,
+         tunnel_url = excluded.tunnel_url,
+         metadata = excluded.metadata,
+         updated_at = excluded.updated_at,
+         deregistered_at = NULL`
+    ).run({
+      id: input.id,
+      name: input.name,
+      role: input.role,
+      company: input.company ?? null,
+      platform: input.platform,
+      protocol: input.protocol,
+      location,
+      host: input.host ?? null,
+      port: input.port ?? null,
+      healthEndpoint,
+      tunnelUrl: input.tunnelUrl ?? null,
+      metadata: stringifyJson(metadata),
+      timestamp,
+    });
+
+    replaceCapabilities(input.id, input.capabilities ?? []);
+  });
+  tx();
+
+  const apiKey = input.issueApiKey ? createAgentApiKey(input.id) : undefined;
+  const agent = getRegisteredAgent(input.id);
+  if (!agent) {
+    throw new Error(`Failed to register agent ${input.id}`);
+  }
+  return apiKey ? { agent, apiKey } : { agent };
+}
+
+export function listRegisteredAgents(options: ListAgentsOptions = {}): RegisteredAgent[] {
+  const rows = getDb()
+    .prepare(
+      `SELECT *
+       FROM registered_agents
+       ${options.includeDeregistered ? "" : "WHERE deregistered_at IS NULL"}
+       ORDER BY name COLLATE NOCASE`
+    )
+    .all() as RegisteredAgentRow[];
+
+  return rows.map(rowToRegisteredAgent);
+}
+
+export function getRegisteredAgent(
+  agentId: string,
+  options: ListAgentsOptions = {}
+): RegisteredAgent | null {
+  const row = getAgentRow(agentId, options.includeDeregistered ?? false);
+  return row ? rowToRegisteredAgent(row) : null;
+}
+
+export function deregisterAgent(agentId: string): RegisteredAgent | null {
+  const timestamp = nowIso();
+  getDb()
+    .prepare(
+      `UPDATE registered_agents
+       SET deregistered_at = ?, status = 'dormant', updated_at = ?
+       WHERE id = ? AND deregistered_at IS NULL`
+    )
+    .run(timestamp, timestamp, agentId);
+  getDb()
+    .prepare(
+      `UPDATE agent_api_keys
+       SET revoked_at = ?
+       WHERE agent_id = ? AND revoked_at IS NULL`
+    )
+    .run(timestamp, agentId);
+  return getRegisteredAgent(agentId, { includeDeregistered: true });
+}
+
+export function createAgentApiKey(agentId: string): string {
+  const agent = getAgentRow(agentId, true);
+  if (!agent || agent.deregistered_at) {
+    throw new Error(`Cannot create API key for unknown or deregistered agent ${agentId}`);
+  }
+
+  const key = generateApiKey(agentId);
+  getDb()
+    .prepare(
+      `INSERT INTO agent_api_keys (agent_id, key_prefix, key_hash)
+       VALUES (?, ?, ?)`
+    )
+    .run(agentId, key.slice(0, 12), hashKey(key));
+  return key;
+}
+
+export function authenticateAgentKey(rawKey: string, agentIdHint?: string): RegisteredAgent | null {
+  const keyHash = hashKey(rawKey);
+  const row = getDb()
+    .prepare(
+      `SELECT agent_id, key_hash
+       FROM agent_api_keys
+       WHERE key_hash = ? AND revoked_at IS NULL`
+    )
+    .get(keyHash) as AgentApiKeyRow | undefined;
+
+  if (!row) return null;
+  if (agentIdHint && row.agent_id !== agentIdHint) return null;
+
+  const agent = getRegisteredAgent(row.agent_id);
+  if (!agent) return null;
+
+  getDb()
+    .prepare("UPDATE agent_api_keys SET last_used_at = ? WHERE key_hash = ?")
+    .run(nowIso(), keyHash);
+  return agent;
+}
+
+export function recordHeartbeat(agentId: string, payload: AgentHeartbeatInput): RegisteredAgent {
+  const existing = getAgentRow(agentId);
+  if (!existing) {
+    throw new Error(`Unknown agent ${agentId}`);
+  }
+
+  const timestamp = nowIso();
+  const mergedMetadata = {
+    ...parseObject(existing.metadata),
+    ...(payload.metadata ?? {}),
+  };
+
+  getDb()
+    .prepare(
+      `UPDATE registered_agents
+       SET status = @status,
+           current_task = @currentTask,
+           last_heartbeat_at = @lastHeartbeatAt,
+           latency_ms = @latencyMs,
+           metadata = @metadata,
+           updated_at = @updatedAt
+       WHERE id = @agentId`
+    )
+    .run({
+      agentId,
+      status: payload.status ?? "active",
+      currentTask: payload.currentTask ?? existing.current_task,
+      lastHeartbeatAt: timestamp,
+      latencyMs: payload.latencyMs ?? existing.latency_ms,
+      metadata: stringifyJson(mergedMetadata),
+      updatedAt: timestamp,
+    });
+
+  const agent = getRegisteredAgent(agentId);
+  if (!agent) throw new Error(`Failed to record heartbeat for ${agentId}`);
+  return agent;
+}
+
+export function recordSkillReport(agentId: string, payload: SkillReportInput): void {
+  getDb()
+    .prepare(
+      `INSERT INTO agent_skill_reports (agent_id, skill_id, action, metadata)
+       VALUES (?, ?, ?, ?)`
+    )
+    .run(agentId, payload.skillId, payload.action, stringifyJson(payload.metadata ?? {}));
+}
+
+export function recordMemoryWrite(
+  agentId: string,
+  payload: MemoryWriteInput,
+  result: Record<string, unknown> = {}
+): void {
+  getDb()
+    .prepare(
+      `INSERT INTO agent_memory_writes (agent_id, memory_type, content_hash, metadata, result)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+    .run(
+      agentId,
+      payload.type ?? null,
+      contentHash(payload.content),
+      stringifyJson(payload.metadata ?? {}),
+      stringifyJson(result)
+    );
+}
+
+export function recordToolOutcome(agentId: string, payload: ToolOutcomeInput): void {
+  getDb()
+    .prepare(
+      `INSERT INTO agent_tool_outcomes (agent_id, tool_id, outcome, metadata)
+       VALUES (?, ?, ?, ?)`
+    )
+    .run(agentId, payload.toolId, payload.outcome, stringifyJson(payload.metadata ?? {}));
+}
+
+function toRemoteAgentConfig(agent: RegisteredAgent): RemoteAgentConfig | null {
+  if (agent.location === "local" || !agent.host || !agent.port) return null;
+
+  return {
+    id: agent.id,
+    name: agent.name,
+    role: agent.role,
+    platform: agent.platform,
+    location: agent.location,
+    host: agent.host,
+    port: agent.port,
+    healthEndpoint: agent.healthEndpoint ?? DEFAULT_HEALTH_ENDPOINT,
+    tunnelUrl: agent.tunnelUrl ?? undefined,
+    skills: agent.capabilities.map(
+      (capability): AgentCardSkill => ({
+        id: capability.id,
+        name: capability.name,
+        description: capability.description,
+        tags: capability.tags,
+        inputModes: ["text"],
+        outputModes: ["text"],
+      })
+    ),
+  };
+}
+
 export function getRemoteAgents(): RemoteAgentConfig[] {
-  return loadAgentRegistry();
+  return listRegisteredAgents()
+    .map(toRemoteAgentConfig)
+    .filter((agent): agent is RemoteAgentConfig => Boolean(agent));
 }
 
 export async function pollRemoteAgent(agent: RemoteAgentConfig): Promise<{
@@ -33,7 +455,7 @@ export async function pollRemoteAgent(agent: RemoteAgentConfig): Promise<{
   const start = Date.now();
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
-    const data = await res.json().catch(() => null);
+    const data = (await res.json().catch(() => null)) as Record<string, unknown> | null;
     return { id: agent.id, reachable: res.ok, latencyMs: Date.now() - start, data };
   } catch {
     return { id: agent.id, reachable: false, latencyMs: null, data: null };
