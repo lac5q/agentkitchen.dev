@@ -448,7 +448,7 @@ function toRemoteAgentConfig(agent: RegisteredAgent): RemoteAgentConfig | null {
     role: agent.role,
     platform: agent.platform,
     protocol: agent.protocol,
-    location: agent.location,
+    location: agent.location ?? "local",
     host: agent.host ?? endpointUrl!.hostname,
     port: agent.port ?? (endpointUrl!.port ? Number(endpointUrl!.port) : endpointUrl!.protocol === "https:" ? 443 : 80),
     healthEndpoint: agent.healthEndpoint ?? DEFAULT_HEALTH_ENDPOINT,
