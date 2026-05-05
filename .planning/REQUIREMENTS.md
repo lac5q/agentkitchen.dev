@@ -34,9 +34,9 @@
 
 ### Orchestration (LangGraph)
 
-- [ ] **ORCH-01**: Python LangGraph service with StateGraph for task routing between registered agents
-- [ ] **ORCH-02**: Checkpoint persistence via SqliteSaver writing to a dedicated `data/orchestration.db` (separate from Kitchen's main SQLite DB to avoid cross-process lock contention)
-- [ ] **ORCH-03**: Human-in-the-loop (v2.0 scope: approve/reject only) — Kitchen UI shows pending HIL decisions; user approves or rejects and graph resumes from checkpoint
+- [x] **ORCH-01**: Python LangGraph service with StateGraph for task routing between registered agents
+- [x] **ORCH-02**: Checkpoint persistence via SqliteSaver writing to a dedicated `data/orchestration.db` (separate from Kitchen's main SQLite DB to avoid cross-process lock contention)
+- [x] **ORCH-03**: Human-in-the-loop (v2.0 scope: approve/reject only) — Kitchen UI shows pending HIL decisions; user approves or rejects and graph resumes from checkpoint
 - [x] **ORCH-04**: Capability-based routing — incoming tasks matched to agents by declared capability
 - [x] **ORCH-05**: Correlation IDs and task lineage — every hop (Kitchen → LangGraph → agent A → agent B) carries a trace ID, persisted end-to-end
 - [x] **ORCH-06**: Basic retry policy — failed agent tasks retried up to N times before rerouting or surfacing as failed HIL decision
@@ -117,8 +117,8 @@
 | REST-01, REST-02, REST-03, REST-04, REST-05, REST-06 | Phase 34 | Complete |
 | REG-00, REG-01, REG-02, REG-03 | Phase 34 | Complete |
 | A2A-01, A2A-02, A2A-03, A2A-04, A2A-05, A2A-06, A2A-07, A2A-08 | Phase 35 | Complete |
-| ORCH-01, ORCH-02, ORCH-03, PROFILE-03 | Phase 36 | Pending |
-| ORCH-04, ORCH-05, ORCH-06, ORCH-07 | Phase 36 | Complete |
+| ORCH-01, ORCH-02, ORCH-03, ORCH-04, ORCH-05, ORCH-06, ORCH-07 | Phase 36 | Complete |
+| PROFILE-03 | Phase 36 | Partial |
 | MEM-01, MEM-02, MEM-03, MEM-04, MEM-05, PROFILE-03 | Phase 37 | Pending |
 | INFRA-01, INFRA-02, INFRA-03, INFRA-04, PROFILE-01, PROFILE-02, PROFILE-03, PROFILE-04 | Phase 38 | Pending |
 | DEV-01, DEV-02, PROFILE-01, PROFILE-02, PROFILE-04 | Phase 39 | Pending |

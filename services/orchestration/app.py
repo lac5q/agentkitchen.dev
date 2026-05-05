@@ -10,14 +10,20 @@ from pydantic import BaseModel, Field
 
 try:
     from .engine import OrchestrationEngine, OrchestrationStore
+    from .graph import LangGraphRuntime
 except ImportError:  # Allows `uvicorn app:app` from services/orchestration.
     from engine import OrchestrationEngine, OrchestrationStore
+    from graph import LangGraphRuntime
 
 
 def get_engine() -> OrchestrationEngine:
     db_path = os.environ.get("ORCHESTRATION_DB_PATH", "data/orchestration.db")
     retry_limit = int(os.environ.get("ORCHESTRATION_RETRY_LIMIT", "2"))
-    return OrchestrationEngine(OrchestrationStore(db_path), retry_limit=retry_limit)
+    return OrchestrationEngine(
+        OrchestrationStore(db_path),
+        retry_limit=retry_limit,
+        graph_runtime=LangGraphRuntime(db_path),
+    )
 
 
 app = FastAPI(title="Agent Kitchen Orchestration", version="0.1.0")

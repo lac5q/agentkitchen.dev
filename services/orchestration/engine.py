@@ -254,9 +254,10 @@ class OrchestrationStore:
 
 
 class OrchestrationEngine:
-    def __init__(self, store: OrchestrationStore, retry_limit: int = 2):
+    def __init__(self, store: OrchestrationStore, retry_limit: int = 2, graph_runtime: Any | None = None):
         self.store = store
         self.retry_limit = retry_limit
+        self.graph_runtime = graph_runtime
 
     def route_task(self, payload: dict[str, Any]) -> dict[str, Any]:
         task_summary = str(payload.get("taskSummary") or "").strip()
@@ -289,6 +290,13 @@ class OrchestrationEngine:
         )
 
         if payload.get("requiresApproval") or selected_agent is None:
+            graph_state = self._start_graph(
+                run_id=run_id,
+                task_summary=task_summary,
+                required_capability=required_capability,
+                selected_agent_id=selected_agent_id,
+                requires_approval=True,
+            )
             decision_id = self.store.create_hil_decision(
                 run_id=run_id,
                 correlation_id=correlation_id,
@@ -306,11 +314,19 @@ class OrchestrationEngine:
             return self._result(
                 run_id=run_id,
                 correlation_id=correlation_id,
-                status="waiting_for_approval",
+                status=graph_state.get("status", "waiting_for_approval"),
                 selected_agent_id=selected_agent_id,
                 hil_decision_id=decision_id,
+                graph_state=graph_state,
             )
 
+        graph_state = self._start_graph(
+            run_id=run_id,
+            task_summary=task_summary,
+            required_capability=required_capability,
+            selected_agent_id=selected_agent_id,
+            requires_approval=False,
+        )
         self.store.update_run(run_id, status="dispatched", selected_agent_id=selected_agent_id)
         self.store.append_lineage(
             correlation_id=correlation_id,
@@ -329,8 +345,9 @@ class OrchestrationEngine:
         return self._result(
             run_id=run_id,
             correlation_id=correlation_id,
-            status="dispatched",
+            status=graph_state.get("status", "dispatched"),
             selected_agent_id=selected_agent_id,
+            graph_state=graph_state,
         )
 
     def resolve_hil(self, decision_id: str, decision: str, actor: str | None = None) -> dict[str, Any]:
@@ -348,7 +365,10 @@ class OrchestrationEngine:
             agent_id=resolved["selectedAgentId"],
             detail={"actor": actor},
         )
-        return {"ok": True, **resolved, "status": resolved["status"], "resumed": resumed}
+        graph_state = None
+        if self.graph_runtime:
+            graph_state = self.graph_runtime.resume(resolved["runId"], decision)
+        return {"ok": True, **resolved, "status": resolved["status"], "resumed": resumed, "graphState": graph_state}
 
     def record_task_failure(self, run_id: str, error: str | None = None) -> dict[str, Any]:
         run = self.store.get_run(run_id)
@@ -416,6 +436,7 @@ class OrchestrationEngine:
         status: str,
         selected_agent_id: str | None,
         hil_decision_id: str | None = None,
+        graph_state: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         return {
             "ok": True,
@@ -426,7 +447,29 @@ class OrchestrationEngine:
             "hilDecisionId": hil_decision_id,
             "retryLimit": self.retry_limit,
             "boundary": BOUNDARY,
+            "graphState": graph_state,
         }
+
+    def _start_graph(
+        self,
+        *,
+        run_id: str,
+        task_summary: str,
+        required_capability: str | None,
+        selected_agent_id: str | None,
+        requires_approval: bool,
+    ) -> dict[str, Any]:
+        if not self.graph_runtime:
+            return {"status": "waiting_for_approval" if requires_approval else "dispatched"}
+        return self.graph_runtime.start(
+            {
+                "runId": run_id,
+                "taskSummary": task_summary,
+                "requiredCapability": required_capability,
+                "selectedAgentId": selected_agent_id,
+                "requiresApproval": requires_approval,
+            }
+        )
 
     def _select_agent(self, agents: list[Any], required_capability: str | None) -> dict[str, Any] | None:
         candidates = [agent for agent in agents if isinstance(agent, dict)]
