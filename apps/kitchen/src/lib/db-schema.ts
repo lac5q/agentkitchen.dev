@@ -369,4 +369,42 @@ export function initSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS agent_tool_outcomes_tool
       ON agent_tool_outcomes(tool_id, recorded_at DESC);
   `);
+
+  // a2a_tasks / a2a_task_events: durable transport-level task state (Phase 35)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS a2a_tasks (
+      task_id             TEXT PRIMARY KEY,
+      context_id          TEXT NOT NULL,
+      caller_agent_id     TEXT NOT NULL,
+      target_agent_id     TEXT,
+      state               TEXT NOT NULL
+                          CHECK(state IN ('submitted','working','input-required','completed','failed','canceled')),
+      message_json        TEXT NOT NULL,
+      artifacts_json      TEXT NOT NULL DEFAULT '[]',
+      metadata_json       TEXT NOT NULL DEFAULT '{}',
+      created_at          TEXT NOT NULL,
+      updated_at          TEXT NOT NULL,
+      terminal_at         TEXT,
+      cancel_requested_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS a2a_tasks_context
+      ON a2a_tasks(context_id);
+    CREATE INDEX IF NOT EXISTS a2a_tasks_caller_state
+      ON a2a_tasks(caller_agent_id, state, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS a2a_tasks_target_state
+      ON a2a_tasks(target_agent_id, state, updated_at DESC);
+
+    CREATE TABLE IF NOT EXISTS a2a_task_events (
+      id           INTEGER PRIMARY KEY,
+      task_id      TEXT NOT NULL,
+      sequence     INTEGER NOT NULL,
+      event_type   TEXT NOT NULL,
+      payload_json TEXT NOT NULL,
+      created_at   TEXT NOT NULL,
+      UNIQUE(task_id, sequence),
+      FOREIGN KEY(task_id) REFERENCES a2a_tasks(task_id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS a2a_task_events_task_sequence
+      ON a2a_task_events(task_id, sequence);
+  `);
 }
