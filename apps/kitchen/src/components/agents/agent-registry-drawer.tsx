@@ -17,8 +17,76 @@ interface AgentRegistryDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function a2aMetadata(agent: RegisteredAgent): Record<string, unknown> {
+  const metadata = agent.metadata.a2a;
+  return isRecord(metadata) ? metadata : {};
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function stringList(value: unknown): string {
+  return Array.isArray(value) ? value.filter((item) => typeof item === "string").join(", ") : "unknown";
+}
+
+function redactUrl(rawUrl: string): string {
+  try {
+    const url = new URL(rawUrl);
+    url.username = "";
+    url.password = "";
+    return url.toString();
+  } catch {
+    return rawUrl.replace(/\/\/[^/@\s]+@/, "//");
+  }
+}
+
+function urlHost(rawUrl: unknown): string {
+  if (typeof rawUrl !== "string") return "unknown";
+  try {
+    return new URL(redactUrl(rawUrl)).host;
+  } catch {
+    return redactUrl(rawUrl);
+  }
+}
+
+function securitySummary(value: unknown): string {
+  if (!isRecord(value)) return "unknown";
+  const labels = Object.values(value)
+    .filter(isRecord)
+    .map((scheme) => {
+      const type = stringValue(scheme.type) ?? "scheme";
+      const detail = stringValue(scheme.scheme) ?? stringValue(scheme.in);
+      return detail ? `${type} ${detail}` : type;
+    });
+  return labels.length > 0 ? labels.join(", ") : "unknown";
+}
+
+function sourceLabel(value: unknown): string {
+  return value === "adk" ? "ADK" : stringValue(value)?.toUpperCase() ?? "A2A";
+}
+
+function streamingLabel(value: unknown): string {
+  if (typeof value === "boolean") return value ? "supported" : "not declared";
+  return "unknown";
+}
+
+function MetadataRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="mb-1 text-xs uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="break-words text-slate-200">{value}</p>
+    </div>
+  );
+}
+
 export function AgentRegistryDrawer({ agent, open, onOpenChange }: AgentRegistryDrawerProps) {
   if (!agent) return null;
+  const a2a = a2aMetadata(agent);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -27,9 +95,15 @@ export function AgentRegistryDrawer({ agent, open, onOpenChange }: AgentRegistry
           <SheetTitle className="text-slate-100">{agent.name}</SheetTitle>
           <SheetDescription className="text-slate-400">{agent.role}</SheetDescription>
         </SheetHeader>
-        <div className="space-y-5 p-4 text-sm">
+        <div className="flex flex-col gap-5 p-4 text-sm">
           <div className="flex flex-wrap gap-2">
             <Badge variant="outline" className="border-slate-700 text-slate-300">{agent.protocol}</Badge>
+            {agent.protocol === "a2a" && (
+              <Badge variant="outline" className="border-sky-700 text-sky-300">A2A</Badge>
+            )}
+            {a2a.source === "adk" && (
+              <Badge variant="outline" className="border-sky-700 text-sky-300">ADK</Badge>
+            )}
             <Badge variant="outline" className="border-slate-700 text-slate-300">
               {PLATFORM_LABELS[agent.platform] ?? agent.platform}
             </Badge>
@@ -57,6 +131,23 @@ export function AgentRegistryDrawer({ agent, open, onOpenChange }: AgentRegistry
             <div>
               <p className="mb-1 text-xs uppercase tracking-wide text-slate-500">Current task</p>
               <p className="text-slate-200">{agent.currentTask}</p>
+            </div>
+          )}
+          {agent.protocol === "a2a" && (
+            <div className="border border-slate-800 bg-slate-900/50 p-3">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-sky-400">A2A connection</p>
+              <div className="grid gap-3">
+                <MetadataRow label="Endpoint host" value={urlHost(a2a.endpointUrl)} />
+                <MetadataRow label="Card URL" value={redactUrl(String(a2a.cardUrl ?? "unknown"))} />
+                <MetadataRow label="A2A version" value={stringValue(a2a.version) ?? "unknown"} />
+                <MetadataRow label="Security scheme" value={securitySummary(a2a.securitySchemes)} />
+                <MetadataRow label="Input modes" value={stringList(a2a.inputModes)} />
+                <MetadataRow label="Output modes" value={stringList(a2a.outputModes)} />
+                <MetadataRow label="Last validation" value={stringValue(a2a.lastFetchedAt) ?? "unknown"} />
+                <MetadataRow label="Validation" value={stringValue(a2a.validationStatus) ?? "unknown"} />
+                <MetadataRow label="Streaming" value={streamingLabel(a2a.streaming)} />
+                <MetadataRow label="Source" value={sourceLabel(a2a.source)} />
+              </div>
             </div>
           )}
         </div>

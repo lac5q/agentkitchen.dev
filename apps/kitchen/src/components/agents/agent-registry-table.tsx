@@ -17,6 +17,19 @@ function formatHeartbeat(value: string | null): string {
   return new Date(value).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function a2aMetadata(agent: RegisteredAgent): Record<string, unknown> {
+  const metadata = agent.metadata.a2a;
+  return isRecord(metadata) ? metadata : {};
+}
+
+function isAdkAgent(agent: RegisteredAgent): boolean {
+  return a2aMetadata(agent).source === "adk";
+}
+
 export function AgentRegistryTable({
   agents,
   onSelect,
@@ -54,7 +67,16 @@ export function AgentRegistryTable({
             <span className="block truncate font-medium text-slate-100">{agent.name}</span>
             <span className="block truncate text-xs text-slate-500">{agent.role}</span>
           </button>
-          <span className="text-slate-300">{agent.protocol}</span>
+          <div className="flex flex-wrap gap-1">
+            {agent.protocol === "a2a" ? (
+              <Badge variant="outline" className="border-sky-700 text-sky-300">A2A</Badge>
+            ) : (
+              <span className="text-slate-300">{agent.protocol}</span>
+            )}
+            {isAdkAgent(agent) && (
+              <Badge variant="outline" className="border-sky-700 text-sky-300">ADK</Badge>
+            )}
+          </div>
           <span className="text-slate-300">{PLATFORM_LABELS[agent.platform] ?? agent.platform}</span>
           <span style={{ color: STATUS_COLORS[agent.status] }}>{agent.status}</span>
           <span className="text-xs text-slate-400">{formatHeartbeat(agent.lastHeartbeat)}</span>

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   useDeregisterAgentMutation,
+  useRegisterA2aAgentCardMutation,
   useRegisterAgentMutation,
   useRegisteredAgents,
 } from "@/lib/api-client";
@@ -17,6 +18,7 @@ type StatusFilter = "all" | AgentStatus;
 export default function AgentRegistryPage() {
   const { data, isLoading } = useRegisteredAgents();
   const registerMutation = useRegisterAgentMutation();
+  const registerA2aMutation = useRegisterA2aAgentCardMutation();
   const deregisterMutation = useDeregisterAgentMutation();
   const [protocol, setProtocol] = useState<ProtocolFilter>("all");
   const [status, setStatus] = useState<StatusFilter>("all");
@@ -64,9 +66,14 @@ export default function AgentRegistryPage() {
       </div>
 
       <AgentRegistrationForm
-        isSubmitting={registerMutation.isPending}
+        isSubmitting={registerMutation.isPending || registerA2aMutation.isPending}
         onSubmit={(input) =>
           registerMutation.mutate(input, {
+            onSuccess: (result) => setOneTimeKey(result.apiKey ?? null),
+          })
+        }
+        onA2aSubmit={(input) =>
+          registerA2aMutation.mutate(input, {
             onSuccess: (result) => setOneTimeKey(result.apiKey ?? null),
           })
         }

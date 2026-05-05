@@ -15,6 +15,13 @@ import type {
   ToolAttentionResponse,
 } from "@/types";
 
+export interface RegisterA2aAgentCardInput {
+  cardUrl: string;
+  source?: "adk" | "a2a" | "manual";
+  requestedId?: string;
+  issueApiKey?: boolean;
+}
+
 async function fetchJSON<T>(url: string): Promise<T> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${url}: ${res.status}`);
@@ -53,6 +60,13 @@ export function registerAgent(input: RegisterAgentInput) {
   );
 }
 
+export function registerA2aAgentCard(input: RegisterA2aAgentCardInput) {
+  return mutateJSON<RegisterAgentResult & { ok: boolean; timestamp: string }>(
+    "/api/a2a/agents/register",
+    { method: "POST", body: JSON.stringify(input) }
+  );
+}
+
 export function deregisterAgent(agentId: string) {
   return mutateJSON<{ ok: boolean; agent: RegisteredAgent; timestamp: string }>(
     `/api/agents/${encodeURIComponent(agentId)}`,
@@ -64,6 +78,16 @@ export function useRegisterAgentMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: registerAgent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["agents"] });
+    },
+  });
+}
+
+export function useRegisterA2aAgentCardMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: registerA2aAgentCard,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agents"] });
     },
