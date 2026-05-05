@@ -142,7 +142,9 @@ export function validateA2aAgentCard(value: unknown): A2aAgentCard {
     },
     defaultInputModes: stringArray(value.defaultInputModes),
     defaultOutputModes: stringArray(value.defaultOutputModes),
-    securitySchemes: isRecord(value.securitySchemes) ? value.securitySchemes : {},
+    securitySchemes: isRecord(value.securitySchemes)
+      ? (value.securitySchemes as A2aAgentCard["securitySchemes"])
+      : {},
     security: Array.isArray(value.security)
       ? value.security.filter((item): item is Record<string, string[]> => isRecord(item))
       : [],
