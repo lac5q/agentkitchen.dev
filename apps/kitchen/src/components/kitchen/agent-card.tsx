@@ -32,17 +32,27 @@ const STATUS_DOT: Record<string, string> = {
 interface AgentCardProps {
   agent: Agent;
   onClick: (agent: Agent) => void;
+  harnessName?: string;
+  childCount?: number;
 }
 
-export function AgentCard({ agent, onClick }: AgentCardProps) {
+export function AgentCard({ agent, onClick, harnessName, childCount = 0 }: AgentCardProps) {
   const ringClass = STATUS_RING[agent.status] ?? "ring-slate-500";
   const dotClass = STATUS_DOT[agent.status] ?? "bg-slate-500";
   const platformLabel = PLATFORM_LABELS[agent.platform] ?? agent.platform;
   const timeAgo = formatTimeAgo(agent.lastHeartbeat);
+  const isSubagent = Boolean(agent.masterId);
+  const isHarness = childCount > 0;
 
   return (
     <Card
-      className="border-slate-800 bg-slate-900/50 p-4 cursor-pointer hover:border-slate-700 hover:bg-slate-800/60 transition-colors"
+      className={`cursor-pointer border bg-slate-900/50 p-4 transition-colors hover:border-slate-700 hover:bg-slate-800/60 ${
+        isSubagent
+          ? "border-amber-700/50"
+          : isHarness
+            ? "border-sky-700/60 shadow-[0_0_18px_rgba(14,165,233,0.08)]"
+            : "border-slate-800"
+      }`}
       onClick={() => onClick(agent)}
     >
       <div className="flex items-start gap-3">
@@ -62,11 +72,34 @@ export function AgentCard({ agent, onClick }: AgentCardProps) {
           </div>
           <p className="text-xs text-slate-400 truncate">{agent.role}</p>
 
+          {(harnessName || isHarness) && (
+            <div className="mt-2 rounded-lg border border-slate-800 bg-slate-950/50 px-2 py-1.5 text-xs">
+              {isSubagent ? (
+                <p className="truncate text-amber-300">
+                  <span className="text-slate-500">Subagent of</span> {harnessName ?? agent.masterId}
+                </p>
+              ) : isHarness ? (
+                <p className="truncate text-sky-300">
+                  <span className="text-slate-500">Harness for</span> {childCount} subagent{childCount === 1 ? "" : "s"}
+                </p>
+              ) : (
+                <p className="truncate text-slate-300">
+                  <span className="text-slate-500">Harness</span> {harnessName}
+                </p>
+              )}
+            </div>
+          )}
+
           <div className="mt-2 flex items-center gap-2 flex-wrap">
             <Badge variant="outline" className="text-xs border-slate-700 text-slate-300">
               {platformLabel}
             </Badge>
-            {agent.masterId && (
+            {isHarness && (
+              <Badge variant="outline" className="text-xs border-sky-700 text-sky-300">
+                harness
+              </Badge>
+            )}
+            {isSubagent && (
               <Badge variant="outline" className="text-xs border-amber-700 text-amber-400">
                 sub-agent
               </Badge>

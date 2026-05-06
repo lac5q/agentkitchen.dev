@@ -15,13 +15,43 @@ interface AgentGridProps {
   sections?: AgentSection[];
 }
 
+function uniqueAgents(agents: Agent[]): Agent[] {
+  return Array.from(new Map(agents.map((agent) => [agent.id, agent])).values());
+}
+
+function hierarchyFor(agents: Agent[]) {
+  const unique = uniqueAgents(agents);
+  const byId = new Map(unique.map((agent) => [agent.id, agent]));
+  const childrenByMaster = new Map<string, Agent[]>();
+
+  for (const agent of unique) {
+    if (!agent.masterId) continue;
+    const children = childrenByMaster.get(agent.masterId) ?? [];
+    children.push(agent);
+    childrenByMaster.set(agent.masterId, children);
+  }
+
+  return { byId, childrenByMaster };
+}
+
 export function AgentGrid({ agents, sections }: AgentGridProps) {
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const hierarchyAgents = agents ?? uniqueAgents(sections?.flatMap((section) => section.agents) ?? []);
+  const { byId, childrenByMaster } = hierarchyFor(hierarchyAgents);
 
   function handleAgentClick(agent: Agent) {
     setSelectedAgent(agent);
     setDrawerOpen(true);
+  }
+
+  function harnessName(agent: Agent): string | undefined {
+    if (!agent.masterId) return undefined;
+    return byId.get(agent.masterId)?.name ?? agent.masterId;
+  }
+
+  function childCount(agent: Agent): number {
+    return childrenByMaster.get(agent.id)?.length ?? 0;
   }
 
   function handleDrawerOpenChange(open: boolean) {
@@ -42,7 +72,13 @@ export function AgentGrid({ agents, sections }: AgentGridProps) {
       <>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {agents.map((agent) => (
-            <AgentCard key={agent.id} agent={agent} onClick={handleAgentClick} />
+            <AgentCard
+              key={agent.id}
+              agent={agent}
+              harnessName={harnessName(agent)}
+              childCount={childCount(agent)}
+              onClick={handleAgentClick}
+            />
           ))}
         </div>
         <AgentDrawer
@@ -73,7 +109,13 @@ export function AgentGrid({ agents, sections }: AgentGridProps) {
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {section.agents.map((agent) => (
-                <AgentCard key={agent.id} agent={agent} onClick={handleAgentClick} />
+                <AgentCard
+                  key={agent.id}
+                  agent={agent}
+                  harnessName={harnessName(agent)}
+                  childCount={childCount(agent)}
+                  onClick={handleAgentClick}
+                />
               ))}
             </div>
           )}
