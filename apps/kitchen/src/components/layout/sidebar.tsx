@@ -43,15 +43,15 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     };
   }, [isOpen]);
 
-  const navContent = (
+  const navContent = (showClose: boolean) => (
     <>
       <div className="mb-8 px-2 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-amber-500">Agent Kitchen</h1>
-          <p className="text-xs text-slate-500">Knowledge Restaurant</p>
+          <p className="text-xs text-slate-500">Agent Fleet Control</p>
         </div>
         {/* Close button — mobile only */}
-        {onClose && (
+        {showClose && onClose && (
           <button
             onClick={onClose}
             className="lg:hidden flex items-center justify-center w-8 h-8 rounded-md text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
@@ -82,7 +82,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         })}
       </nav>
       <div className="border-t border-slate-800 pt-4 px-2">
-        <p className="text-xs text-slate-600">v1.0.0</p>
+        <p className="text-xs text-slate-600">local-first A2A hub</p>
       </div>
     </>
   );
@@ -91,19 +91,18 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     <>
       {/* Desktop sidebar — always visible on lg+ */}
       <aside className="fixed left-0 top-0 z-40 hidden lg:flex h-screen w-64 flex-col border-r border-slate-800 bg-slate-950 px-4 py-6">
-        {navContent}
+        {navContent(false)}
       </aside>
 
       {/* Mobile drawer */}
-      <div className="lg:hidden">
+      {isOpen && (
+        <div className="lg:hidden">
         {/* Backdrop */}
-        {isOpen && (
           <div
             className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
             onClick={onClose}
             aria-hidden="true"
           />
-        )}
 
         {/* Slide-in drawer */}
         <aside
@@ -112,9 +111,10 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
             isOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
-          {navContent}
+          {navContent(true)}
         </aside>
-      </div>
+        </div>
+      )}
     </>
   );
 }

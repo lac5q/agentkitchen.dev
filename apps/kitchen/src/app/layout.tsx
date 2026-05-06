@@ -8,7 +8,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Agent Kitchen",
-  description: "Knowledge Restaurant — AI Agent Observability Dashboard",
+  description: "Local-first control plane for multi-agent fleets",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
