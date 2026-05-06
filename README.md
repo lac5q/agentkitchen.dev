@@ -10,6 +10,7 @@
 
 <p align="center">
   <a href="https://github.com/lac5q/agent-kitchen/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-10b981.svg"></a>
+  <img alt="Release: v0.1.0" src="https://img.shields.io/badge/release-v0.1.0-06b6d4.svg">
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black.svg">
   <img alt="A2A ready" src="https://img.shields.io/badge/A2A-ready-0ea5e9.svg">
   <img alt="Local first" src="https://img.shields.io/badge/local--first-yes-f59e0b.svg">
@@ -22,6 +23,7 @@
   <a href="#why-star-this-repo">Why Star</a> |
   <a href="#architecture">Architecture</a> |
   <a href="#security-model">Security</a> |
+  <a href="#upcoming-features">Upcoming</a> |
   <a href="#docs">Docs</a>
 </p>
 
@@ -82,6 +84,21 @@ After setup, you can:
 5. Ingest an A2A agent card and dispatch a task.
 6. Inspect memory and knowledge health from the Library.
 7. Review APO proposals before they modify skills.
+
+## Release 0.1
+
+`v0.1.0` is the first public operator preview of Agent Kitchen.
+
+This release is intentionally focused on the control-plane foundation:
+
+- A local-first Next.js operator console with the Flow, Registry, Dispatch, Library, Ledger, and Sous Vide surfaces.
+- A canonical SQLite-backed agent registry for REST, UI, and A2A-visible agents.
+- A2A card ingestion, task routes, streaming subscription endpoints, and Google ADK compatibility fixtures.
+- REST reporting endpoints for heartbeats, memory writes, skill reports, and tool outcomes.
+- Memory and knowledge visibility across configured file collections, mem0/Qdrant, graph memory, and Kitchen SQLite.
+- Human-gated Agent Lightning/APO approvals so self-learning proposals queue before they mutate agent instructions.
+
+The aim is not to pretend this is a polished SaaS. It is a useful, inspectable, hackable starting point for people operating multiple agents across real machines.
 
 ## What Kitchen Does
 
@@ -411,9 +428,9 @@ agent-kitchen/
 - [LangGraph integration](docs/integrations/langgraph.md)
 - [CrewAI and AutoGen integration](docs/integrations/crewai-autogen.md)
 
-## Roadmap
+## Upcoming Features
 
-Near-term focus:
+Near-term focus after `v0.1.0`:
 
 - More A2A compatibility fixtures and interop tests.
 - Cleaner first-run onboarding for non-localhost deployments.
