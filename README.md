@@ -412,6 +412,7 @@ ClaudeClaw-inspired operator surfaces:
 - **Memory search:** First-class search across episodic SQLite recall, mem0/vector memory, graph memory, and knowledge files, with filters for agent, project, source, date, and memory tier.
 - **Schedules and routines:** A visible routines console for cron jobs, recurring agent checks, standing delegations, maintenance tasks, and approval-required automations.
 - **Hivemind Obsidian view:** An Obsidian-inspired graph/canvas view of agents, memories, tasks, proposals, skills, and backlinks so operators can browse the agent society as a living knowledge map.
+- **Design-system completion:** Finish the Paperclip-style visual migration across drawers, sheets, modals, detail panels, empty states, and error states so no screen falls back to the older dark dashboard shell.
 
 ## Contributing
 

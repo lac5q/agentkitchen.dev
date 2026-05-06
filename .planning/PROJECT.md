@@ -124,6 +124,7 @@ Any agent framework plugs into Kitchen — and every agent, knowledge system, an
 - [ ] Memory search surface — unified search across SQLite recall, mem0/vector memory, Neo4j graph memory, and knowledge files with filters for agent, project, source, date, and tier
 - [ ] Schedules and routines console — visible recurring jobs, cron health, standing delegations, maintenance routines, and approval-required automations
 - [ ] Hivemind Obsidian view — graph/canvas exploration of agents, memories, tasks, proposals, skills, backlinks, and relationships inspired by Obsidian/ClaudeClaw
+- [ ] Paperclip design-system completion — migrate drawers, sheets, modals, detail panels, empty states, and error states off the older dark dashboard shell
 - [ ] Memory pluggability beyond mem0+Qdrant+Neo4j (v3.0 concern)
 
 ### Out of Scope
