@@ -125,6 +125,7 @@ Any agent framework plugs into Kitchen — and every agent, knowledge system, an
 - [ ] Schedules and routines console — visible recurring jobs, cron health, standing delegations, maintenance routines, and approval-required automations
 - [ ] Hivemind Obsidian view — graph/canvas exploration of agents, memories, tasks, proposals, skills, backlinks, and relationships inspired by Obsidian/ClaudeClaw
 - [ ] Paperclip design-system completion — migrate drawers, sheets, modals, detail panels, empty states, and error states off the older dark dashboard shell
+- [ ] Flow canvas redesign — migrate React Flow topology, minimap, controls, node cards, edge styling, group boxes, and node detail panels into the new Paperclip-style visual system while preserving graph readability
 - [ ] Memory pluggability beyond mem0+Qdrant+Neo4j (v3.0 concern)
 
 ### Out of Scope

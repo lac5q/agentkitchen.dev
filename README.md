@@ -413,6 +413,7 @@ ClaudeClaw-inspired operator surfaces:
 - **Schedules and routines:** A visible routines console for cron jobs, recurring agent checks, standing delegations, maintenance tasks, and approval-required automations.
 - **Hivemind Obsidian view:** An Obsidian-inspired graph/canvas view of agents, memories, tasks, proposals, skills, and backlinks so operators can browse the agent society as a living knowledge map.
 - **Design-system completion:** Finish the Paperclip-style visual migration across drawers, sheets, modals, detail panels, empty states, and error states so no screen falls back to the older dark dashboard shell.
+- **Flow canvas redesign:** Bring the React Flow topology, minimap, controls, node cards, edge styling, and node detail panels into the new Paperclip-style system while preserving graph readability.
 
 ## Contributing
 
