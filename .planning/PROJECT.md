@@ -120,6 +120,10 @@ Any agent framework plugs into Kitchen — and every agent, knowledge system, an
 - [ ] LLM-powered recall scoring — semantic/embedding upgrade to BM25 lexical recall
 - [ ] Cross-project recall — similar-task recommendations across multiple local repos
 - [ ] Voice meeting bot — Pipecat meeting participant writing transcripts to SQLite with Kitchen highlights panel
+- [ ] ClaudeClaw-inspired Chat tab — dedicated command/chat workspace for CLIs, Paperclip project agents, runtime subagents, and Kitchen system identities, separate from Flow
+- [ ] Memory search surface — unified search across SQLite recall, mem0/vector memory, Neo4j graph memory, and knowledge files with filters for agent, project, source, date, and tier
+- [ ] Schedules and routines console — visible recurring jobs, cron health, standing delegations, maintenance routines, and approval-required automations
+- [ ] Hivemind Obsidian view — graph/canvas exploration of agents, memories, tasks, proposals, skills, backlinks, and relationships inspired by Obsidian/ClaudeClaw
 - [ ] Memory pluggability beyond mem0+Qdrant+Neo4j (v3.0 concern)
 
 ### Out of Scope
