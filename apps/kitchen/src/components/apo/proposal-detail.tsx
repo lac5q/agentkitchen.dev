@@ -31,6 +31,7 @@ export function ProposalDetail({
   if (!proposal) return null;
 
   const isPending = proposal.status === "pending";
+  const isApproved = proposal.status === "approved";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -45,10 +46,12 @@ export function ProposalDetail({
               className={
                 isPending
                   ? "border-amber-500/50 text-amber-400 text-xs"
+                  : isApproved
+                    ? "border-cyan-500/50 text-cyan-400 text-xs"
                   : "border-slate-600 text-slate-400 text-xs"
               }
             >
-              {proposal.status}
+              {isApproved ? "queued" : proposal.status}
             </Badge>
             <Badge
               variant="outline"

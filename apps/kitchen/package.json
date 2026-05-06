@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "start:all": "bash ../../start.sh",
+    "apo:worker": "node ../../scripts/apply-agent-lightning-approvals.mjs",
     "check:agents": "node ../../scripts/check-agent-systems.mjs",
     "curate:skills": "node ../../scripts/curate-agent-skills.mjs",
     "install:skill-curation": "node ../../scripts/install-skill-curation-launchd.mjs",

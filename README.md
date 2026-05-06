@@ -337,6 +337,21 @@ flowchart LR
 
 The Library counts `.md`, `.mdx`, and `.txt` files from configured collections. Memory entries live in separate memory services and SQLite tables, so a collection file count is not the same thing as total memories.
 
+## Agent Lightning Approvals
+
+Sous Vide approvals are intentionally two-step:
+
+1. The UI/API approval moves the proposal into a durable `approved/` work queue.
+2. The worker CLI applies queued approvals and archives the proposal for audit history.
+
+Qwen is the default executor assignment for this queue:
+
+```bash
+npm --prefix apps/kitchen run apo:worker -- --executor qwen
+```
+
+Use `APO_APPROVAL_CLI=qwen` to keep that default for scheduled runs, or pass `--executor codex` / `--executor claude` when you explicitly want a different CLI to own the implementation pass.
+
 ## Security Model
 
 Kitchen is built for private-network production first.

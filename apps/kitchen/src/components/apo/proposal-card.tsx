@@ -20,6 +20,7 @@ interface ProposalCardProps {
 
 export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
   const isPending = proposal.status === "pending";
+  const isApproved = proposal.status === "approved";
   const preview = proposal.content.slice(0, 200).replace(/#+\s/g, "").trim();
   const approveProposal = useApproveApoProposalMutation();
 
@@ -34,6 +35,7 @@ export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
         "border-slate-800 bg-slate-900/50 p-4 cursor-pointer transition-colors",
         "hover:border-slate-700 hover:bg-slate-800/60",
         isPending ? "border-l-2 border-l-amber-500" : "",
+        isApproved ? "border-l-2 border-l-cyan-500" : "",
       ].join(" ")}
       onClick={() => onClick(proposal)}
     >
@@ -48,10 +50,12 @@ export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
               className={
                 isPending
                   ? "border-amber-500/50 text-amber-400 text-xs"
+                  : isApproved
+                    ? "border-cyan-500/50 text-cyan-400 text-xs"
                   : "border-slate-600 text-slate-400 text-xs"
               }
             >
-              {proposal.status}
+              {isApproved ? "queued" : proposal.status}
             </Badge>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">

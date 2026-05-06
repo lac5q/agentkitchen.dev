@@ -18,7 +18,7 @@ interface CycleStatusProps {
 
 export function CycleStatus({ stats }: CycleStatusProps) {
   return (
-    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
       <Card className="border-slate-800 bg-slate-900/50 p-4">
         <p className="flex items-center text-xs text-slate-500 uppercase tracking-wide">
           Last Run
@@ -46,6 +46,16 @@ export function CycleStatus({ stats }: CycleStatusProps) {
         </p>
         <p className="text-3xl font-bold text-amber-400 mt-1">
           {stats.pendingProposals}
+        </p>
+      </Card>
+
+      <Card className="border-slate-800 bg-slate-900/50 p-4">
+        <p className="flex items-center text-xs text-slate-500 uppercase tracking-wide">
+          Queued
+          <InfoTip text="Approved proposals waiting for the Agent Lightning worker CLI to implement them. By default, queued work is assigned to qwen unless the operator overrides the executor CLI." />
+        </p>
+        <p className="text-3xl font-bold text-cyan-400 mt-1">
+          {stats.approvedProposals}
         </p>
       </Card>
 

@@ -250,12 +250,13 @@ export function useApo() {
           subsystem: string;
           timestamp: string;
           content: string;
-          status: "pending" | "archived";
+          status: "pending" | "approved" | "archived";
         }>;
         stats: {
           lastRun: string | null;
           totalProposals: number;
           pendingProposals: number;
+          approvedProposals: number;
           archivedProposals: number;
           recentLogLines: string[];
         };
@@ -270,9 +271,10 @@ export function approveApoProposal(proposalId: string) {
     ok: boolean;
     proposalId: string;
     skillId: string;
-    archived: boolean;
-    applied: boolean;
-    timestamp: string;
+    executorCli: string;
+    queued: boolean;
+    workerCommand: string;
+    approvedAt: string;
   }>("/api/apo", {
     method: "POST",
     body: JSON.stringify({ action: "approve", proposalId }),

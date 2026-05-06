@@ -17,10 +17,26 @@ const SKILLS_PATH: string =
 const HOME = process.env.HOME ?? "~";
 const CRON_LOG_PATH: string =
   process.env.APO_CRON_LOG_PATH ?? `${HOME}/.openclaw/logs/agent-lightning-cron.log`;
+const APPROVED_PATH = path.join(PROPOSALS_PATH, "approved");
+const ARCHIVED_PATH = path.join(PROPOSALS_PATH, "archived");
+const DEFAULT_EXECUTOR_CLI = process.env.APO_APPROVAL_CLI ?? "qwen";
+
+type ApoProposalStatus = "pending" | "approved" | "archived";
+type ApprovalTargetKind = "skill" | "agent";
+
+interface ApprovalWorkItem {
+  proposalId: string;
+  skillId: string;
+  targetPath: string;
+  targetKind: ApprovalTargetKind;
+  executorCli: string;
+  status: "approved";
+  approvedAt: string;
+}
 
 async function parseProposal(
   filePath: string,
-  status: "pending" | "archived"
+  status: ApoProposalStatus
 ): Promise<ApoProposal | null> {
   try {
     const content = await readFile(filePath, "utf-8");
@@ -113,14 +129,33 @@ async function resolveApprovalTarget(skillId: string) {
   return null;
 }
 
-async function approveProposal(filename: string) {
+function workItemPath(filename: string, basePath = APPROVED_PATH) {
+  return path.join(basePath, `${filename}.json`);
+}
+
+async function readApprovalWorkItem(filename: string): Promise<ApprovalWorkItem | null> {
+  const content = await readFile(workItemPath(filename), "utf-8").catch((error: unknown) => {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  });
+  if (!content) return null;
+  return JSON.parse(content) as ApprovalWorkItem;
+}
+
+function normalizeExecutorCli(value: unknown) {
+  if (typeof value !== "string") return DEFAULT_EXECUTOR_CLI;
+  const trimmed = value.trim();
+  return trimmed || DEFAULT_EXECUTOR_CLI;
+}
+
+async function queueApprovedProposal(filename: string, executorCli = DEFAULT_EXECUTOR_CLI) {
   const identity = parseProposalFilename(filename);
   if (!identity) {
     return { status: 400, body: { ok: false, error: "Invalid proposal id" } };
   }
 
   const proposalPath = path.join(PROPOSALS_PATH, identity.filename);
-  const archivedPath = path.join(PROPOSALS_PATH, "archived", identity.filename);
+  const approvedPath = path.join(APPROVED_PATH, identity.filename);
   const content = await readFile(proposalPath, "utf-8").catch((error: unknown) => {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw error;
@@ -149,6 +184,80 @@ async function approveProposal(filename: string) {
     };
   }
 
+  const approvedAt = new Date().toISOString();
+  const workItem: ApprovalWorkItem = {
+    proposalId: identity.filename,
+    skillId: identity.skillId,
+    targetPath: target.path,
+    targetKind: target.kind,
+    executorCli,
+    status: "approved",
+    approvedAt,
+  };
+
+  await mkdir(APPROVED_PATH, { recursive: true });
+  await writeFile(workItemPath(identity.filename), JSON.stringify(workItem, null, 2), "utf-8");
+  await rename(proposalPath, approvedPath);
+
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      proposalId: identity.filename,
+      skillId: identity.skillId,
+      targetPath: target.path,
+      targetKind: target.kind,
+      executorCli,
+      queued: true,
+      approvedAt,
+      workerCommand: `npm --prefix apps/kitchen run apo:worker -- --executor ${executorCli}`,
+    },
+  };
+}
+
+async function applyApprovedProposal(filename: string, executorCliOverride?: string) {
+  const identity = parseProposalFilename(filename);
+  if (!identity) {
+    return { status: 400, body: { ok: false, error: "Invalid proposal id" } };
+  }
+
+  const approvedPath = path.join(APPROVED_PATH, identity.filename);
+  const archivedPath = path.join(ARCHIVED_PATH, identity.filename);
+  const content = await readFile(approvedPath, "utf-8").catch((error: unknown) => {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  });
+  if (!content) {
+    return { status: 404, body: { ok: false, error: "Approved proposal not found" } };
+  }
+
+  const constraint = extractConstraint(content);
+  if (!constraint) {
+    return { status: 422, body: { ok: false, error: "Proposal has no APO constraint block" } };
+  }
+
+  const workItem = await readApprovalWorkItem(identity.filename);
+  const executorCli = executorCliOverride ?? workItem?.executorCli ?? DEFAULT_EXECUTOR_CLI;
+  const queuedTarget = workItem?.targetPath
+    ? await readFirstExisting([workItem.targetPath])
+    : null;
+  const target = queuedTarget
+    ? { ...queuedTarget, kind: workItem?.targetKind ?? ("skill" as const) }
+    : await resolveApprovalTarget(identity.skillId);
+  if (!target) {
+    return {
+      status: 404,
+      body: {
+        ok: false,
+        error: `No SKILL.md or AGENTS.md target found for ${identity.skillId}`,
+        searched: {
+          skillRoots: skillRoots(),
+          agentRoots: agentRoots(),
+        },
+      },
+    };
+  }
+
   if (!target.content.includes(constraint)) {
     const approvalBlock = [
       "",
@@ -162,8 +271,12 @@ async function approveProposal(filename: string) {
     await writeFile(target.path, `${target.content.trimEnd()}\n${approvalBlock}`, "utf-8");
   }
 
-  await mkdir(path.dirname(archivedPath), { recursive: true });
-  await rename(proposalPath, archivedPath);
+  await mkdir(ARCHIVED_PATH, { recursive: true });
+  await rename(approvedPath, archivedPath);
+  await rename(workItemPath(identity.filename), workItemPath(identity.filename, ARCHIVED_PATH)).catch((error: unknown) => {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
+    throw error;
+  });
 
   return {
     status: 200,
@@ -173,8 +286,36 @@ async function approveProposal(filename: string) {
       skillId: identity.skillId,
       targetPath: target.path,
       targetKind: target.kind,
+      executorCli,
       archived: true,
       applied: !target.content.includes(constraint),
+      timestamp: new Date().toISOString(),
+    },
+  };
+}
+
+async function processApprovedQueue(limit?: number, executorCli?: string) {
+  const files = await readdir(APPROVED_PATH).catch((error: unknown) => {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw error;
+  });
+  const mdFiles = files
+    .filter((file) => file.endsWith(".md"))
+    .slice(0, limit && limit > 0 ? limit : undefined);
+
+  const results: Array<Record<string, unknown> & { ok?: boolean }> = [];
+  for (const filename of mdFiles) {
+    const result = await applyApprovedProposal(filename, executorCli);
+    results.push(result.body);
+  }
+
+  return {
+    status: 200,
+    body: {
+      ok: true,
+      processed: results.filter((result) => result.ok).length,
+      failed: results.filter((result) => !result.ok).length,
+      results,
       timestamp: new Date().toISOString(),
     },
   };
@@ -198,14 +339,28 @@ export async function GET() {
     /* no proposals dir */
   }
 
-  // Read archived proposals
-  const archivedPath = path.join(PROPOSALS_PATH, "archived");
+  // Read approved work queue
   try {
-    const files = await readdir(archivedPath);
+    const files = await readdir(APPROVED_PATH);
     const mdFiles = files.filter((f) => f.endsWith(".md"));
     for (const f of mdFiles) {
       const proposal = await parseProposal(
-        path.join(archivedPath, f),
+        path.join(APPROVED_PATH, f),
+        "approved"
+      );
+      if (proposal) proposals.push(proposal);
+    }
+  } catch {
+    /* no approved dir */
+  }
+
+  // Read archived proposals
+  try {
+    const files = await readdir(ARCHIVED_PATH);
+    const mdFiles = files.filter((f) => f.endsWith(".md"));
+    for (const f of mdFiles) {
+      const proposal = await parseProposal(
+        path.join(ARCHIVED_PATH, f),
         "archived"
       );
       if (proposal) proposals.push(proposal);
@@ -242,20 +397,24 @@ export async function GET() {
   }
 
   const pending = proposals.filter((p) => p.status === "pending");
+  const approved = proposals.filter((p) => p.status === "approved");
   const archived = proposals.filter((p) => p.status === "archived");
 
   const stats: ApoCycleStats = {
     lastRun,
     totalProposals: proposals.length,
     pendingProposals: pending.length,
+    approvedProposals: approved.length,
     archivedProposals: archived.length,
     recentLogLines,
   };
 
-  // Sort proposals by timestamp descending
-  proposals.sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-  );
+  // Sort proposals by operator queue state, then timestamp descending.
+  const order = { pending: 0, approved: 1, archived: 2 } as const;
+  proposals.sort((a, b) => {
+    if (a.status !== b.status) return order[a.status] - order[b.status];
+    return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+  });
 
   return NextResponse.json({
     proposals,
@@ -269,16 +428,28 @@ export async function POST(request: Request) {
     return registryWriteUnauthorizedResponse();
   }
 
-  const body = (await request.json().catch(() => null)) as { proposalId?: unknown; action?: unknown } | null;
-  if (!body || typeof body.proposalId !== "string") {
-    return NextResponse.json({ ok: false, error: "proposalId is required" }, { status: 400 });
+  const body = (await request.json().catch(() => null)) as {
+    proposalId?: unknown;
+    action?: unknown;
+    executorCli?: unknown;
+    limit?: unknown;
+  } | null;
+  const action = body?.action ?? "approve";
+  if (action !== "approve" && action !== "apply-approved" && action !== "process-approved") {
+    return NextResponse.json({ ok: false, error: "action must be approve, apply-approved, or process-approved" }, { status: 400 });
   }
-  if (body.action !== undefined && body.action !== "approve") {
-    return NextResponse.json({ ok: false, error: "action must be approve" }, { status: 400 });
+  if (action !== "process-approved" && (!body || typeof body.proposalId !== "string")) {
+    return NextResponse.json({ ok: false, error: "proposalId is required" }, { status: 400 });
   }
 
   try {
-    const result = await approveProposal(body.proposalId);
+    const executorCli = normalizeExecutorCli(body?.executorCli);
+    const result =
+      action === "process-approved"
+        ? await processApprovedQueue(typeof body?.limit === "number" ? body.limit : undefined, executorCli)
+        : action === "apply-approved"
+          ? await applyApprovedProposal(body?.proposalId as string, executorCli)
+          : await queueApprovedProposal(body?.proposalId as string, executorCli);
     return NextResponse.json(result.body, { status: result.status });
   } catch (error) {
     return NextResponse.json(

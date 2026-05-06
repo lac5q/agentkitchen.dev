@@ -160,13 +160,14 @@ export interface ApoProposal {
   subsystem: string;
   timestamp: string;
   content: string;
-  status: "pending" | "archived";
+  status: "pending" | "approved" | "archived";
 }
 
 export interface ApoCycleStats {
   lastRun: string | null;
   totalProposals: number;
   pendingProposals: number;
+  approvedProposals: number;
   archivedProposals: number;
   recentLogLines: string[];
 }

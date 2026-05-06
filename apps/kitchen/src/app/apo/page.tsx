@@ -10,11 +10,12 @@ import { InfoTip } from "@/components/ui/info-tip";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { ApoProposal } from "@/types";
 
-type TabFilter = "all" | "pending" | "archived";
+type TabFilter = "all" | "pending" | "approved" | "archived";
 
 const TABS: { value: TabFilter; label: string }[] = [
   { value: "all", label: "All" },
   { value: "pending", label: "Pending" },
+  { value: "approved", label: "Queued" },
   { value: "archived", label: "Archived" },
 ];
 
@@ -22,6 +23,7 @@ const EMPTY_STATS = {
   lastRun: null,
   totalProposals: 0,
   pendingProposals: 0,
+  approvedProposals: 0,
   archivedProposals: 0,
   recentLogLines: [],
 };
@@ -41,12 +43,13 @@ export default function ApoPage() {
     return p.status === tab;
   });
 
-  // Pending first, then archived within the filtered list
+  // Operator queue first, then completed items within the filtered list.
   const sorted = [...filtered].sort((a, b) => {
     if (a.status === b.status) {
       return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
     }
-    return a.status === "pending" ? -1 : 1;
+    const order = { pending: 0, approved: 1, archived: 2 } as const;
+    return order[a.status] - order[b.status];
   });
 
   function handleCardClick(proposal: ApoProposal) {
@@ -88,6 +91,11 @@ export default function ApoPage() {
             {t.value === "pending" && stats.pendingProposals > 0 && (
               <span className="ml-1.5 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-xs text-amber-400">
                 {stats.pendingProposals}
+              </span>
+            )}
+            {t.value === "approved" && stats.approvedProposals > 0 && (
+              <span className="ml-1.5 rounded-full bg-cyan-500/20 px-1.5 py-0.5 text-xs text-cyan-400">
+                {stats.approvedProposals}
               </span>
             )}
           </button>
