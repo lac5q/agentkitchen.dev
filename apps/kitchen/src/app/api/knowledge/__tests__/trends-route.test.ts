@@ -32,16 +32,22 @@ describe("GET /api/knowledge/trends", () => {
   it("returns zero-filled per-collection activity buckets for supported files", async () => {
     mkdirSync(path.join(root, "skills"), { recursive: true });
     mkdirSync(path.join(root, "gdrive", "meet-recordings"), { recursive: true });
+    mkdirSync(path.join(root, "apple-notes", "call-recordings"), { recursive: true });
     touch(path.join(root, "skills", "one.md"), new Date());
     touch(path.join(root, "skills", "two.mdx"), new Date());
     touch(path.join(root, "skills", "ignore.json"), new Date());
     touch(path.join(root, "gdrive", "meet-recordings", "call.txt"), new Date());
+    touch(path.join(root, "apple-notes", "call-recordings", "apple-call.md"), new Date());
     writeFileSync(
       configPath,
       JSON.stringify({
         collections: [
           { name: "skills", category: "agents" },
-          { name: "meet-recordings", category: "business", basePath: "gdrive/meet-recordings" },
+          {
+            name: "meet-recordings",
+            category: "business",
+            basePaths: ["gdrive/meet-recordings", "apple-notes/call-recordings"],
+          },
         ],
       })
     );
@@ -59,6 +65,9 @@ describe("GET /api/knowledge/trends", () => {
     expect(skills.recentFiles).toBe(2);
     expect(skills.points).toHaveLength(7);
     expect(skills.points.reduce((sum: number, point: { value: number }) => sum + point.value, 0)).toBe(2);
+    const meetings = body.collections.find((collection: { name: string }) => collection.name === "meet-recordings");
+    expect(meetings.totalFiles).toBe(2);
+    expect(meetings.recentFiles).toBe(2);
   });
 
   it("rejects unsupported windows", async () => {

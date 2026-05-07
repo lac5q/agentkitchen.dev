@@ -32,6 +32,8 @@ describe("GET /api/knowledge", () => {
 
     mkdirSync(path.join(root, "gdrive", "meet-recordings"), { recursive: true });
     writeFileSync(path.join(root, "gdrive", "meet-recordings", "call.md"), "call");
+    mkdirSync(path.join(root, "apple-notes", "call-recordings"), { recursive: true });
+    writeFileSync(path.join(root, "apple-notes", "call-recordings", "apple-call.txt"), "apple call");
 
     mkdirSync(path.join(root, "external", "memory"), { recursive: true });
     writeFileSync(path.join(root, "external", "memory", "should-not-count.md"), "external");
@@ -42,7 +44,11 @@ describe("GET /api/knowledge", () => {
       JSON.stringify({
         collections: [
           { name: "skills", category: "agents" },
-          { name: "meet-recordings", category: "business", basePath: "gdrive/meet-recordings" },
+          {
+            name: "meet-recordings",
+            category: "business",
+            basePaths: ["gdrive/meet-recordings", "apple-notes/call-recordings"],
+          },
           { name: "missing", category: "business" },
         ],
       })
@@ -52,10 +58,10 @@ describe("GET /api/knowledge", () => {
     const response = await GET();
     const body = await response.json();
 
-    expect(body.totalDocs).toBe(4);
-    expect(body.totalFiles).toBe(4);
+    expect(body.totalDocs).toBe(5);
+    expect(body.totalFiles).toBe(5);
     expect(body.collections.find((collection: { name: string }) => collection.name === "skills").docCount).toBe(3);
-    expect(body.collections.find((collection: { name: string }) => collection.name === "meet-recordings").docCount).toBe(1);
+    expect(body.collections.find((collection: { name: string }) => collection.name === "meet-recordings").docCount).toBe(2);
     expect(body.collections.find((collection: { name: string }) => collection.name === "missing").docCount).toBe(0);
   });
 });

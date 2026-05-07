@@ -1,8 +1,7 @@
 import type { KnowledgeCollection } from "@/types";
 import {
   loadCollections,
-  resolveCollectionPath,
-  scanCollection,
+  scanConfiguredCollection,
 } from "@/lib/knowledge-collections";
 
 export const dynamic = "force-dynamic";
@@ -12,9 +11,8 @@ export async function GET() {
   const collections: KnowledgeCollection[] = [];
 
   for (const col of COLLECTIONS) {
-    const colPath = resolveCollectionPath(col);
     try {
-      const { docCount, lastUpdated } = await scanCollection(colPath);
+      const { docCount, lastUpdated } = await scanConfiguredCollection(col);
       collections.push({
         name: col.name,
         docCount,

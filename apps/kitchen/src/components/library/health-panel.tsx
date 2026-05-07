@@ -58,9 +58,9 @@ export function HealthPanel({ collections, totalFiles }: HealthPanelProps) {
                   }`}
                 />
                 <span className="text-xs font-medium text-slate-300">
-                  Meeting Recordings
+                  Meeting + Call Recordings
                 </span>
-                <InfoTip text="The 'meet-recordings' QMD collection. Green = your meeting transcripts are indexed and searchable. Grey = collection not found — add .md, .mdx, or .txt files to ~/github/knowledge/gdrive/meet-recordings/ to populate it." />
+                <InfoTip text="The 'meet-recordings' QMD collection. Green = Google Meet transcripts and exported Apple Notes call recordings are indexed and searchable. Grey = collection not found — add .md, .mdx, or .txt files to ~/github/knowledge/gdrive/meet-recordings/ or ~/github/knowledge/apple-notes/call-recordings/." />
               </div>
               {meetingsCollection ? (
                 <span className="text-xs font-semibold text-emerald-400">

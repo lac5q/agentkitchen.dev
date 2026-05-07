@@ -340,6 +340,7 @@ flowchart LR
     Projects["projects"]
     Emails["emails"]
     Meetings["gdrive/meet-recordings"]
+    AppleCalls["apple-notes/call-recordings"]
     Runtime["skill-runtimes"]
   end
 
@@ -353,7 +354,7 @@ flowchart LR
   Memory --> Ledger["Ledger + Memory Intelligence"]
 ```
 
-The Library counts `.md`, `.mdx`, and `.txt` files from configured collections. Memory entries live in separate memory services and SQLite tables, so a collection file count is not the same thing as total memories.
+The Library counts `.md`, `.mdx`, and `.txt` files from configured collections. A collection can combine multiple source folders; `meet-recordings` includes both Google Drive transcripts and exported Apple Notes call recordings. Memory entries live in separate memory services and SQLite tables, so a collection file count is not the same thing as total memories.
 
 ## Progressive Capabilities
 

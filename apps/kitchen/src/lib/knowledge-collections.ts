@@ -7,7 +7,10 @@ import { findConfigFile } from "@/lib/paths";
 export type CollectionConfig = {
   name: string;
   category: KnowledgeCollection["category"];
+  /** Legacy single-source path, relative to KNOWLEDGE_BASE_PATH unless absolute. */
   basePath?: string;
+  /** Multiple source paths for one logical collection, relative to KNOWLEDGE_BASE_PATH unless absolute. */
+  basePaths?: string[];
 };
 
 export const KNOWLEDGE_FILE_EXTENSIONS = new Set([".md", ".mdx", ".txt"]);
@@ -33,9 +36,17 @@ export function getKnowledgeBasePath() {
   );
 }
 
-export function resolveCollectionPath(col: { name: string; basePath?: string }) {
-  if (!col.basePath) return path.join(getKnowledgeBasePath(), col.name);
-  return path.isAbsolute(col.basePath) ? col.basePath : path.join(getKnowledgeBasePath(), col.basePath);
+function resolveBasePath(basePath: string) {
+  return path.isAbsolute(basePath) ? basePath : path.join(getKnowledgeBasePath(), basePath);
+}
+
+export function resolveCollectionPaths(col: { name: string; basePath?: string; basePaths?: string[] }) {
+  const basePaths = col.basePaths?.length ? col.basePaths : [col.basePath ?? col.name];
+  return basePaths.map(resolveBasePath);
+}
+
+export function resolveCollectionPath(col: { name: string; basePath?: string; basePaths?: string[] }) {
+  return resolveCollectionPaths(col)[0];
 }
 
 export function isKnowledgeFile(filePath: string) {
@@ -66,6 +77,32 @@ export async function collectKnowledgeFiles(collectionPath: string): Promise<Arr
 
 export async function scanCollection(collectionPath: string): Promise<{ docCount: number; lastUpdated: Date | null }> {
   const files = await collectKnowledgeFiles(collectionPath);
+  const lastUpdated = files.reduce<Date | null>(
+    (latest, file) => (!latest || file.mtime > latest ? file.mtime : latest),
+    null
+  );
+  return { docCount: files.length, lastUpdated };
+}
+
+export async function collectCollectionFiles(col: CollectionConfig): Promise<Array<{ path: string; mtime: Date }>> {
+  const byPath = new Map<string, { path: string; mtime: Date }>();
+
+  for (const collectionPath of resolveCollectionPaths(col)) {
+    try {
+      const files = await collectKnowledgeFiles(collectionPath);
+      for (const file of files) byPath.set(file.path, file);
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === "ENOENT" || code === "ENOTDIR") continue;
+      throw error;
+    }
+  }
+
+  return Array.from(byPath.values());
+}
+
+export async function scanConfiguredCollection(col: CollectionConfig): Promise<{ docCount: number; lastUpdated: Date | null }> {
+  const files = await collectCollectionFiles(col);
   const lastUpdated = files.reduce<Date | null>(
     (latest, file) => (!latest || file.mtime > latest ? file.mtime : latest),
     null

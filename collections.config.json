@@ -8,7 +8,11 @@
     { "name": "content", "category": "marketing" },
     { "name": "spark-recordings", "category": "business" },
     { "name": "emails", "category": "business" },
-    { "name": "meet-recordings", "category": "business", "basePath": "gdrive/meet-recordings" },
+    {
+      "name": "meet-recordings",
+      "category": "business",
+      "basePaths": ["gdrive/meet-recordings", "apple-notes/call-recordings"]
+    },
     { "name": "llm-wiki", "category": "business" },
     { "name": "mem0-exports", "category": "agents" },
     { "name": "shared", "category": "business" },

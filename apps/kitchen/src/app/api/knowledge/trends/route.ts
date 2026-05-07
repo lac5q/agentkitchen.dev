@@ -1,8 +1,7 @@
 import type { NextRequest } from "next/server";
 import {
-  collectKnowledgeFiles,
+  collectCollectionFiles,
   loadCollections,
-  resolveCollectionPath,
 } from "@/lib/knowledge-collections";
 import type { KnowledgeCollection } from "@/types";
 
@@ -112,7 +111,7 @@ export async function GET(req: NextRequest) {
 
   for (const collection of collections) {
     try {
-      const files = await collectKnowledgeFiles(resolveCollectionPath(collection));
+      const files = await collectCollectionFiles(collection);
       const mtimes = files.map((file) => file.mtime);
       const points = buildPoints(bucketConfig, mtimes);
       const lastUpdated = mtimes.reduce<Date | null>(
