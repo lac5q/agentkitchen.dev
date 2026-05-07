@@ -234,7 +234,10 @@ describe("agent onboarding routes", () => {
     expect(script).toContain("\"gemini\": \"gemini\"");
     expect(script).toContain("\"qwen\": \"qwen\"");
     expect(script).toContain("\"openclaw\": \"openclaw\"");
+    expect(script).toContain("\"opencode\": \"opencode\"");
     expect(script).toContain("\"hermes\": \"hermes\"");
+    expect(script).toContain("home / \".config\" / \"opencode\" / \"opencode.json\"");
+    expect(script).toContain("\"type\": \"remote\"");
     expect(script).toContain("claude\", [\"mcp\", \"add\"");
     expect(script).toContain("gemini\", [\"mcp\", \"add\"");
     expect(script).toContain("qwen\", [\"mcp\", \"add\"");
@@ -245,7 +248,7 @@ describe("agent onboarding routes", () => {
     expect(rejected.status).toBe(403);
   });
 
-  it.each(["hermes", "openclaw", "claude", "gemini", "qwen"] as const)(
+  it.each(["hermes", "openclaw", "opencode", "claude", "gemini", "qwen"] as const)(
     "onboards %s agents with the shared bootstrap contract",
     async (platform) => {
       const { inviteRoute, registerRoute, agentsRoute } = await loadRoutes();

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { RegisteredAgent } from "@/types";
 
@@ -136,6 +136,24 @@ describe("AgentRegistryPage", () => {
       }),
       expect.any(Object)
     );
+  });
+
+  it("copies the invite with a DOM fallback when the clipboard API is unavailable", async () => {
+    const execCommand = vi.fn(() => true);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
+    Object.defineProperty(document, "execCommand", { configurable: true, value: execCommand });
+
+    render(<AgentRegistryPage />);
+
+    fireEvent.click(screen.getByText("Copy Invite"));
+
+    const [, options] = mutateInvite.mock.calls[0];
+    await options.onSuccess({ command: "curl -fsSL 'https://kitchen.example.test/invite' | bash" });
+
+    await waitFor(() => {
+      expect(screen.getByText("Invite copied to clipboard.")).toBeInTheDocument();
+    });
+    expect(execCommand).toHaveBeenCalledWith("copy");
   });
 
   it("supports A2A card registration mode", () => {

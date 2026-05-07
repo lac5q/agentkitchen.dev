@@ -17,6 +17,33 @@ import type { AgentProtocol, AgentStatus, RegisteredAgent } from "@/types";
 type ProtocolFilter = "all" | AgentProtocol;
 type StatusFilter = "all" | AgentStatus;
 
+async function copyTextToClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fall back to the selection API below for non-secure origins or denied clipboard access.
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    return document.execCommand?.("copy") ?? false;
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
 export default function AgentRegistryPage() {
   const { data, isLoading } = useRegisteredAgents();
   const registerMutation = useRegisterAgentMutation();
@@ -87,10 +114,9 @@ export default function AgentRegistryPage() {
           inviteMutation.mutate(input, {
             onSuccess: async (result) => {
               setInviteCommand(result.command);
-              try {
-                await navigator.clipboard.writeText(result.command);
+              if (await copyTextToClipboard(result.command)) {
                 setInviteStatus("Invite copied to clipboard.");
-              } catch {
+              } else {
                 setInviteStatus("Invite created. Copy it from the box below.");
               }
             },
@@ -119,8 +145,11 @@ export default function AgentRegistryPage() {
                 variant="outline"
                 size="sm"
                 onClick={async () => {
-                  await navigator.clipboard.writeText(inviteCommand);
-                  setInviteStatus("Invite copied to clipboard.");
+                  if (await copyTextToClipboard(inviteCommand)) {
+                    setInviteStatus("Invite copied to clipboard.");
+                  } else {
+                    setInviteStatus("Clipboard unavailable. Copy it from the box below.");
+                  }
                 }}
               >
                 Copy
