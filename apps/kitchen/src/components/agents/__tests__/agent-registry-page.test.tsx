@@ -5,11 +5,13 @@ import type { RegisteredAgent } from "@/types";
 const mutateRegister = vi.fn();
 const mutateRegisterA2a = vi.fn();
 const mutateDeregister = vi.fn();
+const mutateInvite = vi.fn();
 
 vi.mock("@/lib/api-client", () => ({
   useRegisteredAgents: vi.fn(),
   useRegisterAgentMutation: vi.fn(() => ({ mutate: mutateRegister, isPending: false })),
   useRegisterA2aAgentCardMutation: vi.fn(() => ({ mutate: mutateRegisterA2a, isPending: false })),
+  useCreateAgentOnboardingInviteMutation: vi.fn(() => ({ mutate: mutateInvite, isPending: false })),
   useDeregisterAgentMutation: vi.fn(() => ({ mutate: mutateDeregister, isPending: false })),
 }));
 
@@ -117,6 +119,23 @@ describe("AgentRegistryPage", () => {
 
     fireEvent.click(screen.getAllByText("Deregister")[0]);
     expect(mutateDeregister).toHaveBeenCalledWith("rest-agent");
+  });
+
+  it("creates a generic invite command for the selected platform", () => {
+    render(<AgentRegistryPage />);
+
+    fireEvent.change(screen.getByLabelText("Agent platform"), { target: { value: "hermes" } });
+    fireEvent.click(screen.getByText("Copy Invite"));
+
+    expect(mutateInvite).toHaveBeenCalledWith(
+      expect.objectContaining({
+        platform: "hermes",
+        protocol: "rest",
+        ttlMinutes: 60,
+        mcpTarget: "auto",
+      }),
+      expect.any(Object)
+    );
   });
 
   it("supports A2A card registration mode", () => {

@@ -24,6 +24,28 @@ export interface RegisterA2aAgentCardInput {
   issueApiKey?: boolean;
 }
 
+export interface CreateAgentOnboardingInviteInput {
+  agentId?: string;
+  name?: string;
+  role?: string;
+  platform?: RegisterAgentInput["platform"];
+  protocol?: RegisterAgentInput["protocol"];
+  ttlMinutes?: number;
+  kitchenUrl?: string;
+  mcpUrl?: string;
+  mcpTarget?: string;
+  operatorKey?: string;
+}
+
+export interface AgentOnboardingInviteResult {
+  ok: boolean;
+  token: string;
+  expiresAt: string;
+  command: string;
+  mcpUrl: string;
+  timestamp: string;
+}
+
 export interface OrchestrationHilDecision {
   id: string;
   runId: string;
@@ -98,6 +120,15 @@ export function registerA2aAgentCard(input: RegisterA2aAgentCardInput) {
   );
 }
 
+export function createAgentOnboardingInvite(input: CreateAgentOnboardingInviteInput) {
+  const { operatorKey, ...body } = input;
+  return mutateJSON<AgentOnboardingInviteResult>("/api/onboarding/invite", {
+    method: "POST",
+    headers: operatorKey ? { "x-kitchen-operator-key": operatorKey } : undefined,
+    body: JSON.stringify(body),
+  });
+}
+
 export function deregisterAgent(agentId: string) {
   return mutateJSON<{ ok: boolean; agent: RegisteredAgent; timestamp: string }>(
     `/api/agents/${encodeURIComponent(agentId)}`,
@@ -122,6 +153,12 @@ export function useRegisterA2aAgentCardMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["agents"] });
     },
+  });
+}
+
+export function useCreateAgentOnboardingInviteMutation() {
+  return useMutation({
+    mutationFn: createAgentOnboardingInvite,
   });
 }
 

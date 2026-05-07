@@ -65,6 +65,30 @@ describe("agent onboarding routes", () => {
     expect(new Date(body.expiresAt).getTime()).toBeGreaterThan(Date.now());
   });
 
+  it("issues a runnable generic invite command when no agent identity is scoped", async () => {
+    const { inviteRoute } = await loadRoutes();
+
+    const response = await inviteRoute.POST(
+      new Request("https://kitchen.example.test/api/onboarding/invite", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-kitchen-operator-key": "operator-secret",
+        },
+        body: JSON.stringify({ platform: "openclaw", ttlMinutes: 60 }),
+      })
+    );
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body.command).toContain("--platform 'openclaw'");
+    expect(body.command).toContain("--mcp-target 'auto'");
+    expect(body.command).not.toContain("<agent-id>");
+    expect(body.command).not.toContain("--id ");
+    expect(body.command).not.toContain("--name ");
+    expect(body.command).not.toContain("--role ");
+  });
+
   it("registers an agent from an onboarding token and returns MCP config without storing the raw key in registry output", async () => {
     const { inviteRoute, registerRoute, agentsRoute } = await loadRoutes();
 
@@ -179,6 +203,8 @@ describe("agent onboarding routes", () => {
     expect(scriptResponse.status).toBe(200);
     const script = await scriptResponse.text();
     expect(script).toContain("KITCHEN_URL=\"https://kitchen.example.test\"");
+    expect(script).toContain("AGENT_KITCHEN_AGENT_ID");
+    expect(script).toContain("AGENT_KITCHEN_AGENT_NAME");
     expect(script).toContain("\"claude\": \"claude\"");
     expect(script).toContain("\"gemini\": \"gemini\"");
     expect(script).toContain("\"qwen\": \"qwen\"");

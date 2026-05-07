@@ -4,19 +4,33 @@ import { useState } from "react";
 import type React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { RegisterA2aAgentCardInput } from "@/lib/api-client";
-import type { RegisterAgentInput } from "@/types";
+import type { CreateAgentOnboardingInviteInput, RegisterA2aAgentCardInput } from "@/lib/api-client";
+import type { AgentPlatform, RegisterAgentInput } from "@/types";
+
+const ONBOARDING_PLATFORMS: AgentPlatform[] = [
+  "openclaw",
+  "hermes",
+  "claude",
+  "gemini",
+  "qwen",
+  "chatgpt",
+  "codex",
+];
 
 interface AgentRegistrationFormProps {
   onSubmit: (input: RegisterAgentInput) => void;
   onA2aSubmit?: (input: RegisterA2aAgentCardInput) => void;
+  onCreateInvite?: (input: CreateAgentOnboardingInviteInput) => void;
   isSubmitting?: boolean;
+  isCreatingInvite?: boolean;
 }
 
 export function AgentRegistrationForm({
   onSubmit,
   onA2aSubmit,
+  onCreateInvite,
   isSubmitting = false,
+  isCreatingInvite = false,
 }: AgentRegistrationFormProps) {
   const [mode, setMode] = useState<"manual" | "a2a">("manual");
   const [name, setName] = useState("");
@@ -24,6 +38,8 @@ export function AgentRegistrationForm({
   const [capabilities, setCapabilities] = useState("");
   const [cardUrl, setCardUrl] = useState("");
   const [source, setSource] = useState<"adk" | "a2a" | "manual">("adk");
+  const [platform, setPlatform] = useState<AgentPlatform>("openclaw");
+  const [operatorKey, setOperatorKey] = useState("");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -40,7 +56,7 @@ export function AgentRegistrationForm({
       id,
       name: name.trim(),
       role: role.trim(),
-      platform: "codex",
+      platform,
       protocol: "rest",
       capabilities: capabilities
         .split(",")
@@ -52,6 +68,16 @@ export function AgentRegistrationForm({
     setName("");
     setRole("");
     setCapabilities("");
+  }
+
+  function handleCreateInvite() {
+    onCreateInvite?.({
+      platform,
+      protocol: "rest",
+      ttlMinutes: 60,
+      mcpTarget: "auto",
+      operatorKey: operatorKey.trim() || undefined,
+    });
   }
 
   return (
@@ -112,29 +138,63 @@ export function AgentRegistrationForm({
           </div>
         </div>
       ) : (
-        <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
-          <Input
-            aria-label="Agent name"
-            placeholder="Agent name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-          />
-          <Input
-            aria-label="Agent role"
-            placeholder="Role"
-            value={role}
-            onChange={(event) => setRole(event.target.value)}
-          />
-          <Input
-            aria-label="Agent capabilities"
-            placeholder="Capabilities, comma separated"
-            value={capabilities}
-            onChange={(event) => setCapabilities(event.target.value)}
-          />
-          <Button type="submit" disabled={isSubmitting}>
-            Register
-          </Button>
-        </div>
+        <>
+          <div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_10rem_auto_auto]">
+            <Input
+              aria-label="Agent name"
+              placeholder="Agent name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+            />
+            <Input
+              aria-label="Agent role"
+              placeholder="Role"
+              value={role}
+              onChange={(event) => setRole(event.target.value)}
+            />
+            <Input
+              aria-label="Agent capabilities"
+              placeholder="Capabilities, comma separated"
+              value={capabilities}
+              onChange={(event) => setCapabilities(event.target.value)}
+            />
+            <select
+              aria-label="Agent platform"
+              className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm text-slate-200"
+              value={platform}
+              onChange={(event) => setPlatform(event.target.value as AgentPlatform)}
+            >
+              {ONBOARDING_PLATFORMS.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+            <Button type="submit" disabled={isSubmitting}>
+              Register
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isCreatingInvite || !onCreateInvite}
+              onClick={handleCreateInvite}
+            >
+              Copy Invite
+            </Button>
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto]">
+            <Input
+              aria-label="Operator key"
+              placeholder="Operator key for public invite creation"
+              type="password"
+              value={operatorKey}
+              onChange={(event) => setOperatorKey(event.target.value)}
+            />
+            <span className="self-center text-xs text-slate-500">
+              Localhost can create invites without this.
+            </span>
+          </div>
+        </>
       )}
     </form>
   );

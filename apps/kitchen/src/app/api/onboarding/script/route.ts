@@ -16,6 +16,17 @@ PROTOCOL="rest"
 LOCATION="local"
 MCP_TARGET="\${AGENT_KITCHEN_MCP_TARGET:-auto}"
 
+slugify() {
+  python3 - "$1" <<'PY'
+import re
+import sys
+
+value = sys.argv[1].strip().lower()
+slug = re.sub(r"[^a-z0-9]+", "-", value).strip("-")
+print(slug or "agent")
+PY
+}
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --id) AGENT_ID="\${2:?--id requires a value}"; shift 2 ;;
@@ -32,14 +43,26 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "$AGENT_ID" || -z "$AGENT_NAME" || -z "$AGENT_ROLE" || -z "$PLATFORM" ]]; then
-  echo "Usage: onboard --id <id> --name <name> --role <role> --platform <chatgpt|codex|claude|openclaw|hermes|gemini|qwen> [--mcp-target auto|stdout|codex|claude|gemini|qwen|openclaw|hermes|none|file:/path]" >&2
+AGENT_ID="\${AGENT_ID:-\${AGENT_KITCHEN_AGENT_ID:-}}"
+AGENT_NAME="\${AGENT_NAME:-\${AGENT_KITCHEN_AGENT_NAME:-}}"
+AGENT_ROLE="\${AGENT_ROLE:-\${AGENT_KITCHEN_AGENT_ROLE:-Kitchen agent}}"
+PLATFORM="\${PLATFORM:-\${AGENT_KITCHEN_PLATFORM:-}}"
+
+if [[ -z "$PLATFORM" ]]; then
+  echo "Usage: onboard [--id <id>] [--name <name>] [--role <role>] --platform <chatgpt|codex|claude|openclaw|hermes|gemini|qwen> [--mcp-target auto|stdout|codex|claude|gemini|qwen|openclaw|hermes|none|file:/path]" >&2
   exit 2
 fi
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "python3 is required for Agent Kitchen onboarding" >&2
   exit 1
+fi
+
+if [[ -z "$AGENT_NAME" ]]; then
+  AGENT_NAME="\${USER:-Agent}@$(hostname -s 2>/dev/null || hostname 2>/dev/null || echo local)"
+fi
+if [[ -z "$AGENT_ID" ]]; then
+  AGENT_ID="$(slugify "$AGENT_NAME")"
 fi
 
 payload="$(python3 - "$TOKEN" "$AGENT_ID" "$AGENT_NAME" "$AGENT_ROLE" "$PLATFORM" "$PROTOCOL" "$LOCATION" <<'PY'

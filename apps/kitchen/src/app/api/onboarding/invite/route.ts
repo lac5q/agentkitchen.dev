@@ -59,12 +59,12 @@ export async function POST(request: Request) {
   });
 
   const flags = [
-    agentId ? `--id ${shellQuote(agentId)}` : "--id <agent-id>",
-    typeof input.name === "string" ? `--name ${shellQuote(input.name)}` : "--name <agent-name>",
-    typeof input.role === "string" ? `--role ${shellQuote(input.role)}` : "--role <agent-role>",
-    defaultPlatform ? `--platform ${shellQuote(defaultPlatform)}` : "--platform <platform>",
+    agentId ? `--id ${shellQuote(agentId)}` : null,
+    typeof input.name === "string" ? `--name ${shellQuote(input.name)}` : null,
+    typeof input.role === "string" ? `--role ${shellQuote(input.role)}` : null,
+    defaultPlatform ? `--platform ${shellQuote(defaultPlatform)}` : null,
     `--mcp-target ${shellQuote(typeof input.mcpTarget === "string" ? input.mcpTarget : "auto")}`,
-  ];
+  ].filter(Boolean);
   const command = `curl -fsSL ${shellQuote(`${payload.kitchenUrl}/api/onboarding/script?token=${encodeURIComponent(token)}`)} | bash -s -- ${flags.join(" ")}`;
 
   return Response.json({

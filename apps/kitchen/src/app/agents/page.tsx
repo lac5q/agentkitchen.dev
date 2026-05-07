@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  useCreateAgentOnboardingInviteMutation,
   useDeregisterAgentMutation,
   useRegisterA2aAgentCardMutation,
   useRegisterAgentMutation,
@@ -10,6 +11,7 @@ import {
 import { AgentRegistryDrawer } from "@/components/agents/agent-registry-drawer";
 import { AgentRegistrationForm } from "@/components/agents/agent-registration-form";
 import { AgentRegistryTable } from "@/components/agents/agent-registry-table";
+import { Button } from "@/components/ui/button";
 import type { AgentProtocol, AgentStatus, RegisteredAgent } from "@/types";
 
 type ProtocolFilter = "all" | AgentProtocol;
@@ -19,11 +21,14 @@ export default function AgentRegistryPage() {
   const { data, isLoading } = useRegisteredAgents();
   const registerMutation = useRegisterAgentMutation();
   const registerA2aMutation = useRegisterA2aAgentCardMutation();
+  const inviteMutation = useCreateAgentOnboardingInviteMutation();
   const deregisterMutation = useDeregisterAgentMutation();
   const [protocol, setProtocol] = useState<ProtocolFilter>("all");
   const [status, setStatus] = useState<StatusFilter>("all");
   const [selected, setSelected] = useState<RegisteredAgent | null>(null);
   const [oneTimeKey, setOneTimeKey] = useState<string | null>(null);
+  const [inviteCommand, setInviteCommand] = useState<string | null>(null);
+  const [inviteStatus, setInviteStatus] = useState<string | null>(null);
 
   const agents = useMemo(
     () => (data?.agents ?? []) as RegisteredAgent[],
@@ -77,12 +82,53 @@ export default function AgentRegistryPage() {
             onSuccess: (result) => setOneTimeKey(result.apiKey ?? null),
           })
         }
+        onCreateInvite={(input) => {
+          setInviteStatus(null);
+          inviteMutation.mutate(input, {
+            onSuccess: async (result) => {
+              setInviteCommand(result.command);
+              try {
+                await navigator.clipboard.writeText(result.command);
+                setInviteStatus("Invite copied to clipboard.");
+              } catch {
+                setInviteStatus("Invite created. Copy it from the box below.");
+              }
+            },
+            onError: (error) => {
+              setInviteStatus(error instanceof Error ? error.message : "Invite creation failed.");
+            },
+          });
+        }}
+        isCreatingInvite={inviteMutation.isPending}
       />
 
       {oneTimeKey && (
         <div className="border border-amber-500/30 bg-amber-500/10 p-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-amber-400">One-time API key</p>
           <code className="mt-1 block break-all text-sm text-amber-100">{oneTimeKey}</code>
+        </div>
+      )}
+
+      {(inviteCommand || inviteStatus) && (
+        <div className="border border-sky-500/30 bg-sky-500/10 p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-sky-300">Generic onboarding invite</p>
+            {inviteCommand && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(inviteCommand);
+                  setInviteStatus("Invite copied to clipboard.");
+                }}
+              >
+                Copy
+              </Button>
+            )}
+          </div>
+          {inviteStatus && <p className="mt-1 text-xs text-sky-100">{inviteStatus}</p>}
+          {inviteCommand && <code className="mt-2 block break-all text-sm text-sky-50">{inviteCommand}</code>}
         </div>
       )}
 
