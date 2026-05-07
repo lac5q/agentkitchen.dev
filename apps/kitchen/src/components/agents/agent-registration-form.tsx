@@ -8,6 +8,7 @@ import type { CreateAgentOnboardingInviteInput, RegisterA2aAgentCardInput } from
 import type { AgentPlatform, RegisterAgentInput } from "@/types";
 
 const ONBOARDING_PLATFORMS: AgentPlatform[] = [
+  "opencode",
   "openclaw",
   "hermes",
   "claude",
