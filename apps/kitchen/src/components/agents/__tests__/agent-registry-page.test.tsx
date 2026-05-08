@@ -139,6 +139,28 @@ describe("AgentRegistryPage", () => {
     );
   });
 
+  it("copies an LLM-ready onboarding prompt when an invite is created", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+
+    render(<AgentRegistryPage />);
+
+    fireEvent.click(screen.getByText("Copy Invite"));
+
+    const [, options] = mutateInvite.mock.calls[0];
+    await options.onSuccess({ command: "curl -fsSL 'https://kitchen.example.test/invite' | bash" });
+
+    await waitFor(() => {
+      expect(screen.getByText("Onboarding prompt copied to clipboard.")).toBeInTheDocument();
+    });
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("Run this Agent Kitchen onboarding command exactly as written.")
+    );
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringContaining("curl -fsSL 'https://kitchen.example.test/invite' | bash")
+    );
+  });
+
   it("copies the invite with a DOM fallback when the clipboard API is unavailable", async () => {
     const execCommand = vi.fn(() => true);
     Object.defineProperty(navigator, "clipboard", { configurable: true, value: undefined });
@@ -152,7 +174,7 @@ describe("AgentRegistryPage", () => {
     await options.onSuccess({ command: "curl -fsSL 'https://kitchen.example.test/invite' | bash" });
 
     await waitFor(() => {
-      expect(screen.getByText("Invite copied to clipboard.")).toBeInTheDocument();
+      expect(screen.getByText("Onboarding prompt copied to clipboard.")).toBeInTheDocument();
     });
     expect(execCommand).toHaveBeenCalledWith("copy");
   });

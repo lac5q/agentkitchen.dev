@@ -17,6 +17,18 @@ import type { AgentProtocol, AgentStatus, RegisteredAgent } from "@/types";
 type ProtocolFilter = "all" | AgentProtocol;
 type StatusFilter = "all" | AgentStatus;
 
+function formatAgentOnboardingPrompt(command: string) {
+  return [
+    "Run this Agent Kitchen onboarding command exactly as written.",
+    "It will register you, save your per-agent credentials, and install the Agent Kitchen MCP server for your runtime.",
+    "After it finishes, tell me whether it succeeded and include the onboarding report path it printed.",
+    "",
+    "```bash",
+    command,
+    "```",
+  ].join("\n");
+}
+
 async function copyTextToClipboard(text: string) {
   if (navigator.clipboard?.writeText) {
     try {
@@ -113,9 +125,10 @@ export default function AgentRegistryPage() {
           setInviteStatus(null);
           inviteMutation.mutate(input, {
             onSuccess: async (result) => {
-              setInviteCommand(result.command);
-              if (await copyTextToClipboard(result.command)) {
-                setInviteStatus("Invite copied to clipboard.");
+              const prompt = formatAgentOnboardingPrompt(result.command);
+              setInviteCommand(prompt);
+              if (await copyTextToClipboard(prompt)) {
+                setInviteStatus("Onboarding prompt copied to clipboard.");
               } else {
                 setInviteStatus("Invite created. Copy it from the box below.");
               }
@@ -146,7 +159,7 @@ export default function AgentRegistryPage() {
                 size="sm"
                 onClick={async () => {
                   if (await copyTextToClipboard(inviteCommand)) {
-                    setInviteStatus("Invite copied to clipboard.");
+                    setInviteStatus("Onboarding prompt copied to clipboard.");
                   } else {
                     setInviteStatus("Clipboard unavailable. Copy it from the box below.");
                   }
@@ -157,7 +170,7 @@ export default function AgentRegistryPage() {
             )}
           </div>
           {inviteStatus && <p className="mt-1 text-xs text-sky-100">{inviteStatus}</p>}
-          {inviteCommand && <code className="mt-2 block break-all text-sm text-sky-50">{inviteCommand}</code>}
+          {inviteCommand && <pre className="mt-2 whitespace-pre-wrap break-words text-sm text-sky-50">{inviteCommand}</pre>}
         </div>
       )}
 
