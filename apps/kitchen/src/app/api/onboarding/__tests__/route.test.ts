@@ -36,16 +36,13 @@ describe("agent onboarding routes", () => {
     delete process.env.KITCHEN_ONBOARDING_SECRET;
   });
 
-  it("issues a short bootstrap command for an operator-approved invite", async () => {
+  it("issues a short bootstrap command without an operator key", async () => {
     const { inviteRoute } = await loadRoutes();
 
     const response = await inviteRoute.POST(
       new Request("https://kitchen.example.test/api/onboarding/invite", {
         method: "POST",
-        headers: {
-          "content-type": "application/json",
-          "x-kitchen-operator-key": "operator-secret",
-        },
+        headers: { "content-type": "application/json" },
         body: JSON.stringify({
           agentId: "maria",
           name: "Maria",

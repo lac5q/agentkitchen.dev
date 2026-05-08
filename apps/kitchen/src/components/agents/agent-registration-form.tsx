@@ -39,8 +39,7 @@ export function AgentRegistrationForm({
   const [capabilities, setCapabilities] = useState("");
   const [cardUrl, setCardUrl] = useState("");
   const [source, setSource] = useState<"adk" | "a2a" | "manual">("adk");
-  const [platform, setPlatform] = useState<AgentPlatform>("openclaw");
-  const [operatorKey, setOperatorKey] = useState("");
+  const [platform, setPlatform] = useState<AgentPlatform>("opencode");
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -77,7 +76,6 @@ export function AgentRegistrationForm({
       protocol: "rest",
       ttlMinutes: 60,
       mcpTarget: "auto",
-      operatorKey: operatorKey.trim() || undefined,
     });
   }
 
@@ -182,18 +180,6 @@ export function AgentRegistrationForm({
             >
               Copy Invite
             </Button>
-          </div>
-          <div className="mt-3 grid gap-3 md:grid-cols-[1fr_auto]">
-            <Input
-              aria-label="Operator key"
-              placeholder="Operator key for public invite creation"
-              type="password"
-              value={operatorKey}
-              onChange={(event) => setOperatorKey(event.target.value)}
-            />
-            <span className="self-center text-xs text-slate-500">
-              Localhost can create invites without this.
-            </span>
           </div>
         </>
       )}

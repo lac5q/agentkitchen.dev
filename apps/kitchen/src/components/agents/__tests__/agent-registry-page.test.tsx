@@ -185,21 +185,6 @@ describe("AgentRegistryPage", () => {
     expect(execCommand).toHaveBeenCalledWith("copy");
   });
 
-  it("shows a clear operator-key error when public invite creation is unauthorized", async () => {
-    render(<AgentRegistryPage />);
-
-    fireEvent.click(screen.getByText("Copy Invite"));
-
-    const [, options] = mutateInvite.mock.calls[0];
-    options.onError(new Error("/api/onboarding/invite: Registry write authorization required"));
-
-    await waitFor(() => {
-      expect(screen.getByText("Invite not created")).toBeInTheDocument();
-    });
-    expect(screen.getByText("Operator key required. Paste the operator key, then click Copy Invite again.")).toBeInTheDocument();
-    expect(screen.queryByText("Generic onboarding invite")).not.toBeInTheDocument();
-  });
-
   it("supports A2A card registration mode", () => {
     render(<AgentRegistryPage />);
 
