@@ -17,6 +17,14 @@ import type { AgentProtocol, AgentStatus, RegisteredAgent } from "@/types";
 type ProtocolFilter = "all" | AgentProtocol;
 type StatusFilter = "all" | AgentStatus;
 
+function inviteErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : "Invite creation failed.";
+  if (message.includes("Registry write authorization required")) {
+    return "Operator key required. Paste the operator key, then click Copy Invite again.";
+  }
+  return message;
+}
+
 function formatAgentOnboardingPrompt(command: string) {
   return [
     "Run this Agent Kitchen onboarding command exactly as written.",
@@ -124,8 +132,13 @@ export default function AgentRegistryPage() {
         }
         onCreateInvite={(input) => {
           setInviteStatus(null);
+          setInviteCommand(null);
           inviteMutation.mutate(input, {
             onSuccess: async (result) => {
+              if (!result.command) {
+                setInviteStatus("Invite response did not include a command. Try again.");
+                return;
+              }
               const prompt = formatAgentOnboardingPrompt(result.command);
               setInviteCommand(prompt);
               if (await copyTextToClipboard(prompt)) {
@@ -135,7 +148,8 @@ export default function AgentRegistryPage() {
               }
             },
             onError: (error) => {
-              setInviteStatus(error instanceof Error ? error.message : "Invite creation failed.");
+              setInviteCommand(null);
+              setInviteStatus(inviteErrorMessage(error));
             },
           });
         }}
@@ -150,9 +164,11 @@ export default function AgentRegistryPage() {
       )}
 
       {(inviteCommand || inviteStatus) && (
-        <div className="border border-sky-500/30 bg-sky-500/10 p-3">
+        <div className={`border p-3 ${inviteCommand ? "border-sky-500/30 bg-sky-500/10" : "border-rose-500/30 bg-rose-500/10"}`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-sky-300">Generic onboarding invite</p>
+            <p className={`text-xs font-semibold uppercase tracking-wide ${inviteCommand ? "text-sky-300" : "text-rose-300"}`}>
+              {inviteCommand ? "Generic onboarding invite" : "Invite not created"}
+            </p>
             {inviteCommand && (
               <Button
                 type="button"
@@ -170,7 +186,7 @@ export default function AgentRegistryPage() {
               </Button>
             )}
           </div>
-          {inviteStatus && <p className="mt-1 text-xs text-sky-100">{inviteStatus}</p>}
+          {inviteStatus && <p className={`mt-1 text-xs ${inviteCommand ? "text-sky-100" : "text-rose-100"}`}>{inviteStatus}</p>}
           {inviteCommand && <pre className="mt-2 whitespace-pre-wrap break-words text-sm text-sky-50">{inviteCommand}</pre>}
         </div>
       )}
