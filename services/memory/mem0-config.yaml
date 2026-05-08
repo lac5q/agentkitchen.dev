@@ -15,7 +15,7 @@ llm:
 embedder:
   provider: openai
   config:
-    model: jinaai/jina-clip-v2
+    model: clip-ViT-L-14
     embedding_dims: 768
     api_key_env: JINA_API_KEY
-    api_base: http://31.13.237.164:8000/v1
+    api_base: http://31.13.237.164:40197/v1
