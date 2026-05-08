@@ -164,10 +164,10 @@ export default function AgentRegistryPage() {
       )}
 
       {(inviteCommand || inviteStatus) && (
-        <div className={`border p-3 ${inviteCommand ? "border-sky-500/30 bg-sky-500/10" : "border-rose-500/30 bg-rose-500/10"}`}>
+        <div className={`border p-4 ${inviteCommand ? "border-sky-300 bg-white" : "border-rose-500/30 bg-rose-500/10"}`}>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className={`text-xs font-semibold uppercase tracking-wide ${inviteCommand ? "text-sky-300" : "text-rose-300"}`}>
-              {inviteCommand ? "Generic onboarding invite" : "Invite not created"}
+            <p className={`text-xs font-semibold uppercase tracking-wide ${inviteCommand ? "text-sky-700" : "text-rose-300"}`}>
+              {inviteCommand ? "Agent onboarding prompt" : "Invite not created"}
             </p>
             {inviteCommand && (
               <Button
@@ -186,8 +186,12 @@ export default function AgentRegistryPage() {
               </Button>
             )}
           </div>
-          {inviteStatus && <p className={`mt-1 text-xs ${inviteCommand ? "text-sky-100" : "text-rose-100"}`}>{inviteStatus}</p>}
-          {inviteCommand && <pre className="mt-2 whitespace-pre-wrap break-words text-sm text-sky-50">{inviteCommand}</pre>}
+          {inviteStatus && <p className={`mt-1 text-xs ${inviteCommand ? "text-slate-600" : "text-rose-100"}`}>{inviteStatus}</p>}
+          {inviteCommand && (
+            <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md border border-slate-200 bg-slate-950 p-3 font-mono text-sm leading-6 text-slate-50">
+              {inviteCommand}
+            </pre>
+          )}
         </div>
       )}
 

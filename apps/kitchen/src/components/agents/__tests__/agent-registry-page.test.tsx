@@ -165,6 +165,7 @@ describe("AgentRegistryPage", () => {
     expect(screen.getByText(/Command to run:/)).toHaveTextContent(
       "curl -fsSL 'https://kitchen.example.test/invite' | bash"
     );
+    expect(screen.getByText("Agent onboarding prompt")).toBeInTheDocument();
   });
 
   it("copies the invite with a DOM fallback when the clipboard API is unavailable", async () => {
