@@ -1,4 +1,4 @@
-name: agentkitchen-dev
+name: agent-kitchen
 
 services:
   kitchen:
