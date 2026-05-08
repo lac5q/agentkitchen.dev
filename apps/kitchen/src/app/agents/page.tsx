@@ -17,6 +17,45 @@ import type { AgentProtocol, AgentStatus, RegisteredAgent } from "@/types";
 type ProtocolFilter = "all" | AgentProtocol;
 type StatusFilter = "all" | AgentStatus;
 
+function formatAgentOnboardingPrompt(command: string) {
+  return [
+    "Run this Agent Kitchen onboarding command exactly as written.",
+    "It will register you, save your per-agent credentials, and install the Agent Kitchen MCP server for your runtime.",
+    "After it finishes, tell me whether it succeeded and include the onboarding report path it printed.",
+    "",
+    "```bash",
+    command,
+    "```",
+  ].join("\n");
+}
+
+async function copyTextToClipboard(text: string) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fall back to the selection API below for non-secure origins or denied clipboard access.
+    }
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+
+  try {
+    return document.execCommand?.("copy") ?? false;
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(textarea);
+  }
+}
+
 export default function AgentRegistryPage() {
   const { data, isLoading } = useRegisteredAgents();
   const registerMutation = useRegisterAgentMutation();
@@ -86,11 +125,11 @@ export default function AgentRegistryPage() {
           setInviteStatus(null);
           inviteMutation.mutate(input, {
             onSuccess: async (result) => {
-              setInviteCommand(result.command);
-              try {
-                await navigator.clipboard.writeText(result.command);
-                setInviteStatus("Invite copied to clipboard.");
-              } catch {
+              const prompt = formatAgentOnboardingPrompt(result.command);
+              setInviteCommand(prompt);
+              if (await copyTextToClipboard(prompt)) {
+                setInviteStatus("Onboarding prompt copied to clipboard.");
+              } else {
                 setInviteStatus("Invite created. Copy it from the box below.");
               }
             },
@@ -119,8 +158,11 @@ export default function AgentRegistryPage() {
                 variant="outline"
                 size="sm"
                 onClick={async () => {
-                  await navigator.clipboard.writeText(inviteCommand);
-                  setInviteStatus("Invite copied to clipboard.");
+                  if (await copyTextToClipboard(inviteCommand)) {
+                    setInviteStatus("Onboarding prompt copied to clipboard.");
+                  } else {
+                    setInviteStatus("Clipboard unavailable. Copy it from the box below.");
+                  }
                 }}
               >
                 Copy
@@ -128,7 +170,7 @@ export default function AgentRegistryPage() {
             )}
           </div>
           {inviteStatus && <p className="mt-1 text-xs text-sky-100">{inviteStatus}</p>}
-          {inviteCommand && <code className="mt-2 block break-all text-sm text-sky-50">{inviteCommand}</code>}
+          {inviteCommand && <pre className="mt-2 whitespace-pre-wrap break-words text-sm text-sky-50">{inviteCommand}</pre>}
         </div>
       )}
 

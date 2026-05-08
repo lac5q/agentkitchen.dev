@@ -97,7 +97,7 @@ describe("agent onboarding routes", () => {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          "x-forwarded-host": "kitchen.epiloguecapital.com",
+          "x-forwarded-host": "kitchen.public.example",
           "x-forwarded-proto": "https",
           "x-kitchen-operator-key": "operator-secret",
         },
@@ -107,8 +107,8 @@ describe("agent onboarding routes", () => {
 
     expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body.command).toContain("https://kitchen.epiloguecapital.com/api/onboarding/script?token=");
-    expect(body.mcpUrl).toBe("https://kitchen.epiloguecapital.com/mcp");
+    expect(body.command).toContain("https://kitchen.public.example/api/onboarding/script?token=");
+    expect(body.mcpUrl).toBe("https://kitchen.public.example/mcp");
   });
 
   it("registers an agent from an onboarding token and returns MCP config without storing the raw key in registry output", async () => {
@@ -234,7 +234,10 @@ describe("agent onboarding routes", () => {
     expect(script).toContain("\"gemini\": \"gemini\"");
     expect(script).toContain("\"qwen\": \"qwen\"");
     expect(script).toContain("\"openclaw\": \"openclaw\"");
+    expect(script).toContain("\"opencode\": \"opencode\"");
     expect(script).toContain("\"hermes\": \"hermes\"");
+    expect(script).toContain("home / \".config\" / \"opencode\" / \"opencode.json\"");
+    expect(script).toContain("\"type\": \"remote\"");
     expect(script).toContain("claude\", [\"mcp\", \"add\"");
     expect(script).toContain("gemini\", [\"mcp\", \"add\"");
     expect(script).toContain("qwen\", [\"mcp\", \"add\"");
@@ -245,7 +248,7 @@ describe("agent onboarding routes", () => {
     expect(rejected.status).toBe(403);
   });
 
-  it.each(["hermes", "openclaw", "claude", "gemini", "qwen"] as const)(
+  it.each(["hermes", "openclaw", "opencode", "claude", "gemini", "qwen"] as const)(
     "onboards %s agents with the shared bootstrap contract",
     async (platform) => {
       const { inviteRoute, registerRoute, agentsRoute } = await loadRoutes();

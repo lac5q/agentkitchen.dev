@@ -49,7 +49,7 @@ AGENT_ROLE="\${AGENT_ROLE:-\${AGENT_KITCHEN_AGENT_ROLE:-Kitchen agent}}"
 PLATFORM="\${PLATFORM:-\${AGENT_KITCHEN_PLATFORM:-}}"
 
 if [[ -z "$PLATFORM" ]]; then
-  echo "Usage: onboard [--id <id>] [--name <name>] [--role <role>] --platform <chatgpt|codex|claude|openclaw|hermes|gemini|qwen> [--mcp-target auto|stdout|codex|claude|gemini|qwen|openclaw|hermes|none|file:/path]" >&2
+  echo "Usage: onboard [--id <id>] [--name <name>] [--role <role>] --platform <chatgpt|codex|claude|opencode|openclaw|hermes|gemini|qwen> [--mcp-target auto|stdout|codex|claude|gemini|qwen|opencode|openclaw|hermes|none|file:/path]" >&2
   exit 2
 fi
 
@@ -208,6 +208,19 @@ def install_openclaw():
     merge_json(home / ".openclaw" / "openclaw.json", {"mcp": {"servers": {"agentkitchen": streamable_entry}}})
     return True
 
+def install_opencode():
+    merge_json(home / ".config" / "opencode" / "opencode.json", {
+        "$schema": "https://opencode.ai/config.json",
+        "mcp": {
+            "agentkitchen": {
+                "type": "remote",
+                "url": mcp_url,
+                "enabled": True,
+            }
+        },
+    })
+    return True
+
 def install_hermes():
     merge_hermes_yaml(home / ".hermes" / "config.yaml")
     return True
@@ -236,6 +249,7 @@ def install_explicit(selected):
         "claude": install_claude,
         "gemini": install_gemini,
         "qwen": install_qwen,
+        "opencode": install_opencode,
         "openclaw": install_openclaw,
         "hermes": install_hermes,
     }
@@ -252,7 +266,7 @@ def install_auto():
         "gemini": "gemini",
         "qwen": "qwen",
         "openclaw": "openclaw",
-        "opencode": "openclaw",
+        "opencode": "opencode",
         "hermes": "hermes",
     }
     return install_explicit(platform_targets.get(platform, "stdout"))
