@@ -8,7 +8,8 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-DOCKER_DIR="$SCRIPT_DIR/docker"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+DOCKER_DIR="$PROJECT_DIR/docker"
 IMAGE_NAME="agentkitchen/embedding-server"
 IMAGE_TAG="latest"
 FULL_IMAGE="$IMAGE_NAME:$IMAGE_TAG"
