@@ -99,7 +99,13 @@ c6d246f migrate embeddings from Gemini to jina-clip-v2 on Vast.ai
 
 ### Working Configuration (2026-05-09)
 - **Instance**: Vast.ai RTX 4090 (36385878)
-- **SSH Tunnel**: localhost:8001 -> 85.51.34.67:8000
+- **Direct Endpoint**: http://85.51.34.67:42362/v1
 - **Model**: clip-ViT-L-14 (768-dim, multimodal)
 - **mem0**: Connected and tested ✓
-- **Cost**: ~$0.33/hr when running (batch mode)
+- **Cost**: ~$0.29/hr when running (batch mode)
+- **Auto-destroy**: Enabled (60s after embedding completes)
+
+### Instance Cleanup (2026-05-09)
+- **Destroyed 7 extra instances**: 36385886, 36385901, 36385906, 36385921, 36385928, 36386006, 36387801
+- **Savings**: ~$200+/month (from ~$2.30/hr to $0.29/hr)
+- **Remaining**: 1 instance (36385878) for batch processing
