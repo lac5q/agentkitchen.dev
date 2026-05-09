@@ -16,6 +16,13 @@
 | QMD Index | 3,879 files | Local | 1,532 docs removed |
 | SSH Tunnel | **Inactive** | Free | Destroyed with instance |
 
+### Security Fixes (2026-05-09)
+- ✅ **GitHub Secret Scanning Alert #1**: Resolved
+  - Removed hardcoded Telegram bot token from `services/memory/healthcheck.sh`
+  - Removed hardcoded Qdrant API key from `services/memory/healthcheck.sh`
+  - Replaced with environment variables: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `QDRANT_API_KEY`
+  - **NOTE**: Tokens need to be rotated (were exposed in git history)
+
 ### Vast.ai Instance
 - **ID**: 36385878
 - **Status**: **DESTROYED** (2026-05-09)
