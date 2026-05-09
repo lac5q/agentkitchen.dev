@@ -224,6 +224,10 @@ main() {
     run_embeddings
     auto_destroy
     
+    # Run post-batch verification
+    log "Running post-batch verification..."
+    "$SCRIPT_DIR/verify-cleanup.sh"
+    
     log "=== Batch Complete ==="
 }
 
