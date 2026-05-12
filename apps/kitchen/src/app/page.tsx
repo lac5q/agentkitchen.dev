@@ -447,10 +447,10 @@ function LandingPage() {
           <div>
             <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#7a2a1e]">Video demo</p>
             <h2 className="mt-3 text-[42px] font-semibold leading-tight tracking-normal text-[#0f0f0e]">
-              See the operator loop in motion.
+              See the memory loop in motion.
             </h2>
             <p className="mt-4 text-[17px] leading-8 text-[#4a4a45]">
-              The demo shows memory search, knowledge access, agent engagement, and skill surfaces working as one MemroOS operator workflow.
+              A 56-second animated product demo with a custom electronic score, starting with memory as the core value prop and moving through context packs, teams, skills, trust, and runtime.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
@@ -472,8 +472,8 @@ function LandingPage() {
             <video
               className="aspect-video w-full bg-black"
               controls
-              muted
               playsInline
+              poster="/demo/memroos-demo-poster.jpg"
               preload="metadata"
             >
               <source src="/demo/memroos-demo.mp4" type="video/mp4" />
