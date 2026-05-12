@@ -77,7 +77,7 @@ export function HiveFeed({ limit = 20 }: { limit?: number }) {
       {/* Section header */}
       <div className="mb-4 flex items-center gap-2">
         <span className="text-xs font-medium uppercase tracking-wide text-amber-500">
-          Hive Feed
+          Activity Feed
         </span>
         <div className="h-px flex-1 bg-amber-900/40" />
       </div>
@@ -92,7 +92,7 @@ export function HiveFeed({ limit = 20 }: { limit?: number }) {
       {/* Empty state */}
       {!isLoading && actions.length === 0 && (
         <p className="py-10 text-center text-sm text-slate-500">
-          No hive activity yet.
+          No activity yet.
         </p>
       )}
 

@@ -6,13 +6,19 @@ import { Sidebar } from "./sidebar";
 import { TopBar } from "./top-bar";
 import { useHealth } from "@/lib/api-client";
 
-export function Shell({ children }: { children: React.ReactNode }) {
+export function Shell({
+  children,
+  publicLandingHost,
+}: {
+  children: React.ReactNode;
+  publicLandingHost: boolean;
+}) {
   const { data } = useHealth();
   const services = data?.services || [];
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
-  if (pathname === "/") {
+  if (pathname === "/" && publicLandingHost) {
     return <>{children}</>;
   }
 

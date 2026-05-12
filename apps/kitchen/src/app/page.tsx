@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import {
   ArrowRight,
   Brain,
@@ -12,6 +13,14 @@ import {
   Send,
 } from "lucide-react";
 import { KangarooMark } from "@/components/layout/brand-mark";
+import { OperatorHome } from "@/components/workspace/operator-home";
+
+const PUBLIC_LANDING_HOSTS = new Set(["memroos.com", "www.memroos.com", "memroos.vercel.app"]);
+
+function isPublicLandingHost(host: string): boolean {
+  const normalized = host.split(":")[0]?.toLowerCase() ?? "";
+  return PUBLIC_LANDING_HOSTS.has(normalized) || normalized.endsWith(".vercel.app");
+}
 
 const workflows = [
   {
@@ -76,7 +85,7 @@ const testimonials = [
   },
 ];
 
-export default function LandingPage() {
+function LandingPage() {
   return (
     <main className="min-h-screen overflow-hidden bg-[#fafaf7] text-[#1f1f1c]">
       <section className="relative isolate border-b border-[#c9c9c2] bg-[linear-gradient(180deg,#fafaf7_0%,#f2f2ee_100%)]">
@@ -312,4 +321,9 @@ export default function LandingPage() {
       </section>
     </main>
   );
+}
+
+export default async function HomePage() {
+  const host = (await headers()).get("host") ?? "";
+  return isPublicLandingHost(host) ? <LandingPage /> : <OperatorHome />;
 }
