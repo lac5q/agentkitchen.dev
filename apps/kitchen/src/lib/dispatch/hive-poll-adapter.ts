@@ -2,13 +2,13 @@ import type { RemoteAgentConfig } from "@/types";
 import type { AgentAdapter, DispatchTask, DispatchResult } from "./types";
 
 function pollUrl(agentId: string): string {
-  const baseUrl = process.env.HIVE_PUBLIC_URL ?? "https://kitchen.epiloguecapital.com/api/hive";
-  const url = new URL(baseUrl);
+  const baseUrl = process.env.HIVE_PUBLIC_URL ?? "/api/hive";
+  const url = new URL(baseUrl, "http://localhost");
   url.searchParams.set("type", "delegation");
   url.searchParams.set("to_agent", agentId);
   url.searchParams.set("status", "pending");
   url.searchParams.set("limit", "1");
-  return url.toString();
+  return /^https?:\/\//.test(baseUrl) ? url.toString() : `${url.pathname}${url.search}`;
 }
 
 export const hivePollAdapter: AgentAdapter = {

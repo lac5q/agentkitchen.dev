@@ -9,8 +9,10 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 import uvicorn
 
-# Add venv to path
-sys.path.insert(0, "/Users/lcalderon/github/knowledge/.venv/lib/python3.14/site-packages")
+# Optional local venv override for machines that keep sentence-transformers elsewhere.
+site_packages = os.environ.get("KNOWLEDGE_VENV_SITE_PACKAGES")
+if site_packages:
+    sys.path.insert(0, site_packages)
 
 from sentence_transformers import SentenceTransformer
 

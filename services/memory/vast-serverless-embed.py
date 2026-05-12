@@ -12,8 +12,10 @@ import time
 import logging
 from typing import List, Union
 
-# Add venv to path
-sys.path.insert(0, "/Users/lcalderon/github/knowledge/.venv/lib/python3.14/site-packages")
+# Optional local venv override for machines that keep the Vast SDK elsewhere.
+site_packages = os.environ.get("KNOWLEDGE_VENV_SITE_PACKAGES")
+if site_packages:
+    sys.path.insert(0, site_packages)
 
 try:
     from vastai import Serverless
@@ -25,11 +27,14 @@ except ImportError:
 import asyncio
 import httpx
 
+log_dir = os.environ.get("SERVERLESS_EMBED_LOG_DIR", os.path.join(os.path.dirname(__file__), "logs"))
+os.makedirs(log_dir, exist_ok=True)
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('/Users/lcalderon/github/agent-kitchen/services/memory/logs/serverless-embed.log'),
+        logging.FileHandler(os.path.join(log_dir, "serverless-embed.log")),
         logging.StreamHandler()
     ]
 )

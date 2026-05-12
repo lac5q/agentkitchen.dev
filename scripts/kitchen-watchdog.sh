@@ -16,9 +16,11 @@
 
 set -u
 
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+REPO_ROOT=$(cd "$SCRIPT_DIR/.." && pwd)
 STATE=/tmp/kitchen-watchdog.fails
 KILL_LOG=/tmp/kitchen-watchdog.kills   # newline-separated unix timestamps
-LOG=/Users/lcalderon/github/agent-kitchen/logs/watchdog.log
+LOG=${KITCHEN_WATCHDOG_LOG:-"$REPO_ROOT/logs/watchdog.log"}
 LABEL=com.agent-kitchen
 URL=http://localhost:3002/
 TIMEOUT=5
@@ -61,6 +63,7 @@ fi
 prev=$(cat "$STATE" 2>/dev/null || echo 0)
 fails=$((prev + 1))
 echo "$fails" > "$STATE"
+mkdir -p "$(dirname "$LOG")" 2>/dev/null || true
 echo "[$(date -Iseconds)] health=$code fails=$fails/$THRESHOLD pid=$PID etime=${etime_secs}s" >> "$LOG"
 
 if [ "$fails" -lt "$THRESHOLD" ]; then
