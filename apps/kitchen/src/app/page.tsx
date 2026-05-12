@@ -1,16 +1,25 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 import {
+  Archive,
   ArrowRight,
   Brain,
   BriefcaseBusiness,
   CheckCircle2,
   Code2,
   Database,
+  FileSearch,
+  Gauge,
   GitBranch,
+  KeyRound,
+  MessageSquareText,
   PackageSearch,
   RefreshCw,
   Send,
+  ShieldCheck,
+  Sparkles,
+  UsersRound,
+  Wrench,
 } from "lucide-react";
 import { KangarooMark } from "@/components/layout/brand-mark";
 import { OperatorHome } from "@/components/workspace/operator-home";
@@ -57,11 +66,129 @@ const proofPoints = [
   { value: "1", label: "context plane", detail: "One shared source of retained knowledge across agents, files, and decisions." },
 ];
 
+const topValueFeatures = [
+  {
+    number: "01",
+    title: "Memory that every agent can use",
+    icon: Archive,
+    detail: "MemroOS keeps decisions, customer context, files, conversations, outcomes, and prior work in one durable memory layer.",
+    outcome: "No more re-explaining the business. Every agent starts with what the company already learned.",
+  },
+  {
+    number: "02",
+    title: "Runtime context packs before dispatch",
+    icon: Send,
+    detail: "MemroOS assembles the right memories, knowledge files, and skills before product, sales, or engineering work begins.",
+    outcome: "Fewer back-and-forths. Better first responses from every agent.",
+  },
+  {
+    number: "03",
+    title: "One place to engage active agents",
+    icon: MessageSquareText,
+    detail: "Chat, voice, dispatch, standups, live delegations, and agent status sit in one operator surface.",
+    outcome: "Small teams get a practical agent command center without enterprise ceremony.",
+  },
+  {
+    number: "04",
+    title: "Skills from repeated work",
+    icon: Wrench,
+    detail: "Successful repeated workflows become durable procedures, playbooks, and reusable skill signals.",
+    outcome: "Institutional knowledge compounds instead of living in one-off chats.",
+  },
+  {
+    number: "05",
+    title: "Trust, evals, and speed built in",
+    icon: ShieldCheck,
+    detail: "Security checks, permissions, human approval, model routing, evaluation signals, and caching support safer agent work.",
+    outcome: "Ship with confidence, audit what happened, and keep agent work fast.",
+  },
+];
+
 const proofs = [
   "Context packs before agent dispatch",
   "Source-backed memory for product, sales, and engineering",
   "Skills promoted from repeated successful workflows",
   "Governance hooks for identity, permissions, and audit",
+];
+
+const featureGroups = [
+  {
+    title: "Memory",
+    icon: Brain,
+    items: [
+      "Shared semantic, graph, and episodic memory",
+      "Multi-memory search",
+      "Memory timeline and retention signals",
+      "Memory access controls",
+      "Outcome capture after agent work",
+    ],
+  },
+  {
+    title: "Knowledge",
+    icon: FileSearch,
+    items: [
+      "Knowledge file ingest and indexing",
+      "Freshness and corpus health",
+      "Source-backed retrieval",
+      "Collections for teams and workflows",
+      "Docs, notes, and repo context",
+    ],
+  },
+  {
+    title: "Agents",
+    icon: UsersRound,
+    items: [
+      "Canonical agent registry",
+      "Local, REST, UI, and A2A agents",
+      "Agent cards and capabilities",
+      "Dispatch and live delegations",
+      "Engagement console for standups",
+    ],
+  },
+  {
+    title: "Trust",
+    icon: KeyRound,
+    items: [
+      "Iris dispatch preflight",
+      "Prompt-injection checks",
+      "Tool permission governance",
+      "Human-in-the-loop approvals",
+      "Audit logs and security reports",
+    ],
+  },
+  {
+    title: "Optimization",
+    icon: Sparkles,
+    items: [
+      "Model-routing telemetry",
+      "LLM recommendation surfaces",
+      "Evaluation fixtures",
+      "Quality reports",
+      "Skill extraction signals",
+    ],
+  },
+  {
+    title: "Runtime",
+    icon: GitBranch,
+    items: [
+      "Runtime middleware",
+      "Memory client v2 paths",
+      "Agent observability",
+      "Task lifecycle routes",
+      "SSE task updates",
+    ],
+  },
+  {
+    title: "Performance",
+    icon: Gauge,
+    items: [
+      "Response caching",
+      "Query-path tuning",
+      "Cache prewarm and purge APIs",
+      "Usage analytics",
+      "Faster memory retrieval",
+    ],
+  },
 ];
 
 const completedRoadmap = [
@@ -127,10 +254,16 @@ function LandingPage() {
           </Link>
           <div className="flex items-center gap-2">
             <Link
-              href="#proof"
+              href="#memory-first"
               className="hidden rounded border border-transparent px-4 py-2 text-sm font-semibold text-[#4a4a45] transition hover:border-[#c9c9c2] hover:bg-white hover:text-[#0f0f0e] sm:inline-flex"
             >
-              Proof points
+              Memory
+            </Link>
+            <Link
+              href="#features"
+              className="hidden rounded border border-transparent px-4 py-2 text-sm font-semibold text-[#4a4a45] transition hover:border-[#c9c9c2] hover:bg-white hover:text-[#0f0f0e] md:inline-flex"
+            >
+              Features
             </Link>
             <Link
               href="#memory-loop"
@@ -143,19 +276,19 @@ function LandingPage() {
         </div>
 
         <div className="mx-auto grid max-w-[1180px] gap-12 px-5 pb-16 pt-12 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end lg:pb-20">
-          <div>
+          <div className="mk-reveal">
             <h1 className="max-w-[18ch] text-[clamp(44px,7vw,78px)] font-semibold leading-[1.04] tracking-normal text-[#0f0f0e]">
               Stop making every agent start from zero.
             </h1>
             <p className="mt-7 max-w-[62ch] text-[18px] leading-8 text-[#4a4a45]">
-              MemroOS retains what product, sales, and engineering agents learn, retrieves the right context at runtime, and turns repeated work into durable skills.
+              MemroOS is the shared memory layer for product, sales, and engineering agents: retain what the company learns, retrieve the right context at runtime, and turn repeated work into durable skills.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
-                href="#workflows"
+                href="#memory-first"
                 className="inline-flex items-center gap-2 bg-[#a8392c] px-5 py-3 text-[13px] font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[#7a2a1e]"
               >
-                Explore workflows
+                Explore memory layer
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
               <Link
@@ -178,7 +311,7 @@ function LandingPage() {
             </div>
           </div>
 
-          <div className="border border-[#1f1f1c] bg-white p-5 shadow-[0_12px_32px_rgba(0,0,0,0.04)]">
+          <div className="mk-context-panel mk-reveal mk-reveal-delay-1 border border-[#1f1f1c] bg-white p-5 shadow-[0_12px_32px_rgba(0,0,0,0.04)]">
             <div className="flex items-center justify-between border-b border-[#e4e4dd] pb-4">
               <div className="flex items-center gap-3">
                 <KangarooMark className="h-12 w-12 border border-[#c9c9c2]" />
@@ -203,7 +336,7 @@ function LandingPage() {
 
             <div className="divide-y divide-[#e4e4dd] border-y border-[#e4e4dd]">
               {workflows.map((workflow) => (
-                <div key={workflow.title} className="grid gap-4 py-5 md:grid-cols-[160px_1fr]">
+                <div key={workflow.title} className="mk-context-row grid gap-4 py-5 md:grid-cols-[160px_1fr]">
                   <div className="flex items-center gap-3">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center bg-[#f2e2dc] text-[#a8392c]">
                       <workflow.icon className="h-4 w-4" aria-hidden="true" />
@@ -214,6 +347,69 @@ function LandingPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="memory-first" className="border-y border-[#1f1f1c] bg-[#0f0f0e] text-white">
+        <div className="mx-auto grid max-w-[1180px] gap-8 px-5 py-16 sm:px-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:py-20">
+          <div className="mk-reveal">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#e7b6a8]">Memory is feature one</p>
+            <h2 className="mt-3 text-[42px] font-semibold leading-tight tracking-normal text-white">
+              The product is not another chat box. It is company memory agents can consume.
+            </h2>
+            <p className="mt-5 text-[17px] leading-8 text-[#d8d4cb]">
+              For AI-native small businesses, the advantage is not having more agents. It is making every agent start with the same retained context: customer history, product decisions, sales notes, repo patterns, incidents, tasks, and outcomes.
+            </p>
+          </div>
+          <div className="grid gap-px bg-[#4a4a45] md:grid-cols-3">
+            {[
+              ["Retain", "Capture what happened across files, chats, calls, commits, and agent outcomes."],
+              ["Retrieve", "Pull the right memories into a context pack before the agent begins."],
+              ["Reinforce", "Feed completed work back into memory so the next workflow starts smarter."],
+            ].map(([title, detail]) => (
+              <article key={title} className="bg-[#171715] p-6">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#e7b6a8]">{title}</p>
+                <p className="mt-4 text-[20px] leading-8 text-white">{detail}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="value" className="mx-auto max-w-[1180px] px-5 py-16 sm:px-8 lg:py-20">
+        <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr]">
+          <div className="mk-reveal">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#7a2a1e]">Top 5 value features</p>
+            <h2 className="mt-3 text-[42px] font-semibold leading-tight tracking-normal text-[#0f0f0e]">
+              Memory first, then context, engagement, skills, and trust.
+            </h2>
+            <p className="mt-4 text-[17px] leading-8 text-[#4a4a45]">
+              Native AI small businesses need agents that remember the company before they act. Everything else in MemroOS supports that memory loop.
+            </p>
+          </div>
+          <div className="divide-y divide-[#c9c9c2] border-y border-[#c9c9c2]">
+            {topValueFeatures.map((feature, index) => (
+              <article
+                key={feature.title}
+                className="mk-feature-row grid gap-5 py-6 md:grid-cols-[80px_220px_1fr]"
+                style={{ animationDelay: `${index * 90}ms` }}
+              >
+                <div className="flex items-start justify-between gap-3 md:block">
+                  <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#7a2a1e]">{feature.number}</p>
+                  <span className="mt-3 flex h-11 w-11 items-center justify-center border border-[#c9c9c2] bg-white text-[#a8392c]">
+                    <feature.icon className="h-5 w-5" aria-hidden="true" />
+                  </span>
+                </div>
+                <h3 className="text-[24px] font-semibold leading-snug text-[#0f0f0e]">{feature.title}</h3>
+                <div>
+                  <p className="text-[15px] leading-7 text-[#4a4a45]">{feature.detail}</p>
+                  <p className="mt-3 border-l-2 border-[#a8392c] pl-4 text-[15px] font-semibold leading-7 text-[#0f0f0e]">
+                    {feature.outcome}
+                  </p>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>
@@ -344,6 +540,42 @@ function LandingPage() {
                 </div>
               </article>
             ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="features" className="border-y border-[#c9c9c2] bg-white">
+        <div className="mx-auto max-w-[1180px] px-5 py-16 sm:px-8 lg:py-20">
+          <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr]">
+            <div className="mk-reveal">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#7a2a1e]">Full feature map</p>
+              <h2 className="mt-3 text-[42px] font-semibold leading-tight tracking-normal text-[#0f0f0e]">
+                Memory is the durable layer beneath every agent workflow.
+              </h2>
+              <p className="mt-4 text-[17px] leading-8 text-[#4a4a45]">
+                The product surface is intentionally broad, but it starts with memory: retained context, source-backed retrieval, runtime consumption, governance, evaluation, and speed working together.
+              </p>
+            </div>
+            <div className="grid gap-px bg-[#c9c9c2] md:grid-cols-2">
+              {featureGroups.map((group) => (
+                <article key={group.title} className="mk-feature-card bg-[#fafaf7] p-5">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-10 w-10 items-center justify-center bg-white text-[#a8392c]">
+                      <group.icon className="h-5 w-5" aria-hidden="true" />
+                    </span>
+                    <h3 className="text-[21px] font-semibold text-[#0f0f0e]">{group.title}</h3>
+                  </div>
+                  <ul className="mt-5 space-y-3">
+                    {group.items.map((item) => (
+                      <li key={item} className="flex gap-3 text-[14px] leading-6 text-[#4a4a45]">
+                        <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-[#a8392c]" aria-hidden="true" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>
