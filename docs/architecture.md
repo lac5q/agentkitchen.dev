@@ -1,6 +1,6 @@
-# agentkitchen.dev Architecture
+# MemroOS Architecture
 
-agentkitchen.dev is a thin, durable broker and observability layer for agent systems. It does not try to become every framework's runtime. Instead, it standardizes registration, authentication, task transport, memory reporting, and operator visibility.
+MemroOS is a thin, durable broker and observability layer for agent systems. It does not try to become every framework's runtime. Instead, it standardizes registration, authentication, task transport, memory reporting, and operator visibility.
 
 ## System Shape
 

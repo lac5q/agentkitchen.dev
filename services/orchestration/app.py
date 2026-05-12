@@ -26,7 +26,7 @@ def get_engine() -> OrchestrationEngine:
     )
 
 
-app = FastAPI(title="agentkitchen.dev Orchestration", version="0.1.0")
+app = FastAPI(title="MemroOS Orchestration", version="0.1.0")
 
 
 class RouteTaskRequest(BaseModel):

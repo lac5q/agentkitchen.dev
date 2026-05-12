@@ -7,7 +7,7 @@
 
 ## Problem
 
-Agent Kitchen's current security scanner (`content-scanner.ts`) covers ~18 regex patterns for secrets, PII, and basic injection. It is a useful first line but has gaps:
+MemroOS' current security scanner (`content-scanner.ts`) covers ~18 regex patterns for secrets, PII, and basic injection. It is a useful first line but has gaps:
 
 - Regex-only: no semantic understanding of prompt injection patterns
 - No MCP server / tool permission auditing
@@ -30,7 +30,7 @@ This is the most mature open-source agent security tool in the space.
 
 ## What is Iris
 
-"Iris" is the proposed name for the **secure dispatch gate** in Agent Kitchen — a watchdog layer that sits between task dispatch and agent execution:
+"Iris" is the proposed name for the **secure dispatch gate** in MemroOS — a watchdog layer that sits between task dispatch and agent execution:
 
 1. **Pre-flight:** Scan incoming task prompts for injection, jailbreak, and tool-misuse patterns before dispatch
 2. **In-flight:** Validate tool calls and agent permissions against the registry before execution
@@ -41,7 +41,7 @@ Iris wraps the existing `content-scanner.ts` and adds Agent Shield's deeper anal
 ## Architecture
 
 ```
-Agent Kitchen (existing)          Iris (new)
+MemroOS (existing)                Iris (new)
 ┌──────────────────┐              ┌──────────────────────┐
 │  Dispatch UI     │──dispatch──▶│  Pre-flight Scanner  │
 │  A2A Broker      │              │  (prompt injection)  │

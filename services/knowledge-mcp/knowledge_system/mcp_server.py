@@ -229,7 +229,7 @@ def knowledge_read(path: str, max_chars: int = 20000) -> dict:
 
 @_mcp_tool
 def search(query: str) -> dict:
-    """Use this for ChatGPT connector search. Returns matching Agent Kitchen knowledge documents."""
+    """Use this for ChatGPT connector search. Returns matching MemroOS knowledge documents."""
     store = KnowledgeStore(_root())
     results = []
     for item in store.search(query=query, limit=10):
@@ -250,7 +250,7 @@ def search(query: str) -> dict:
 
 @_mcp_tool
 def fetch(id: str) -> dict:
-    """Use this for ChatGPT connector fetch. Returns a full Agent Kitchen knowledge document by search result id."""
+    """Use this for ChatGPT connector fetch. Returns a full MemroOS knowledge document by search result id."""
     path, line = _split_chatgpt_id(id)
     document = KnowledgeStore(_root()).read_text(path, max_chars=50000)
     text = str(document.get("content", ""))

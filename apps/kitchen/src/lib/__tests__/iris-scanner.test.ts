@@ -26,7 +26,7 @@ describe("scanIrisPreflight", () => {
   });
 
   it("allows ordinary task summaries", () => {
-    const result = scanIrisPreflight("Draft a concise blog post about Agent Kitchen security milestones.");
+    const result = scanIrisPreflight("Draft a concise blog post about MemroOS security milestones.");
 
     expect(result.blocked).toBe(false);
     expect(result.findings).toEqual([]);

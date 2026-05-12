@@ -1,6 +1,6 @@
 # Security Policy
 
-`agentkitchen.dev` is early operator infrastructure for local and self-hosted agent fleets. Security reports are welcome, especially around agent registration, A2A task handling, memory writes, MCP/tool permissions, and secret handling.
+MemroOS is early operator infrastructure for local and self-hosted agent fleets. Security reports are welcome, especially around agent registration, A2A task handling, memory writes, MCP/tool permissions, and secret handling.
 
 ## Supported Versions
 

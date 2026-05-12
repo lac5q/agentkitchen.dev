@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Agent Kitchen — start all services
+# MemroOS — start all services
 # Usage: ./start.sh
 # Kills any existing instances on the same ports first.
 

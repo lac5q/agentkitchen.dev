@@ -1,10 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_HOSTS = new Set(["memroos.com", "www.memroos.com", "memroos.vercel.app"]);
+const LEGACY_HOSTS = new Set(["agentkitchen.dev", "www.agentkitchen.dev"]);
+
+function normalizeHost(host: string): string {
+  return host.split(":")[0]?.toLowerCase() ?? "";
+}
 
 function isPublicLandingHost(host: string): boolean {
-  const normalized = host.split(":")[0]?.toLowerCase() ?? "";
-  return PUBLIC_HOSTS.has(normalized) || normalized.endsWith(".vercel.app");
+  return PUBLIC_HOSTS.has(host) || host.endsWith(".vercel.app");
 }
 
 function isLandingAsset(pathname: string): boolean {
@@ -17,8 +21,12 @@ function isLandingAsset(pathname: string): boolean {
 }
 
 export function proxy(request: NextRequest) {
-  const host = request.headers.get("host") ?? "";
+  const host = normalizeHost(request.headers.get("host") ?? "");
   const { pathname } = request.nextUrl;
+
+  if (LEGACY_HOSTS.has(host)) {
+    return NextResponse.redirect("https://memroos.com/", 308);
+  }
 
   if (!isPublicLandingHost(host) || isLandingAsset(pathname)) {
     return NextResponse.next();

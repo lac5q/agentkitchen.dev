@@ -133,7 +133,7 @@ describe("POST /api/memory/add", () => {
       new Request("http://localhost/api/memory/add", {
         method: "POST",
         headers: { authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({ content: "Luis works with Agent Kitchen", type: "graph" }),
+        body: JSON.stringify({ content: "Luis works with MemroOS", type: "graph" }),
       })
     );
 

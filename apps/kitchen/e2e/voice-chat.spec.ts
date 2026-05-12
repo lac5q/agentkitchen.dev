@@ -42,11 +42,11 @@ test.describe("Voice & Chat panel — Flow page", () => {
   test("Chat tab: send a message and receive a streaming response", async ({ page }) => {
     // Ensure ANTHROPIC_API_KEY is set — skip gracefully if not
     const input = page.getByPlaceholder(/Message Kitchen Floor/);
-    await input.fill("What is Agent Kitchen in one sentence?");
+    await input.fill("What is MemroOS in one sentence?");
     await page.getByRole("button", { name: "Send" }).click();
 
     // User bubble appears immediately
-    await expect(page.getByText("What is Agent Kitchen in one sentence?")).toBeVisible();
+    await expect(page.getByText("What is MemroOS in one sentence?")).toBeVisible();
 
     // Assistant bubble appears (streaming — wait up to 15s)
     await expect(

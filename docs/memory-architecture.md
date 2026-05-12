@@ -1,6 +1,6 @@
 # Memory Architecture
 
-agentkitchen.dev uses three memory tiers so agents can store the right kind of knowledge in the right backend.
+MemroOS uses three memory tiers so agents can store the right kind of knowledge in the right backend.
 
 ## Tiers
 

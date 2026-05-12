@@ -11,6 +11,7 @@
 <p align="center">
   <a href="https://memroos.com">memroos.com</a> ·
   <a href="#quickstart">Quickstart</a> ·
+  <a href="#video-demo">Video Demo</a> ·
   <a href="#screenshots">Screenshots</a> ·
   <a href="#architecture">Architecture</a> ·
   <a href="#security-model">Security</a> ·
@@ -18,7 +19,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/lac5q/agentkitchen.dev/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-0f0f0e.svg"></a>
+  <a href="https://github.com/lac5q/memroos/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-0f0f0e.svg"></a>
   <img alt="Release: v0.1.0" src="https://img.shields.io/badge/release-v0.1.0-a8392c.svg">
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black.svg">
   <img alt="A2A ready" src="https://img.shields.io/badge/A2A-ready-7a2a1e.svg">
@@ -40,6 +41,16 @@ MemroOS is the operating layer that gives agents a memory plane:
 - **Improve:** promote repeated successful workflows into durable skills and playbooks.
 
 The repository began as `agentkitchen.dev`; some internal package names, paths, and environment variables still use `kitchen` for compatibility. The public product and positioning are now MemroOS.
+
+## Video Demo
+
+<p align="center">
+  <video src="docs/demo/memroos-demo.mp4" controls muted playsinline width="900"></video>
+</p>
+
+<p align="center">
+  <a href="docs/demo/memroos-demo.mp4">Watch the MemroOS demo video</a>
+</p>
 
 ## Screenshots
 
@@ -121,6 +132,14 @@ The current release includes:
 - REST reporting endpoints for heartbeats, memory writes, skill reports, and tool outcomes.
 - Memory and knowledge visibility across configured file collections, mem0/Qdrant, graph memory, and local SQLite.
 - Human-gated Agent Lightning/APO approvals so self-learning proposals queue before mutating agent instructions.
+
+## Completed Roadmap
+
+- **Phase 41: OSS Polish** - MIT license, public README, contribution guide, security policy, issue templates, and GitHub Actions checks for public collaboration.
+- **Phases 42-45: v2.1 Security + Trust Layer** - Iris dispatch preflight, prompt-injection checks, tool-permission governance, security reporting, and progressive capability exposure.
+- **Phases 46-49: v2.2 LLM Optimization + Evaluation** - model-routing telemetry, recommendation surfaces, evaluation fixtures, optimization dashboards, and quality reports.
+- **Phases 50-52: v2.3 Agent Runtime Enhancements** - runtime middleware, memory client v2 paths, richer engagement state, and observability surfaces for live agents.
+- **Phases 53-54: v2.4 Performance + Caching** - response caching, query-path tuning, and faster memory/knowledge retrieval for operator workflows.
 
 ## What MemroOS Does
 
@@ -239,8 +258,8 @@ sequenceDiagram
 - Optional: Tailscale for multi-machine private networking
 
 ```bash
-git clone https://github.com/lac5q/agentkitchen.dev.git
-cd agentkitchen.dev
+git clone https://github.com/lac5q/memroos.git
+cd memroos
 npm install
 ./setup.sh --wizard
 ./setup.sh
@@ -355,7 +374,7 @@ The default `--mcp-target auto` selects the right installer from the platform: `
 ChatGPT uses remote MCP over HTTP. Start the MCP facade and expose it through a trusted HTTPS URL such as Tailscale Funnel, Cloudflare Tunnel, or your own private gateway:
 
 ```bash
-cd /path/to/agentkitchen.dev
+cd /path/to/memroos
 KITCHEN_MCP_PUBLIC_BASE_URL=https://memroos.example npm run install:mcp:chatgpt
 ```
 
@@ -384,14 +403,14 @@ Add or merge this server entry:
       "command": "/bin/bash",
       "args": [
         "-lc",
-        "exec \"${AGENT_KITCHEN_ROOT:-$HOME/github/agentkitchen.dev}/scripts/agentkitchen-mcp.sh\""
+        "exec \"${AGENT_KITCHEN_ROOT:-$HOME/github/memroos}/scripts/agentkitchen-mcp.sh\""
       ]
     }
   }
 }
 ```
 
-Fully quit and reopen Claude Desktop after saving the file. If your local clone is somewhere else, either set `AGENT_KITCHEN_ROOT` or replace `$HOME/github/agentkitchen.dev` with the absolute path to this repo.
+Fully quit and reopen Claude Desktop after saving the file. If your local clone is somewhere else, either set `AGENT_KITCHEN_ROOT` or replace `$HOME/github/memroos` with the absolute path to this repo.
 
 ## Protocol Strategy
 
@@ -487,7 +506,7 @@ npm run first-run:check
 ## Project Structure
 
 ```text
-agentkitchen.dev/
+memroos/
 ├── apps/kitchen/              # Next.js UI and API routes
 ├── services/orchestration/    # Python LangGraph orchestration service
 ├── services/memory/           # mem0 service wrapper

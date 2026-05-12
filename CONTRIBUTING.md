@@ -1,6 +1,6 @@
-# Contributing to agentkitchen.dev
+# Contributing to MemroOS
 
-Thanks for helping improve `agentkitchen.dev`. This project is an early operator control plane for agent fleets, A2A delegation, memory routing, and workflow visibility.
+Thanks for helping improve MemroOS. This project is an early operator control plane for agent fleets, A2A delegation, memory routing, and workflow visibility.
 
 ## Setup
 

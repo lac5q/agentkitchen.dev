@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install the Agent Kitchen Streamable HTTP MCP server as a macOS LaunchAgent
+# Install the MemroOS Streamable HTTP MCP server as a macOS LaunchAgent
 # for ChatGPT custom connectors / Developer Mode.
 set -euo pipefail
 
@@ -162,7 +162,7 @@ install_service() {
   sleep 2
   status
   echo
-  echo "Agent Kitchen MCP is listening at http://localhost:${PORT}/mcp"
+  echo "MemroOS MCP is listening at http://localhost:${PORT}/mcp"
   echo "ChatGPT connector URL: ${PUBLIC_BASE_URL}/mcp"
   echo "Bearer token file: ${TOKEN_FILE}"
   echo "Logs: ${LOG_PATH}"

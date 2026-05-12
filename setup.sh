@@ -108,7 +108,7 @@ main() {
   validate_qdrant
   start_services
 
-  echo "Agent Kitchen setup complete for profile: $PROFILE"
+  echo "MemroOS setup complete for profile: $PROFILE"
 }
 
 main "$@"

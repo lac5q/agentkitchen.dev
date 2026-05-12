@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Launch agentkitchen.dev's knowledge/tool-attention MCP facade.
+# Launch MemroOS' knowledge/tool-attention MCP facade.
 # Keep stdout clean for MCP JSON-RPC; all setup/status messages go to stderr.
 set -euo pipefail
 
