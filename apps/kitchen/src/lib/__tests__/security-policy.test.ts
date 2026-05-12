@@ -42,7 +42,7 @@ function remoteAgent(skills: RemoteAgentConfig["skills"] = []): RemoteAgentConfi
     platform: "claude",
     protocol: "rest",
     location: "tailscale",
-    host: "100.90.1.2",
+    host: "203.0.113.10",
     port: 18889,
     healthEndpoint: "/health",
     skills,
