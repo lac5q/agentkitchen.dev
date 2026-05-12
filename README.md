@@ -1,216 +1,231 @@
-# agentkitchen.dev
+# MemroOS
 
 <p align="center">
-  <strong>The operator control plane for operating real multi-agent fleets.</strong>
+  <strong>Memory OS for agent workflows.</strong>
 </p>
 
 <p align="center">
-  Register agents, inspect liveness, dispatch work, broker A2A tasks, route memory, and keep a startup-sized agent society from becoming soup.
+  MemroOS retains what product, sales, and engineering agents learn, retrieves the right context at runtime, and turns repeated work into durable skills.
 </p>
 
 <p align="center">
-  <a href="https://github.com/lac5q/agentkitchen.dev/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-10b981.svg"></a>
-  <img alt="Release: v0.1.0" src="https://img.shields.io/badge/release-v0.1.0-06b6d4.svg">
-  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black.svg">
-  <img alt="A2A ready" src="https://img.shields.io/badge/A2A-ready-0ea5e9.svg">
-  <img alt="Local first" src="https://img.shields.io/badge/local--first-yes-f59e0b.svg">
-  <img alt="Security" src="https://img.shields.io/badge/security-operator--gated-ef4444.svg">
-</p>
-
-<p align="center">
-  <a href="#demo">Demo</a> |
-  <a href="#quickstart">Quickstart</a> |
-  <a href="#why-star-this-repo">Why Star</a> |
-  <a href="#architecture">Architecture</a> |
-  <a href="#security-model">Security</a> |
-  <a href="#upcoming-features">Upcoming</a> |
+  <a href="https://memroos.com">memroos.com</a> ·
+  <a href="#quickstart">Quickstart</a> ·
+  <a href="#screenshots">Screenshots</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#security-model">Security</a> ·
   <a href="#docs">Docs</a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/lac5q/agentkitchen.dev/blob/main/LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-0f0f0e.svg"></a>
+  <img alt="Release: v0.1.0" src="https://img.shields.io/badge/release-v0.1.0-a8392c.svg">
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black.svg">
+  <img alt="A2A ready" src="https://img.shields.io/badge/A2A-ready-7a2a1e.svg">
+  <img alt="Local first" src="https://img.shields.io/badge/local--first-yes-4a4a45.svg">
+  <img alt="Security" src="https://img.shields.io/badge/security-operator--gated-a8392c.svg">
 </p>
 
 ---
 
-## Demo
+## What MemroOS Is
 
-agentkitchen.dev is a dashboard and API surface for the part of agent systems that usually lives in scattered terminal tabs, notebooks, cron logs, local databases, and half-remembered shell scripts.
+Most agent systems remember too little, too late. Product decisions live in docs. Sales context lives in calls and CRM notes. Engineering knowledge lives in commits, incidents, and terminal history. Every new agent starts by rediscovering the same context.
+
+MemroOS is the operating layer that gives agents a memory plane:
+
+- **Retain:** capture decisions, files, conversations, outcomes, and workflow history.
+- **Retrieve:** assemble permission-aware context packs before an agent starts work.
+- **Dispatch:** send work to local, REST, or A2A agents with source-backed context.
+- **Improve:** promote repeated successful workflows into durable skills and playbooks.
+
+The repository began as `agentkitchen.dev`; some internal package names, paths, and environment variables still use `kitchen` for compatibility. The public product and positioning are now MemroOS.
+
+## Screenshots
 
 <p align="center">
-  <img src="docs/screenshots/readme-flow.png" alt="agentkitchen.dev Flow map showing agents, memory, gateways, skills, dispatch paths, and system health" width="900">
+  <img src="docs/screenshots/readme-landing.png" alt="MemroOS landing page showing the runtime context pack for product, sales, and engineering agents" width="900">
 </p>
 
 <p align="center">
-  <em>The Flow map gives operators a live topology of agents, infrastructure, memory, skills, and task paths.</em>
+  <em>The public landing page leads with retained agent knowledge, runtime context packs, and product/sales/engineering workflows.</em>
 </p>
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/readme-dispatch.png" alt="Dispatch page with A2A agent cards and live delegations"></td>
-    <td width="50%"><img src="docs/screenshots/readme-library.png" alt="Library page with knowledge collections, health, freshness alerts, and growth trends"></td>
+    <td width="50%"><img src="docs/screenshots/readme-memory.png" alt="MemroOS memory page with multi-memory search, retained context, and activity heatmap"></td>
+    <td width="50%"><img src="docs/screenshots/readme-knowledge.png" alt="MemroOS knowledge page showing source corpus health and knowledge collections"></td>
   </tr>
   <tr>
-    <td><strong>Dispatch</strong><br>Send tasks to registered agents and inspect live delegation state.</td>
-    <td><strong>Library</strong><br>Track knowledge files, memory health, freshness gaps, and collection growth.</td>
+    <td><strong>Memory</strong><br>Search retained context across vector, graph, and episodic memory before handing work to an agent.</td>
+    <td><strong>Knowledge</strong><br>Track source files, freshness, collections, and knowledge health for agent consumption.</td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/readme-apo.png" alt="Agent Lightning APO proposals with approve workflow"></td>
-    <td width="50%"><img src="docs/screenshots/readme-ledger.png" alt="Ledger page with memory and system status panels"></td>
+    <td width="50%"><img src="docs/screenshots/readme-dispatch.png" alt="MemroOS dispatch page with A2A cards and live delegations"></td>
+    <td width="50%"><img src="docs/screenshots/readme-skills.png" alt="MemroOS skills page showing procedural playbooks and skill analytics"></td>
   </tr>
   <tr>
-    <td><strong>APO review</strong><br>Approve self-learning proposals before they modify skills or agent instructions.</td>
-    <td><strong>Ledger</strong><br>Watch memory, recall, audit, and operational signals from one place.</td>
+    <td><strong>Engage</strong><br>Dispatch tasks, chat with agent runtimes, and inspect live delegation state.</td>
+    <td><strong>Skills</strong><br>See which repeated workflows are becoming reusable procedural playbooks.</td>
   </tr>
 </table>
 
-> Want a video? A short demo recording is planned. Until then, the screenshots above are captured from the live local app and represent the intended operator experience.
+## Why This Exists
 
-## Why Star This Repo
+Native AI companies are moving from one-off prompt demos to agent workflows that touch roadmap, revenue, code, support, operations, and internal tools. The hard problem is no longer "can an agent answer?" It is:
 
-Star agentkitchen.dev if you are building agent systems that are moving from clever demos into daily operations.
+- What does the agent already know?
+- Where did that knowledge come from?
+- Which memory did it consume before acting?
+- What should be retained from the outcome?
+- When should repeated work become a skill?
+- Which agent is allowed to do what?
 
-- **You run more than one agent.** Claude Code, Codex, OpenClaw, Hermes, Google ADK, LangGraph, CrewAI, AutoGen, custom HTTP workers: Kitchen gives them one roster.
-- **You care where agents live.** Local machine, VM, Tailscale host, Cloudflare tunnel, LAN box, cloud URL: the registry keeps location and reachability explicit.
-- **You want standards without waiting for everyone.** A2A is the preferred path; REST shims keep non-A2A agents useful today.
-- **You need memory boundaries.** Knowledge files, vector memory, graph memory, episodic memory, and audit logs are separated on purpose.
-- **You want operator control.** Registry writes, destructive actions, and self-learning proposals are gated instead of casually automated.
-- **You believe agents need infrastructure.** Not just prompts. Not just chat. A system of record.
+MemroOS is built for that layer.
+
+## Primary Use Cases
+
+### Product
+
+Retain customer interviews, launch notes, roadmap decisions, objections, and beta learnings. Retrieve them into PRDs, prioritization work, release notes, and follow-up workflows.
+
+### Sales
+
+Retain CRM notes, call takeaways, buyer preferences, competitor mentions, and account history. Retrieve them into account briefs, talk tracks, follow-up, and expansion plans.
+
+### Engineering
+
+Retain architecture decisions, incidents, deploy fixes, repo patterns, and code review outcomes. Retrieve them into debug plans, migrations, reviews, onboarding, and runbooks.
 
 ## What You Can Do In 5 Minutes
 
 After setup, you can:
 
-1. Open the Kitchen UI.
-2. Register a local or remote agent.
-3. See it appear in the canonical registry.
-4. Send heartbeats, memory writes, or skill reports through REST.
-5. Ingest an A2A agent card and dispatch a task.
-6. Inspect memory and knowledge health from the Library.
-7. Review APO proposals before they modify skills.
+1. Open the MemroOS workspace.
+2. Search retained memory across product, sales, engineering, and operational context.
+3. Inspect source corpus health in the Knowledge view.
+4. Register a local, REST, or A2A-compatible agent.
+5. Dispatch work and inspect live delegation state.
+6. Review skill proposals before they modify instructions or playbooks.
+7. Keep memory, knowledge, skills, agents, usage, and governance in one operator surface.
 
 ## Release 0.1
 
-`v0.1.0` is the first public operator preview of agentkitchen.dev.
+`v0.1.0` is the first public operator preview of MemroOS.
 
-This release is intentionally focused on the control-plane foundation:
+The current release includes:
 
-- A Next.js operator console with the Flow, Registry, Dispatch, Library, Ledger, and Sous Vide surfaces.
+- A Next.js workspace with Memory, Knowledge, Skills, Agents, Workflow Map, Engage, Improvements, Usage, and Governance surfaces.
 - A canonical SQLite-backed agent registry for REST, UI, and A2A-visible agents.
 - A2A card ingestion, task routes, streaming subscription endpoints, and Google ADK compatibility fixtures.
 - REST reporting endpoints for heartbeats, memory writes, skill reports, and tool outcomes.
-- Memory and knowledge visibility across configured file collections, mem0/Qdrant, graph memory, and Kitchen SQLite.
-- Human-gated Agent Lightning/APO approvals so self-learning proposals queue before they mutate agent instructions.
+- Memory and knowledge visibility across configured file collections, mem0/Qdrant, graph memory, and local SQLite.
+- Human-gated Agent Lightning/APO approvals so self-learning proposals queue before mutating agent instructions.
 
-The aim is not to pretend this is a polished SaaS. It is a useful, inspectable, hackable starting point for people operating multiple agents across real machines.
+## What MemroOS Does
 
-## What Kitchen Does
+- **Memory search:** Search retained context before an agent starts work.
+- **Knowledge corpus:** Track files, freshness, collections, and source health.
+- **Skill analytics:** Watch repeatable workflows become procedural playbooks.
+- **Agent registry:** Maintain one canonical roster for local, REST, UI, and A2A agents.
+- **A2A broker:** Expose agent cards, JSON-RPC endpoints, task lifecycle routes, SSE task updates, and outbound A2A delegation.
+- **REST shim:** Let agents report heartbeats, memories, skills, and outcomes before they speak A2A.
+- **Workflow map:** Visualize agents, memory, skills, dispatch paths, and infrastructure.
+- **Governance:** Gate registry writes, memory reads, destructive actions, and self-learning approvals.
 
-- **Canonical agent registry:** SQLite-backed roster for local, REST, UI, and A2A agents.
-- **A2A broker:** Agent card discovery, JSON-RPC endpoints, task lifecycle routes, SSE task updates, and outbound A2A delegation.
-- **REST shim:** Framework-agnostic endpoints for agents that do not speak A2A yet.
-- **Dispatch:** Send work to registered agents and inspect live delegation history.
-- **Flow map:** Visual system topology for agents, memory, skills, dispatch, and infrastructure.
-- **Knowledge Library:** File counts, freshness alerts, collection maps, and growth trends for configured knowledge folders.
-- **Memory routing:** Vector memory through mem0/Qdrant, graph memory through Neo4j, and episodic/audit memory in Kitchen SQLite.
-- **Progressive capability discovery:** Tool-attention keeps optional systems such as GitNexus and Agent Lightning discoverable without loading every tool into every agent session.
-- **APO review:** Approve self-learning skill improvement proposals before they are applied.
-- **Operator security:** Operator-gated registry writes plus per-agent bearer keys for write/reporting endpoints.
-
-## What Kitchen Is Not
+## What MemroOS Is Not
 
 - Not a replacement for Claude Code, Codex, OpenClaw, Hermes, Google ADK, LangGraph, CrewAI, or AutoGen.
-- Not a hosted SaaS control plane.
-- Not an excuse to expose your agents directly to the public internet.
-- Not finished. It is useful, hackable, and moving fast.
-
-Kitchen is the operating layer between frameworks.
+- Not a hosted SaaS control plane in this repo.
+- Not an excuse to expose private agents directly to the public internet.
+- Not finished. It is useful, inspectable, hackable, and moving quickly.
 
 ## Architecture
 
-Kitchen is intentionally thin at the boundary and durable at the center.
+MemroOS is intentionally thin at the boundary and durable at the center.
 
 ```mermaid
 flowchart TB
-  subgraph Fleet["Agent Fleet"]
-    Claude["Claude Code"]
-    Codex["Codex CLI"]
-    ADK["Google ADK"]
-    OpenClaw["OpenClaw"]
-    Hermes["Hermes"]
-    Custom["Custom HTTP agents"]
+  subgraph Workflows["Agent Workflows"]
+    Product["Product agents"]
+    Sales["Sales agents"]
+    Engineering["Engineering agents"]
+    Ops["Operations agents"]
   end
 
-  subgraph Kitchen["agentkitchen.dev"]
-    UI["Operator UI"]
-    Registry[("SQLite Registry")]
-    A2A["A2A Broker"]
+  subgraph MemroOS["MemroOS"]
+    UI["Workspace UI"]
+    Registry[("Agent Registry")]
+    Broker["A2A Broker"]
     REST["REST Shim"]
-    Dispatch["Dispatch + Delegations"]
-    Audit["Audit + Outcomes"]
+    Dispatch["Engage + Delegations"]
+    Governance["Governance + Audit"]
   end
 
   subgraph Memory["Memory + Knowledge"]
     Vector["mem0 + Qdrant"]
-    Graph["Neo4j Graph Memory"]
+    Graph["Graph Memory"]
     Episodic[("SQLite Episodic Memory")]
-    Library["Knowledge File Collections"]
+    Library["Knowledge Collections"]
+    Skills["Procedural Skills"]
   end
 
-  subgraph Routing["Durable Coordination"]
-    LangGraph["LangGraph Service"]
-    Checkpoints[("Checkpoints")]
-    HIL["Human Approval"]
+  subgraph Runtimes["Agent Runtimes"]
+    Claude["Claude Code"]
+    Codex["Codex CLI"]
+    ADK["Google ADK"]
+    OpenClaw["OpenClaw"]
+    Custom["Custom HTTP agents"]
   end
 
-  Claude --> A2A
-  Codex --> REST
-  ADK --> A2A
-  OpenClaw --> REST
-  Hermes --> REST
-  Custom --> REST
+  Product --> UI
+  Sales --> UI
+  Engineering --> UI
+  Ops --> UI
 
-  A2A --> Registry
-  REST --> Registry
   UI --> Registry
   UI --> Dispatch
-  Dispatch --> A2A
+  Dispatch --> Broker
   Dispatch --> REST
-  REST --> Audit
-  A2A --> Audit
+  Broker --> Registry
+  REST --> Registry
+  REST --> Governance
+  Broker --> Governance
 
   REST --> Vector
   REST --> Graph
   REST --> Episodic
   UI --> Library
-  UI --> Memory
+  UI --> Skills
+  Skills --> Dispatch
 
-  Dispatch --> LangGraph
-  LangGraph --> Checkpoints
-  LangGraph --> HIL
-  HIL --> UI
+  Broker --> ADK
+  REST --> Claude
+  REST --> Codex
+  REST --> OpenClaw
+  REST --> Custom
 ```
 
-### Data Flow
+### Memory Loop
 
 ```mermaid
 sequenceDiagram
   participant Agent
-  participant Kitchen
+  participant MemroOS
   participant Registry
   participant Memory
   participant Operator
-  participant Orchestrator
 
-  Agent->>Kitchen: Register or present A2A card
-  Kitchen->>Registry: Store identity, protocol, capabilities
-  Agent->>Kitchen: Heartbeat / skill report / memory write
-  Kitchen->>Registry: Update liveness and metadata
-  Kitchen->>Memory: Route memory to vector, graph, or SQLite tier
-  Operator->>Kitchen: Dispatch task
-  Kitchen->>Registry: Resolve target agent
-  alt Direct agent task
-    Kitchen->>Agent: REST or A2A task request
-  else Complex routed task
-    Kitchen->>Orchestrator: Delegate with correlation id
-    Orchestrator->>Operator: Human approval when needed
-  end
+  Agent->>MemroOS: Register or present A2A card
+  MemroOS->>Registry: Store identity, protocol, capabilities
+  Agent->>MemroOS: Heartbeat / skill report / memory write
+  MemroOS->>Memory: Route memory to vector, graph, or episodic tier
+  Operator->>MemroOS: Search retained context
+  Operator->>MemroOS: Dispatch task with context
+  MemroOS->>Registry: Resolve target agent
+  MemroOS->>Agent: REST or A2A task request
+  Agent->>MemroOS: Outcome, result, skill signal
+  MemroOS->>Memory: Retain what changed
 ```
 
 ## Quickstart
@@ -231,9 +246,7 @@ npm install
 ./setup.sh
 ```
 
-Previously shared GitHub links to `https://github.com/lac5q/agent-kitchen` should continue to resolve through GitHub's repository rename redirect. Use the new `agentkitchen.dev` URL for fresh links so this project is not confused with similarly named repositories.
-
-Open Kitchen:
+Open MemroOS:
 
 ```text
 http://localhost:3000
@@ -248,17 +261,19 @@ KITCHEN_A2A_ENDPOINT_BASE_URL=http://localhost:3002 \
 npm --prefix apps/kitchen run start -- --port 3002
 ```
 
+The environment variable prefix is still `KITCHEN_*` for compatibility with existing installs.
+
 ## Recommended Deployment
 
-Kitchen is designed to start private and become public only when you mean it.
+MemroOS is designed to start private and become public only when you mean it.
 
 ```mermaid
 flowchart LR
   Founder["Founder laptop"] <--> Tailnet["Tailscale / private LAN"]
-  Server["Kitchen server"] <--> Tailnet
+  Server["MemroOS server"] <--> Tailnet
   Agents["Agent machines"] <--> Tailnet
   Tailnet --> Auth["Operator key + per-agent bearer keys"]
-  Auth --> Kitchen["agentkitchen.dev"]
+  Auth --> MemroOS["MemroOS"]
 ```
 
 Operating profiles:
@@ -273,7 +288,7 @@ See [Install profiles](docs/install-profiles.md).
 
 ## Agent Registry
 
-Kitchen has one canonical registry. The `/agents` page shows this DB-backed roster, not ad hoc files.
+MemroOS has one canonical registry. The `/agents` page shows the DB-backed roster, not ad hoc files.
 
 ### Register a REST agent
 
@@ -306,11 +321,11 @@ curl -X POST http://localhost:3000/api/a2a/agents/register \
   }'
 ```
 
-The response may include an API key unless `issueApiKey` is false. Store it securely. Kitchen never displays stored bearer tokens after creation.
+The response may include an API key unless `issueApiKey` is false. Store it securely. MemroOS never displays stored bearer tokens after creation.
 
 ### One-command agent onboarding
 
-For agents that can run shell commands, create a short-lived invite and hand the returned command to the agent. The invite registers the agent, mints its per-agent API key, and returns an agentkitchen.dev MCP config.
+For agents that can run shell commands, create a short-lived invite and hand the returned command to the agent. The invite registers the agent, mints its per-agent API key, and returns a MemroOS MCP config.
 
 ```bash
 curl -X POST http://localhost:3000/api/onboarding/invite \
@@ -328,41 +343,33 @@ curl -X POST http://localhost:3000/api/onboarding/invite \
 Give the `command` from the response to the agent. The command looks like:
 
 ```bash
-curl -fsSL 'https://kitchen.example/api/onboarding/script?token=...' | bash -s -- --id 'maria' --name 'Maria' --role 'Research and implementation partner' --platform 'openclaw' --mcp-target 'auto'
+curl -fsSL 'https://memroos.example/api/onboarding/script?token=...' | bash -s -- --id 'maria' --name 'Maria' --role 'Research and implementation partner' --platform 'openclaw' --mcp-target 'auto'
 ```
 
-The default `--mcp-target auto` selects the right installer from the platform: `hermes`, `openclaw`, `claude`, `gemini`, `qwen`, `codex`, or `stdout` for `chatgpt`. The bootstrap prefers each runtime's own MCP command when available and falls back to narrow config writes, so newer runtime installers can keep working without changing the invite command. Use `--mcp-target file:/path/to/mcp.json`, `--mcp-target stdout`, or `AGENT_KITCHEN_MCP_TARGET=...` to override. ChatGPT cannot run the shell command directly; for ChatGPT, use the returned `mcpUrl` as the custom connector URL in ChatGPT Apps & Connectors.
+The default `--mcp-target auto` selects the right installer from the platform: `hermes`, `openclaw`, `claude`, `gemini`, `qwen`, `codex`, or `stdout` for ChatGPT. ChatGPT cannot run the shell command directly; for ChatGPT, use the returned `mcpUrl` as the custom connector URL in ChatGPT Apps & Connectors.
 
-### Add Agent Kitchen to ChatGPT
+## Add MemroOS To Agent Clients
 
-ChatGPT uses remote MCP over HTTP. Start the Agent Kitchen MCP facade and expose it through a trusted HTTPS URL such as Tailscale Funnel, Cloudflare Tunnel, or your own private gateway:
+### ChatGPT
+
+ChatGPT uses remote MCP over HTTP. Start the MCP facade and expose it through a trusted HTTPS URL such as Tailscale Funnel, Cloudflare Tunnel, or your own private gateway:
 
 ```bash
 cd /path/to/agentkitchen.dev
-KITCHEN_MCP_PUBLIC_BASE_URL=https://kitchen.example npm run install:mcp:chatgpt
+KITCHEN_MCP_PUBLIC_BASE_URL=https://memroos.example npm run install:mcp:chatgpt
 ```
 
 The connector URL is:
 
 ```text
-https://kitchen.example/mcp
+https://memroos.example/mcp
 ```
 
-In ChatGPT, open **Settings -> Connectors -> Advanced -> Developer mode**, add a remote MCP server, name it `Agent Kitchen`, and use the `/mcp` URL above. The MCP facade exposes ChatGPT-compatible `search` and `fetch` tools, plus the richer Agent Kitchen tools for knowledge, memory, and progressive tool discovery when Developer mode allows arbitrary MCP tools.
+In ChatGPT, open **Settings -> Connectors -> Advanced -> Developer mode**, add a remote MCP server, name it `MemroOS`, and use the `/mcp` URL above.
 
-The installer enables bearer-token auth by default and stores the token in `~/.agent-kitchen/com.agentkitchen.chatgpt-mcp.env`. That is useful for Tailscale clients, API clients, and private testing. ChatGPT web custom connectors generally need OAuth or no-auth remote MCP, so do not put this on a public hostname unless an OAuth-capable proxy such as Cloudflare Access is enforcing access in front of it, or the exposed MCP profile is reduced to read-only public-safe `search`/`fetch`.
+### Claude Desktop
 
-For a manual foreground server instead of the macOS LaunchAgent installer:
-
-```bash
-KITCHEN_MCP_PUBLIC_BASE_URL=https://kitchen.example \
-KITCHEN_MCP_BEARER_TOKEN=<strong-random-token> \
-./scripts/agentkitchen-mcp.sh --http --host 0.0.0.0 --port 8765
-```
-
-### Add Agent Kitchen to Claude Desktop
-
-Claude Desktop can run Agent Kitchen locally over stdio. Edit:
+Claude Desktop can run MemroOS locally over stdio. Edit:
 
 ```text
 ~/Library/Application Support/Claude/claude_desktop_config.json
@@ -373,7 +380,7 @@ Add or merge this server entry:
 ```json
 {
   "mcpServers": {
-    "agentkitchen": {
+    "memroos": {
       "command": "/bin/bash",
       "args": [
         "-lc",
@@ -385,13 +392,6 @@ Add or merge this server entry:
 ```
 
 Fully quit and reopen Claude Desktop after saving the file. If your local clone is somewhere else, either set `AGENT_KITCHEN_ROOT` or replace `$HOME/github/agentkitchen.dev` with the absolute path to this repo.
-
-If `/agents` shows fewer agents than expected, check:
-
-- The agent has been registered into the canonical registry.
-- Its host and port are real, not placeholders such as `100.x.x.x`.
-- A2A agents expose a valid card URL.
-- REST agents have a health endpoint if you want remote reachability.
 
 ## Protocol Strategy
 
@@ -405,13 +405,11 @@ flowchart TD
   Shim --> Later["Upgrade to A2A when framework supports it"]
 ```
 
-Use **A2A** when the framework can expose or consume an agent card and task lifecycle. This is the preferred path for standards-compatible agents such as Google ADK services and future A2A-native runtimes.
+Use **A2A** when the framework can expose or consume an agent card and task lifecycle. Use the **REST shim** when the framework does not speak A2A yet or when you only need reporting: heartbeat, memory writes, skill outcomes, and registry visibility.
 
-Use **REST shim** when the framework does not speak A2A yet or when you only need reporting: heartbeat, memory writes, skill outcomes, and registry visibility.
+## Memory And Knowledge
 
-## Memory and Knowledge
-
-Kitchen keeps knowledge files and conversation memory separate on purpose.
+MemroOS keeps source knowledge and retained memory separate on purpose.
 
 ```mermaid
 flowchart LR
@@ -419,9 +417,8 @@ flowchart LR
     Skills["skills"]
     Projects["projects"]
     Emails["emails"]
-    Meetings["gdrive/meet-recordings"]
-    AppleCalls["apple-notes/call-recordings"]
-    Runtime["skill-runtimes"]
+    Meetings["meetings"]
+    Runtime["skill runtimes"]
   end
 
   subgraph Memory["Memory entries"]
@@ -430,15 +427,17 @@ flowchart LR
     Episodic["SQLite episodic memory"]
   end
 
-  Knowledge --> Library["Library UI"]
-  Memory --> Ledger["Ledger + Memory Intelligence"]
+  Knowledge --> Library["Knowledge UI"]
+  Memory --> Search["Memory search"]
+  Search --> Context["Runtime context packs"]
+  Context --> Agents["Agent workflows"]
 ```
 
-The Library counts `.md`, `.mdx`, and `.txt` files from configured collections. A collection can combine multiple source folders; `meet-recordings` includes both Google Drive transcripts and exported Apple Notes call recordings. Memory entries live in separate memory services and SQLite tables, so a collection file count is not the same thing as total memories.
+Knowledge files are counted from configured collections. Memory entries live in separate memory services and SQLite tables, so a collection file count is not the same thing as total memories.
 
 ## Progressive Capabilities
 
-agentkitchen.dev treats specialized systems as optional progressive capabilities. They can be checked during setup, shown in tool-attention, and recommended from outcome history without becoming required dependencies for every install.
+MemroOS treats specialized systems as optional progressive capabilities. They can be checked during setup, shown in tool-attention, and recommended from outcome history without becoming required dependencies for every install.
 
 Enable the current optional bundle with:
 
@@ -448,45 +447,30 @@ KITCHEN_OPTIONAL_CAPABILITIES=gitnexus,agent-lightning
 
 Current bundled capabilities:
 
-- **GitNexus:** Kept as a separate MCP server, exposed through `.mcp.json` as `mcp-server:gitnexus`. agentkitchen.dev does not proxy or replace GitNexus; it catalogs the capability, reports status, and helps agents decide when to load it for code intelligence, impact analysis, and index health.
-- **Agent Lightning/APO:** Exposed in tool-attention as `capability:agent-lightning`. Kitchen owns the operator UI/API approval queue, while the worker CLI applies approved proposals and archives them for audit history.
-
-This separation keeps each system's lifecycle clear: GitNexus owns code graphs and indexes, Agent Lightning owns self-learning proposal workflows, and Kitchen owns discovery, operator control, memory routing, and outcome signals.
-
-## Agent Lightning Approvals
-
-Sous Vide approvals are intentionally two-step:
-
-1. The UI/API approval moves the proposal into a durable `approved/` work queue.
-2. The worker CLI applies queued approvals and archives the proposal for audit history.
-
-Qwen is the default executor assignment for this queue:
-
-```bash
-npm --prefix apps/kitchen run apo:worker -- --executor qwen
-```
-
-Use `APO_APPROVAL_CLI=qwen` to keep that default for scheduled runs, or pass `--executor codex` / `--executor claude` when you explicitly want a different CLI to own the implementation pass.
+- **GitNexus:** Code graph and impact analysis capability. MemroOS catalogs the capability, reports status, and helps agents decide when to load it.
+- **Agent Lightning/APO:** Human-gated self-learning proposal workflow. MemroOS owns the operator UI/API approval queue while worker CLIs apply approved proposals.
 
 ## Security Model
 
-Kitchen is built for private-network production first.
+MemroOS is built for private-network production first.
 
 - Registry writes require `KITCHEN_OPERATOR_API_KEY` outside local loopback.
 - Agent write/reporting endpoints require per-agent bearer credentials minted by the registry.
 - Memory read endpoints require operator authorization because they can expose sensitive context.
 - Prefer Tailscale or a private LAN for multi-machine startup deployments.
 - Use HTTPS and explicit operator keys for public or tunnel exposure.
-- Treat agent cards as untrusted input. Kitchen validates URL policy, payload size, required fields, and registration authorization.
+- Treat agent cards as untrusted input. MemroOS validates URL policy, payload size, required fields, and registration authorization.
 
 ## Local URLs
 
-- Dashboard: `http://localhost:3000`
+- Landing page: `http://localhost:3000`
 - Production-style local server: `http://localhost:3002`
-- Registry UI: `/agents`
-- Dispatch UI: `/dispatch`
-- Flow UI: `/flow`
-- Library UI: `/library`
+- Memory UI: `/notebooks`
+- Knowledge UI: `/library`
+- Skills UI: `/cookbooks`
+- Agent registry: `/agents`
+- Engage / Dispatch UI: `/dispatch`
+- Workflow Map UI: `/flow`
 - A2A card: `/.well-known/agent-card.json`
 
 ## Development
@@ -525,36 +509,23 @@ agentkitchen.dev/
 - [Claude Code integration](docs/integrations/claude-code.md)
 - [Google ADK integration](docs/integrations/google-adk.md)
 - [LangGraph integration](docs/integrations/langgraph.md)
-- [agentkitchen.dev MCP server](docs/integrations/mcp.md)
+- [MemroOS MCP server](docs/integrations/mcp.md)
 - [CrewAI and AutoGen integration](docs/integrations/crewai-autogen.md)
 
-## Upcoming Features
+## Roadmap
 
 Near-term focus after `v0.1.0`:
 
-- More A2A compatibility fixtures and interop tests.
 - Cleaner first-run onboarding for non-localhost deployments.
-- Better demo recording and hosted screenshot gallery.
+- Stronger memory-consumption evidence in dispatch and agent run records.
+- More A2A compatibility fixtures and interop tests.
 - More adapters for popular agent runtimes.
 - Hardened production profile examples for Tailscale, Docker, and HTTPS reverse proxies.
-
-**Agent Shield / Iris security layer:**
-
-- **Agent Shield integration:** Add a dedicated security scanning layer on top of the existing `content-scanner.ts` (which covers ~18 regex patterns). Agent Shield ([affaan-m/agentshield](https://github.com/affaan-m/agentshield), 128 commits) provides deeper coverage: `.claude/` config vulnerability scanning, MCP server/tool permission auditing, prompt injection detection, and tool misuse analysis. Goal: promote content scanning from regex-based utility to structured security plane with scan results visible in the Kitchen UI.
-- **Iris secure dispatch gate:** Wrap task dispatch and A2A delegation through an Iris security gate — pre-flight prompt injection checks, tool-call validation, and post-execution output scanning. Named "Iris" as the watchdog layer that watches every agent interaction.
-
-ClaudeClaw-inspired operator surfaces:
-
-- **Chat tab:** A dedicated command/chat workspace for speaking with CLIs, Paperclip project agents, runtime subagents, and the Kitchen system without burying chat inside the Flow page.
-- **Memory search:** First-class search across episodic SQLite recall, mem0/vector memory, graph memory, and knowledge files, with filters for agent, project, source, date, and memory tier.
-- **Schedules and routines:** A visible routines console for cron jobs, recurring agent checks, standing delegations, maintenance tasks, and approval-required automations.
-- **Hivemind Obsidian view:** An Obsidian-inspired graph/canvas view of agents, memories, tasks, proposals, skills, and backlinks so operators can browse the agent society as a living knowledge map.
-- **Design-system completion:** Finish the Paperclip-style visual migration across drawers, sheets, modals, detail panels, empty states, and error states so no screen falls back to the older dark dashboard shell.
-- **Flow canvas redesign:** Bring the React Flow topology, minimap, controls, node cards, edge styling, and node detail panels into the new Paperclip-style system while preserving graph readability.
+- Iris secure dispatch gate for prompt-injection checks, tool-call validation, and post-execution output scanning.
 
 ## Contributing
 
-This project is early, but useful contributions are very welcome.
+This project is early, but useful contributions are welcome.
 
 Start with [CONTRIBUTING.md](CONTRIBUTING.md) for setup, branch, pull request, and verification expectations. Please also read [SECURITY.md](SECURITY.md) before reporting security issues or sharing logs from agent runs.
 
@@ -562,11 +533,11 @@ Good first contribution areas:
 
 - Add an adapter for an agent framework you use.
 - Improve setup docs for your deployment shape.
-- Add screenshots or recordings from a real multi-machine setup.
 - Add A2A compatibility fixtures.
+- Improve memory search and source attribution.
 - Improve security tests around registry writes and memory reads.
 
-If agentkitchen.dev helps you run more than one agent without losing the plot, please star the repo. It helps the project find the people building the same weird, useful future.
+If MemroOS helps you stop making every agent start from zero, please star the repo. It helps the project find people building the same useful future.
 
 ## License
 
