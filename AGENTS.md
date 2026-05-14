@@ -7,7 +7,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **agentkitchen.dev** (4734 symbols, 8319 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **memroos.com** (5452 symbols, 9602 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -30,10 +30,10 @@ This project is indexed by GitNexus as **agentkitchen.dev** (4734 symbols, 8319 
 
 | Resource | Use for |
 |----------|---------|
-| `gitnexus://repo/agentkitchen.dev/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/agentkitchen.dev/clusters` | All functional areas |
-| `gitnexus://repo/agentkitchen.dev/processes` | All execution flows |
-| `gitnexus://repo/agentkitchen.dev/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/memroos.com/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/memroos.com/clusters` | All functional areas |
+| `gitnexus://repo/memroos.com/processes` | All execution flows |
+| `gitnexus://repo/memroos.com/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 

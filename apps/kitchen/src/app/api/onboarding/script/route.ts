@@ -119,11 +119,15 @@ env_path.write_text(
 env_path.chmod(stat.S_IRUSR | stat.S_IWUSR)
 
 mcp = body["mcp"]
-mcp_url = mcp["mcpServers"]["agentkitchen"]["url"]
+mcp_servers = mcp["mcpServers"]
+mcp_url = (mcp_servers.get("memroos") or mcp_servers.get("agentkitchen"))["url"]
 generic_entry = {"url": mcp_url}
 http_entry = {"type": "http", "url": mcp_url}
 streamable_entry = {"url": mcp_url, "transport": "streamable-http"}
 http_url_entry = {"httpUrl": mcp_url}
+generic_servers = {"memroos": generic_entry, "agentkitchen": generic_entry}
+http_url_servers = {"memroos": http_url_entry, "agentkitchen": http_url_entry}
+streamable_servers = {"memroos": streamable_entry, "agentkitchen": streamable_entry}
 report = {"agentId": agent_id, "platform": platform, "target": target, "actions": []}
 
 def remember(action, status, detail):
@@ -170,11 +174,11 @@ def merge_hermes_yaml(path):
         import yaml  # type: ignore
     except Exception:
         if not path.exists():
-            path.write_text(f"mcp_servers:\n  agentkitchen:\n    url: {json.dumps(mcp_url)}\n", encoding="utf-8")
+            path.write_text(f"mcp_servers:\n  memroos:\n    url: {json.dumps(mcp_url)}\n  agentkitchen:\n    url: {json.dumps(mcp_url)}\n", encoding="utf-8")
             remember("write-hermes-yaml", "ok", str(path))
         else:
-            sidecar = path.parent / "agent-kitchen.mcp.yaml"
-            sidecar.write_text(f"mcp_servers:\n  agentkitchen:\n    url: {json.dumps(mcp_url)}\n", encoding="utf-8")
+            sidecar = path.parent / "memroos.mcp.yaml"
+            sidecar.write_text(f"mcp_servers:\n  memroos:\n    url: {json.dumps(mcp_url)}\n  agentkitchen:\n    url: {json.dumps(mcp_url)}\n", encoding="utf-8")
             remember("write-hermes-yaml", "fallback", f"Wrote {sidecar}; install PyYAML for safe merge into {path}")
         return
 
@@ -183,35 +187,46 @@ def merge_hermes_yaml(path):
         loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
         data = loaded if isinstance(loaded, dict) else {}
     servers = data.setdefault("mcp_servers", {})
+    servers["memroos"] = {"url": mcp_url}
     servers["agentkitchen"] = {"url": mcp_url}
     path.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
     remember("write-hermes-yaml", "ok", str(path))
 
 def install_claude():
-    return run_if_available("claude", ["mcp", "add", "--transport", "http", "agentkitchen", "--scope", "user", mcp_url])
+    ok = run_if_available("claude", ["mcp", "add", "--transport", "http", "memroos", "--scope", "user", mcp_url])
+    alias_ok = run_if_available("claude", ["mcp", "add", "--transport", "http", "agentkitchen", "--scope", "user", mcp_url])
+    return ok or alias_ok
 
 def install_gemini():
-    if run_if_available("gemini", ["mcp", "add", "--scope", "user", "--transport", "http", "agentkitchen", mcp_url]):
+    if run_if_available("gemini", ["mcp", "add", "--scope", "user", "--transport", "http", "memroos", mcp_url]):
+        run_if_available("gemini", ["mcp", "add", "--scope", "user", "--transport", "http", "agentkitchen", mcp_url])
         return True
-    merge_json(home / ".gemini" / "settings.json", {"mcpServers": {"agentkitchen": http_url_entry}})
+    merge_json(home / ".gemini" / "settings.json", {"mcpServers": http_url_servers})
     return True
 
 def install_qwen():
-    if run_if_available("qwen", ["mcp", "add", "--scope", "user", "--transport", "http", "agentkitchen", mcp_url]):
+    if run_if_available("qwen", ["mcp", "add", "--scope", "user", "--transport", "http", "memroos", mcp_url]):
+        run_if_available("qwen", ["mcp", "add", "--scope", "user", "--transport", "http", "agentkitchen", mcp_url])
         return True
-    merge_json(home / ".qwen" / "settings.json", {"mcpServers": {"agentkitchen": http_url_entry}})
+    merge_json(home / ".qwen" / "settings.json", {"mcpServers": http_url_servers})
     return True
 
 def install_openclaw():
-    if run_if_available("openclaw", ["mcp", "set", "agentkitchen", json.dumps(streamable_entry)]):
+    if run_if_available("openclaw", ["mcp", "set", "memroos", json.dumps(streamable_entry)]):
+        run_if_available("openclaw", ["mcp", "set", "agentkitchen", json.dumps(streamable_entry)])
         return True
-    merge_json(home / ".openclaw" / "openclaw.json", {"mcp": {"servers": {"agentkitchen": streamable_entry}}})
+    merge_json(home / ".openclaw" / "openclaw.json", {"mcp": {"servers": streamable_servers}})
     return True
 
 def install_opencode():
     merge_json(home / ".config" / "opencode" / "opencode.json", {
         "$schema": "https://opencode.ai/config.json",
         "mcp": {
+            "memroos": {
+                "type": "remote",
+                "url": mcp_url,
+                "enabled": True,
+            },
             "agentkitchen": {
                 "type": "remote",
                 "url": mcp_url,
@@ -226,12 +241,12 @@ def install_hermes():
     return True
 
 def install_codex():
-    merge_json(home / ".codex" / "mcp.json", {"mcpServers": {"agentkitchen": generic_entry}})
+    merge_json(home / ".codex" / "mcp.json", {"mcpServers": generic_servers})
     return True
 
 def install_file(path_value):
     path = pathlib.Path(path_value).expanduser()
-    merge_json(path, {"mcpServers": {"agentkitchen": generic_entry}})
+    merge_json(path, {"mcpServers": generic_servers})
     return True
 
 def install_explicit(selected):

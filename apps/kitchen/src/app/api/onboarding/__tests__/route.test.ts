@@ -148,6 +148,9 @@ describe("agent onboarding routes", () => {
     expect(registered.apiKey).toMatch(/^ak_chatgpt_/);
     expect(registered.mcp).toEqual({
       mcpServers: {
+        memroos: {
+          url: "https://kitchen.example.test/mcp",
+        },
         agentkitchen: {
           url: "https://kitchen.example.test/mcp",
         },

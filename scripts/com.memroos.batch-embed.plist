@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.memroos.batch-embed</string>
+    
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/lcalderon/github/memoroos/scripts/batch-embed.sh</string>
+    </array>
+    
+    <key>StartCalendarInterval</key>
+    <array>
+        <dict>
+            <key>Hour</key>
+            <integer>3</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+        <dict>
+            <key>Hour</key>
+            <integer>15</integer>
+            <key>Minute</key>
+            <integer>0</integer>
+        </dict>
+    </array>
+    
+    <key>StandardOutPath</key>
+    <string>/Users/lcalderon/github/memoroos/services/memory/logs/batch-embed.log</string>
+    
+    <key>StandardErrorPath</key>
+    <string>/Users/lcalderon/github/memoroos/services/memory/logs/batch-embed-error.log</string>
+    
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>QMD_EMBED_FORCE</key>
+        <string>0</string>
+        <key>QMD_UPDATE_FIRST</key>
+        <string>0</string>
+        <key>QMD_DAYTIME_CHECK</key>
+        <string>1</string>
+        <key>QMD_MIN_FREE_GB</key>
+        <string>4</string>
+        <key>QMD_MAX_LOAD_PER_CPU</key>
+        <string>0.75</string>
+    </dict>
+</dict>
+</plist>

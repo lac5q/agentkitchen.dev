@@ -112,11 +112,14 @@ export function verifyAgentOnboardingToken(token: string): VerifiedOnboardingTok
 }
 
 export function buildAgentKitchenMcpConfig(mcpUrl: string): Record<string, unknown> {
+  const entry = {
+    url: normalizeUrl(mcpUrl),
+  };
+
   return {
     mcpServers: {
-      agentkitchen: {
-        url: normalizeUrl(mcpUrl),
-      },
+      memroos: entry,
+      agentkitchen: entry,
     },
   };
 }
