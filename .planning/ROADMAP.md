@@ -14,8 +14,94 @@
 - ✅ **v2.2 LLM Optimization + Evaluation** — Phases 46-49 (shipped 2026-05-11)
 - ✅ **v2.3 Agent Runtime Enhancements** — Phases 50-52 (shipped 2026-05-11)
 - ✅ **v2.4 Performance + Caching** — Phases 53-54 (shipped 2026-05-11)
+- 🚧 **v2.5 Eval Engine + Self-Improvement Platform** — Phases 57-62 (scoping)
 
 ## Phases
+
+### v2.5 Eval Engine + Self-Improvement Platform (Phases 57-62)
+
+Single coherent eval substrate dogfooded internally and shipped as an external product surface. Default scoring is a **3-layer composite scalar `W`** (L1 capability + L2 LLM-as-judge + L3 business outcome), used as the keep/discard signal for all autogen learning loops. See `.planning/notes/eval-engine-3-layer-composite.md` for the locked decision record.
+
+- [ ] **Phase 57**: Eval Engine Core — scorer registry, 3-layer composite W, pinned cross-family judge, golden-set framework, drift guard, config surface + UI mirror
+- [ ] **Phase 58**: SEAL Self-Improvement Substrate — reflection → typed proposals → operator approval → apply → rerun-evals → keep-if-W-improved → rollback/audit
+- [ ] **Phase 59**: Memory Autogen Learnings — 5 memory proposal types + Karpathy-style fixed-harness memory policy lab
+- [ ] **Phase 60**: Agent Autogen Learnings — agent_instruction_patch / skill_addition / tool_routing_update + per-role golden sets + trajectory evals
+- [ ] **Phase 61**: Business-Ops Outcome Layer (L3) — trace post-hoc metrics + CRM/helpdesk/finance adapters + per-company KPI weighting
+- [ ] **Phase 62**: Public Eval API + SDK — framework-agnostic HTTP surface, BYO agent trace format, dogfooded by 59/60, shipped externally
+
+Open questions tracked in `.planning/research/questions.md`. External product packaging decisions deferred — see `.planning/seeds/eval-engine-as-product.md`.
+
+### Phase 57: Eval Engine Core
+**Goal**: A scorer registry, 3-layer composite `W` scalar, pinned cross-family LLM judge with drift guard, and a `memroos.eval.yaml` config surface (mirrored in the UI) ship and produce a single normalized 0–1 keep/discard signal for any registered agent trace.
+**Depends on**: v2.0 baseline (registry, memory, REST surface) — phases 34-41
+**Requirements**: EVAL-01, EVAL-02, EVAL-03, EVAL-04, EVAL-05, EVAL-06, EVAL-07, EVAL-08, EVAL-09, EVAL-10
+**Success Criteria** (what must be TRUE):
+  1. A registered agent's trace, scored through the registry, returns a composite `W ∈ [0,1]` with per-layer L1/L2/L3 breakdown and per-scorer detail
+  2. Default judge (`claude-haiku-4-5-20251001`) and weights `{0.2, 0.5, 0.3}` are config-loaded from `memroos.eval.yaml`; UI panel reflects and edits the same source of truth
+  3. Drift guard runs the configured golden-set agreement check before `W` is trusted in any autogen loop and halts with an operator-visible flag below 0.85 agreement
+  4. Position-bias swap augmentation is wired into the L2 judge call; cross-family constraint blocks any same-family agent/judge pairing in CI
+  5. Every eval run persists layer breakdown, judge model + prompt version, golden-set version, and per-example scores — queryable for any past run
+  6. Memory recall ships as a registered L1+L2 scorer (not a bespoke memory-only path), proving the registry contract
+**UI hint**: yes
+
+### Phase 58: SEAL Self-Improvement Substrate
+**Goal**: A generic reflection → typed-proposal → operator-approval → apply → rerun-evals → keep-if-W-improved → rollback loop runs end-to-end against a mutation surface plugged in via a closed proposal-type registry, with full audit trail.
+**Depends on**: Phase 57 (composite W is the keep/discard signal)
+**Requirements**: SEAL-01, SEAL-02, SEAL-03, SEAL-04, SEAL-05, SEAL-06
+**Success Criteria** (what must be TRUE):
+  1. Reflection on a low-W trace produces at least one typed proposal of a registered type with a forecast W-delta and a human-readable rationale
+  2. The Kitchen UI operator approval queue shows pending proposals with diff, forecast W-delta, and approve/reject controls; decisions are persisted
+  3. An approved proposal is applied in an isolated context, evals rerun against the same golden set, and the mutation is kept only if composite W ≥ baseline
+  4. A regressed mutation is rolled back automatically; the apply/rollback decision and all per-layer W deltas are persisted in an immutable audit log
+  5. The proposal-type registry is a closed enum at v1 — adding a new type requires a registry update commit (not a runtime plugin); v2+ extension path is documented
+**UI hint**: yes
+
+### Phase 59: Memory Autogen Learnings
+**Goal**: Five memory-specific proposal types (`memory_rewrite`, `query_hint`, `salience_update`, `tier_route`, `eval_case_addition`) ride on the SEAL substrate from Phase 58, and a Karpathy-style fixed-harness memory policy lab can rank memory-policy variations by composite `W`.
+**Depends on**: Phase 58 (SEAL substrate must accept registered proposal types)
+**Requirements**: MEMGEN-01, MEMGEN-02, MEMGEN-03, MEMGEN-04, MEMGEN-05, MEMGEN-06
+**Success Criteria** (what must be TRUE):
+  1. All five memory proposal types register against the Phase 58 substrate and round-trip through reflection → approval → apply → evals → keep/rollback
+  2. The fixed-harness memory policy lab can take N policy variants and produce a ranked W-table from the same golden set deterministically
+  3. At least one observed memory miss in the dogfood corpus produces an `eval_case_addition` proposal that, after operator approval, is added to the golden set and used in subsequent evals
+  4. A memory-only SEAL loop run (the original phase 57 scope) succeeds end-to-end on dogfood data and improves composite `W` on the memory-recall scorer
+
+### Phase 60: Agent Autogen Learnings
+**Goal**: Three agent-level proposal types (`agent_instruction_patch`, `skill_addition`, `tool_routing_update`) ship with per-role golden sets (sales/support/finance/ops, ~50 examples each), trajectory evals (Phoenix-style), and named weight preset profiles so operators can adopt the loop without manual weight tuning.
+**Depends on**: Phase 58 (SEAL substrate), Phase 59 (proves substrate is generic over mutation surface)
+**Requirements**: AGENTGEN-01, AGENTGEN-02, AGENTGEN-03, AGENTGEN-04, AGENTGEN-05, AGENTGEN-06
+**Success Criteria** (what must be TRUE):
+  1. All three agent proposal types register against the Phase 58 substrate and round-trip through the full loop on at least one of the four per-role golden sets
+  2. Four per-role golden sets (sales, support, finance, ops) ship in `golden-sets/`, each ~50 examples, with documented authorship and human-validated agreement above the 0.85 drift-guard floor
+  3. Trajectory evals score full multi-step agent runs (not just single-turn output) and feed the trajectory score into the L2 layer of composite `W`
+  4. Three named preset profiles (`outcome-weighted`, `quality-weighted`, `compliance-weighted`) are selectable from the UI and `memroos.eval.yaml` — picking one swaps the weight vector without manual dialing
+  5. The agent autogen loop, run on a single role golden set, lifts composite `W` after at least one approved proposal — demonstrated end-to-end on dogfood data
+**UI hint**: yes
+
+### Phase 61: Business-Ops Outcome Layer (L3)
+**Goal**: Post-hoc business-system outcome signals (Anthropic + Fin/Intercom canonical KPI set) flow into the L3 layer of composite `W` via three business-system adapters covering CRM, helpdesk, and finance, with per-company KPI weighting and a business-ops dashboard for per-agent `W` over time.
+**Depends on**: Phase 57 (L3 is a scorer layer in the registry)
+**Requirements**: L3-01, L3-02, L3-03, L3-04, L3-05, L3-06
+**Success Criteria** (what must be TRUE):
+  1. Trace post-hoc extractor produces the canonical KPI set (completion rate, escalation rate, TTR p50, operator approval rate, cost-per-task) for any completed task, keyed by correlation ID
+  2. CRM adapter (Salesforce + HubSpot v1) pulls deal-advance / lead-disposition signals keyed by correlation ID and emits them as L3 scorer inputs
+  3. Helpdesk adapter (Zendesk + Intercom v1) pulls resolution / CSAT / escalation signals keyed by correlation ID and emits them as L3 scorer inputs
+  4. Finance-system adapter (QuickBooks + NetSuite v1) pulls transaction-posted / reconciled signals keyed by correlation ID and emits them as L3 scorer inputs
+  5. Operators define per-company L3 weights in `memroos.eval.yaml` (no code change required) and the resulting composite `W` reflects the per-company KPI ranking
+  6. Business-ops dashboard renders per-agent W timeline with L1/L2/L3 breakdown and click-through to the source trace and the originating business-system record
+**UI hint**: yes
+
+### Phase 62: Public Eval API + SDK
+**Goal**: A framework-agnostic HTTP eval surface accepts customer agent traces (OpenInference candidate standard or documented JSON) and returns `W` + layer breakdown + proposal queue; TS/Python SDKs wrap the API; phases 59 and 60 dogfood the public surface to prove the contract.
+**Depends on**: Phase 57 (eval engine produces W), Phase 58 (proposal queue exists), Phase 59+60 (proves the substrate is real before opening to customers)
+**Requirements**: API-01, API-02, API-03, API-04, API-05, API-06
+**Success Criteria** (what must be TRUE):
+  1. A customer can `POST` an agent trace to the public eval API surface and receive `W` + L1/L2/L3 breakdown + any proposal IDs queued for that trace, scoped to their tenant
+  2. The API accepts OpenInference-formatted traces (candidate standard) and a documented MemroOS JSON format; round-trip parsing and scoring is identical across formats
+  3. TypeScript and Python SDKs ship with idiomatic per-language ergonomics and a smoke-test that runs the quickstart example against a sample trace + sample golden set
+  4. Per-customer API keys enforce tenant isolation — no cross-tenant trace, golden set, or proposal visibility; verified by test
+  5. The customer-facing quickstart ("first eval in 5 minutes") guides a new user from `pip install memroos` (or `npm i`) through their first scored trace with a sample golden set
+  6. The Phase 59 memory autogen loop and the Phase 60 agent autogen loop use the public API surface end-to-end (not an internal-only path) — proving the framework-agnostic contract on real internal traffic
 
 ### v2.0 A2A Hub — Open Source (Phases 34-41)
 
@@ -288,7 +374,7 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 
 ### Future Milestone Priority
 
-1. Define the next product milestone after the completed v2.0-v2.4 roadmap and Phase 55 engagement repair.
+1. Define the next product milestone after the completed v2.0-v2.4 roadmap and Phase 55 engagement repair. *(v2.5 Eval Engine + Self-Improvement Platform is now scoped — phases 57–62. Run `/gsd-new-milestone v2.5` to formally promote.)*
 
 ### Later Ideas
 

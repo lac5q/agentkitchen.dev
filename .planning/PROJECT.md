@@ -12,19 +12,25 @@ See `.planning/GOAL.md` for the full development goal and workflow loop.
 
 ---
 
-## Current Milestone: v2.0 A2A Hub — Open Source
+## Current Milestone: v2.5 Eval Engine + Self-Improvement Platform
 
-**Goal:** Transform Kitchen from a personal agent dashboard into an open-source A2A protocol hub with a unified three-tier memory architecture that any agent framework can plug into.
+**Goal:** A single 3-layer composite eval signal (`W` = L1 capability + L2 LLM-as-judge + L3 business outcome) drives every autogen learning loop — memory, agents, skills, tool routing — dogfooded internally on MemroOS itself, then shipped externally as a framework-agnostic eval + self-improvement platform for mid-market companies (50–500 employees) going agentic.
 
 **Target features:**
-- A2A Hub — `/.well-known/agent.json`, A2A task API, agent discovery & delegation
-- Google ADK support — ADK agents register via A2A, surface in Flow
-- Universal REST API — Framework-agnostic heartbeat, skills, memory, tool-attention endpoints
-- Unified Memory — mem0 graph layer + Neo4j; unified `/api/memory/*` covering vector (Qdrant Cloud) + graph (Neo4j) + episodic (SQLite)
-- Operating profiles + env-driven config — Sane default install, plus documented overrides for ports, paths, URLs, services, auth, and multi-machine topology
-- Docker full-stack — `docker-compose up` for OSS users (Kitchen + Knowledge MCP + mem0 + Neo4j; Qdrant stays cloud)
-- Documentation — README rewrite, architecture diagram, per-framework guides, API reference, memory architecture guide
-- OSS polish — MIT license, CONTRIBUTING.md, security policy, issue templates, public CI
+- Eval Engine Core — scorer registry, composite W scalar, pinned cross-family LLM judge with drift guard, golden-set framework, `memroos.eval.yaml` config + UI panel
+- SEAL Self-Improvement Substrate — reflection → typed proposals → operator approval → apply → rerun-evals → keep-if-W-improved → rollback/audit (polymorphic over mutation surface)
+- Memory Autogen Learnings — 5 memory proposal types (rewrite / query_hint / salience / tier_route / eval_case_addition) + Karpathy-style fixed-harness memory policy lab
+- Agent Autogen Learnings — agent_instruction_patch / skill_addition / tool_routing_update proposal types, per-role golden sets (sales/support/finance/ops), trajectory evals
+- Business-Ops Outcome Layer (L3) — post-hoc trace metrics (completion / escalation / TTR / approval / cost) + CRM, helpdesk, finance adapters + per-company KPI weighting
+- Public Eval API + SDK — framework-agnostic HTTP surface, OpenInference trace support, TS/Python SDKs, dogfooded by phases 59/60
+
+> Locked decision record: `.planning/notes/eval-engine-3-layer-composite.md`. External product packaging deferred — see `.planning/seeds/eval-engine-as-product.md`.
+
+---
+
+## Previous Milestone: v2.0 A2A Hub — Open Source — SHIPPED 2026-05-11
+
+**What shipped:** A2A hub (`/.well-known/agent.json`, A2A v1 task API, ADK integration), universal REST API + canonical agent registry, LangGraph orchestration (Python, SqliteSaver, HIL), unified memory across vector (Qdrant Cloud) + graph (Neo4j via mem0) + episodic (SQLite), operating profiles (local-dev/single-host/private-network/cloud-https/custom), Docker full-stack, developer setup experience, documentation rewrite, OSS polish (MIT, CONTRIBUTING, SECURITY, CI). Phases 34-41.
 
 ---
 

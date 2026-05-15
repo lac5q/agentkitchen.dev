@@ -130,5 +130,104 @@
 - Unmapped: 0 ✓
 
 ---
+
+## v2.5 Requirements — Eval Engine + Self-Improvement Platform
+
+**Defined:** 2026-05-15
+**Milestone Goal:** A single 3-layer composite eval signal (`W`) drives every autogen learning loop — memory, agents, skills, tool routing — dogfooded internally, shipped externally to mid-market companies (50–500 employees) going agentic.
+
+Derived from `.planning/notes/eval-engine-3-layer-composite.md` (locked decision record, 2026-05-14), `.planning/seeds/eval-engine-as-product.md`, and `.planning/research/questions.md`.
+
+### Eval Engine Core
+
+- [ ] **EVAL-01**: Scorer registry — pluggable L1 (deterministic capability), L2 (LLM-as-judge with rubric), L3 (post-hoc business outcome) scorers register via a single interface
+- [ ] **EVAL-02**: 3-layer composite scalar `W = w1·L1 + w2·L2 + w3·L3` (default weights `{0.2, 0.5, 0.3}`, normalized 0–1, configurable per-agent)
+- [ ] **EVAL-03**: Pinned cross-family LLM judge — default `claude-haiku-4-5-20251001`, version-pinned by model hash + prompt template version; rotation requires explicit re-baseline
+- [ ] **EVAL-04**: Golden-set framework — per-role JSONL golden sets (default + per-role: sales/support/finance/ops, ~50 examples each)
+- [ ] **EVAL-05**: Drift guard — golden-set agreement check before `W` is trusted; halt loop and flag operator if judge-vs-human agreement drops below 0.85
+- [ ] **EVAL-06**: Position-bias and self-preference mitigations — swap augmentation (score both orderings, tie on disagreement); judge model MUST be from a different family than agent under eval
+- [ ] **EVAL-07**: `memroos.eval.yaml` config surface at repo root — judge model, golden sets, scorer lists, weights, drift-guard floor, per-agent overrides
+- [ ] **EVAL-08**: Kitchen UI eval panel — read + edit the same config surface non-engineers can use
+- [ ] **EVAL-09**: Memory recall reframed as one L1/L2 scorer plugged into the registry (no longer a memory-specific SEAL phase)
+- [ ] **EVAL-10**: Eval-run history persistence — every W computation stores layer breakdown, judge model + prompt version, golden set version, and per-example scores for auditability
+
+### SEAL Self-Improvement Substrate
+
+- [ ] **SEAL-01**: Reflection step — given trace + W breakdown, generate one or more typed proposals (registered proposal types only)
+- [ ] **SEAL-02**: Polymorphic proposal-type registry — pluggable mutation surfaces (memory policy / agent instructions / skills / tool routing) register against one interface
+- [ ] **SEAL-03**: Operator approval queue — Kitchen UI surfaces pending proposals with W-delta forecast, diff, and approve/reject controls
+- [ ] **SEAL-04**: Apply → rerun-evals → keep-if-W-improved cycle — proposal applied in isolated context, evals rerun against same golden set, kept only if composite W ≥ pre-mutation baseline
+- [ ] **SEAL-05**: Rollback with full audit trail — failed proposals reverted, every decision (approve/reject/applied/rolled-back) persisted with reasoning
+- [ ] **SEAL-06**: Proposal-type registry is a closed enum at v1 (auditable, safer); extension path documented for future plugin model
+
+### Memory Autogen Learnings
+
+- [ ] **MEMGEN-01**: `memory_rewrite` proposal type — rewrite stored memory entries to improve retrieval precision
+- [ ] **MEMGEN-02**: `query_hint` proposal type — augment user queries with retrieval hints derived from past hits/misses
+- [ ] **MEMGEN-03**: `salience_update` proposal type — adjust memory salience scores based on retrieval outcomes
+- [ ] **MEMGEN-04**: `tier_route` proposal type — change which tier (vector/graph/episodic) a memory class lands in
+- [ ] **MEMGEN-05**: `eval_case_addition` proposal type — add new golden-set examples from observed misses
+- [ ] **MEMGEN-06**: Fixed-harness memory policy lab (Karpathy autoresearch-style) — deterministic eval harness lets memory policy variations be ranked by composite W
+
+### Agent Autogen Learnings
+
+- [ ] **AGENTGEN-01**: `agent_instruction_patch` proposal type — propose edits to an agent's system prompt or operating instructions
+- [ ] **AGENTGEN-02**: `skill_addition` proposal type — propose new skill registration when observed gaps repeat
+- [ ] **AGENTGEN-03**: `tool_routing_update` proposal type — propose changes to which tool an agent reaches for in a given context
+- [ ] **AGENTGEN-04**: Per-role golden sets — sales / support / finance / ops, ~50 examples each, shipped in `golden-sets/` directory
+- [ ] **AGENTGEN-05**: Trajectory evals (Phoenix-style) — score full multi-step agent runs, not just single-turn outputs
+- [ ] **AGENTGEN-06**: Named preset weight profiles — `outcome-weighted`, `quality-weighted`, `compliance-weighted` so operators can pick per-role profile without manual weight tuning
+
+### Business-Ops Outcome Layer (L3)
+
+- [ ] **L3-01**: Trace post-hoc metric extraction — completion rate, escalation rate, TTR p50, operator approval rate, cost-per-task (Anthropic + Fin/Intercom canonical KPI set)
+- [ ] **L3-02**: CRM adapter (Salesforce + HubSpot) — pull outcome signals (deal advance, lead disposition) keyed by correlation ID
+- [ ] **L3-03**: Helpdesk adapter (Zendesk + Intercom) — pull outcome signals (resolution, CSAT, escalation) keyed by correlation ID
+- [ ] **L3-04**: Finance-system adapter (QuickBooks + NetSuite) — pull outcome signals (transaction posted, reconciled) keyed by correlation ID
+- [ ] **L3-05**: Per-company KPI weighting — operators define which L3 metrics matter for their company, override default weights without code changes
+- [ ] **L3-06**: Business-ops dashboard — per-agent W timeline with L1/L2/L3 breakdown and link-through to source trace
+
+### Public Eval API + SDK
+
+- [ ] **API-01**: Framework-agnostic HTTP eval surface — customer's agent traces in, W + layer breakdown + proposal queue out
+- [ ] **API-02**: OpenInference trace format support (candidate standard) — also accept raw JSON with documented schema
+- [ ] **API-03**: TypeScript and Python SDKs — thin wrappers around the HTTP surface, idiomatic per-language ergonomics
+- [ ] **API-04**: Per-customer auth and tenant isolation — API keys, scoped golden sets, no cross-tenant data leakage
+- [ ] **API-05**: Customer-facing quickstart — "first eval in 5 minutes" walkthrough, sample agent trace, sample golden set
+- [ ] **API-06**: Internal dogfood — Phase 59 + 60 autogen loops use the public API surface (not internal-only path), proving framework-agnostic contract
+
+## v2.5 Deferred to v2.6+
+
+- Open-by-default pluggable SEAL proposal-type registry (v1 ships closed enum)
+- Compliance posture floor — SOC 2, data residency, judge-model on-prem option (v1 ships single-tenant cloud)
+- Golden set marketplace — community-contributed or verticalized (legal/healthcare/fintech) upsell
+- Eval engine as separate SKU (v1 ships bundled with MemroOS Hub)
+
+## v2.5 Out of Scope
+
+| Feature | Reason |
+|---------|--------|
+| Multi-judge ensemble | Single pinned judge is the stable contract for v1; ensemble adds drift surface |
+| Pairwise/ranking-only scoring | Composite W requires pointwise scalar; ranking is a future scorer plugin |
+| Reinforcement-learning-style policy optimization | v1 is reflection-only; gradient-based methods are out of scope |
+| On-prem judge model deployment | v1 ships hosted judge only; on-prem is v2.6+ enterprise tier |
+
+## v2.5 Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| EVAL-01 … EVAL-10 | Phase 57 | Pending |
+| SEAL-01 … SEAL-06 | Phase 58 | Pending |
+| MEMGEN-01 … MEMGEN-06 | Phase 59 | Pending |
+| AGENTGEN-01 … AGENTGEN-06 | Phase 60 | Pending |
+| L3-01 … L3-06 | Phase 61 | Pending |
+| API-01 … API-06 | Phase 62 | Pending |
+
+**v2.5 Coverage:**
+- v2.5 requirements: 40 total
+- Unique requirements mapped to phases: 40
+- Unmapped: 0 ✓
+
+---
 *Requirements defined: 2026-05-04*
-*Last updated: 2026-05-05 — added operator-customizable install profiles*
+*Last updated: 2026-05-15 — added v2.5 Eval Engine + Self-Improvement Platform (40 requirements across 6 phases)*

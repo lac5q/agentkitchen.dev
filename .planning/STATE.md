@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.4
-milestone_name: Performance + Caching
-status: complete
-stopped_at: Completed all remaining /goal phases 50-54
-last_updated: "2026-05-11T19:55:00.000-07:00"
-last_activity: 2026-05-11
+milestone: v2.5
+milestone_name: Eval Engine + Self-Improvement Platform
+status: planning
+last_updated: "2026-05-15T15:00:17.418Z"
+last_activity: 2026-05-15
 progress:
-  total_phases: 21
-  completed_phases: 21
-  total_plans: 29
-  completed_plans: 29
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # State: Agent Kitchen
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 ## Current Position
 
-Phase: 56 (code-review-uat-e2e) — COMPLETE
-Plan: /code review fix all issues UAT E2E
-Status: Ready for next milestone definition
-Last activity: 2026-05-11
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-15 — Milestone v2.5 started
 
 ## Roadmap Summary (v2.0)
 
