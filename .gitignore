@@ -60,3 +60,7 @@ services/**/logs/
 
 # GSD internal counters
 .planning/.next-call-count
+
+# Local agent/tool state — never committed
+.codex/
+.agents/
