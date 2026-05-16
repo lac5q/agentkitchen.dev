@@ -123,13 +123,14 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ### Remaining v2.5 gap (1)
 
-- **Dogfood W-lift not capturable — ARCHITECTURAL.** `EvalService.runForTrace`
-  (src/lib/evals/service.ts:111) clones the baseline run instead of re-scoring
-  the post-apply artifact, so SEAL/agent/memory proposals can never show real
-  W improvement in production (only mocked tests show it). Fix: make
-  `runForTrace` re-evaluate via `scoreTraceWithEvalEngine`. Blocks success
-  criteria 58-#? / 60-#5. **DECISION NEEDED: implement now (net-new) vs accept
-  as documented v2.5→v3 carry-over.**
+- **Dogfood W-lift — SPEC'D, ready for separate execution.** Root cause
+  confirmed: `EvalService.runForTrace` (src/lib/evals/service.ts:111) clones
+  the baseline instead of re-scoring. Full self-contained implementation spec
+  written for a fresh LLM session:
+  **`.planning/phases/58-seal-self-improvement/58-02-PLAN.md`** (Tier 1:
+  deterministic modeled re-score via the proven policy-lab pattern, ~0.5–1 day;
+  Tier 2 instruction/skill behavioral effect explicitly carried to v3). Execute
+  that plan in its own session; it needs no prior context.
 - Phase 59 scope classification (v2.5 vs v3) still open
 - Auth/63/64 code kept on main (build depends on it); tracked as v3 in ROADMAP
 

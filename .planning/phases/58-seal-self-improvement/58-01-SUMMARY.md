@@ -47,3 +47,5 @@ substrate tests pass after reconciliation.
   mock `evalService` returning a distinct post-run. **To meet the W-lift
   criterion, `runForTrace` must actually re-evaluate the mutated artifact via
   `scoreTraceWithEvalEngine`.** Tracked as a v2.5 follow-up in STATE.md.
+
+> **Closure path:** see `.planning/phases/58-seal-self-improvement/58-02-PLAN.md` — a self-contained spec to close the W-lift gap (Tier 1) in a separate session. Tier 2 (instruction/skill behavioral W-lift) is carried to v3.

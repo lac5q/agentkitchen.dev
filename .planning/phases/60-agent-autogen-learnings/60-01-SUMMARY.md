@@ -42,3 +42,5 @@ are NOT met.
   re-evaluates via `scoreTraceWithEvalEngine`. See 58-01-SUMMARY.md.
 - Phase 60 now ~70% (golden sets done); remaining gap is the runForTrace
   re-scoring architecture, shared with phase 58.
+
+> **Closure path:** see `.planning/phases/58-seal-self-improvement/58-02-PLAN.md` — a self-contained spec to close the W-lift gap (Tier 1) in a separate session. Tier 2 (instruction/skill behavioral W-lift) is carried to v3.
