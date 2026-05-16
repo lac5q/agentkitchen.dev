@@ -13,7 +13,10 @@
  * by those callers as well (see 62-01-PLAN.md task 9).
  */
 
+import { loadEvalConfig } from "@/lib/evals/config";
+import { goldenSetPathForTrace, loadGoldenSet } from "@/lib/evals/golden-sets";
 import type { EvalRunResult } from "@/lib/evals/types";
+import { rescorePostApply, type SealRescoreProposalContext } from "./rescore";
 import type { EvalServiceLike } from "./service";
 
 // Minimal HTTP client — avoids importing the full SDK package during the
@@ -116,11 +119,38 @@ export class SdkBackedEvalService implements EvalServiceLike {
     return runResult.run;
   }
 
+  async rescoreForProposal(
+    proposal: SealRescoreProposalContext & { traceId: string; agentId: string; baselineRunId: string }
+  ): Promise<EvalRunResult> {
+    const runResult = (await publicApiGet(
+      this.baseUrl,
+      `/api/public/v1/runs/${encodeURIComponent(proposal.baselineRunId)}`,
+      this.apiKey
+    )) as { run: EvalRunResult };
+    const baseline = runResult.run;
+    if (baseline.agentId !== proposal.agentId) {
+      throw new Error(`Trace ${proposal.traceId} belongs to ${baseline.agentId}, not ${proposal.agentId}`);
+    }
+
+    const config = loadEvalConfig();
+    const goldenSetPath = goldenSetPathForTrace(config, { agentId: baseline.agentId, role: baseline.role });
+    const goldenSet = loadGoldenSet(goldenSetPath);
+    return rescorePostApply({
+      baseline,
+      proposalType: proposal.proposalType,
+      diff: proposal.diff,
+      forecastWDelta: proposal.forecastWDelta,
+      config,
+      goldenSet,
+      goldenSetPath,
+    });
+  }
+
   /**
    * Not needed by SealService.applyProposal() in the SDK path,
    * but required by the EvalServiceLike interface.
    */
-  getRunById(_runId: string): EvalRunResult | null {
+  getRunById(): EvalRunResult | null {
     // The SDK path doesn't use this method in the SEAL apply loop.
     // Return null to allow the caller to detect absence gracefully.
     return null;

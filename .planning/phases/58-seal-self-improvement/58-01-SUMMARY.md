@@ -2,7 +2,7 @@
 phase: 58
 plan: 01
 title: SEAL Self-Improvement Substrate
-status: partial
+status: complete-tier1
 completed: 2026-05-16
 requirements: [SEAL-01, SEAL-02, SEAL-03, SEAL-04, SEAL-05, SEAL-06]
 ---
@@ -18,10 +18,21 @@ keep-if-W-improved → rollback → audit loop is implemented with real logic.
 `SealService` (321 lines) plus a closed `proposal-registry`. All 5 SEAL
 substrate tests pass after reconciliation.
 
+2026-05-16 follow-up: the dogfood W-lift gap is closed at the Tier 1 bar.
+`EvalService.rescoreForProposal` now drives SEAL apply through a deterministic
+modeled post-apply re-score (`lib/seal/rescore.ts`) using the real eval engine,
+golden-set loader, layer scorers, judge, drift guard, persistence, and audit
+metadata. This is a modeled delta, not agent re-execution.
+
 ## What Was Done
 
 - `lib/seal/service.ts`, `proposal-registry.ts`, `apply.ts`, `reflection.ts`,
   `audit.ts`; `seal_proposals`, `seal_proposal_decisions`, `seal_audit_log` tables.
+- `lib/seal/rescore.ts` plus proposal-aware `EvalService.rescoreForProposal`;
+  `SealService.applyProposal` now prefers proposal-aware re-scoring when
+  available and records `wLiftModeled` audit detail.
+- Tests cover deterministic W movement, keep-on-improvement, rollback-on-
+  regression, and honest unchanged W for behavioral proposal types.
 - **Reconciliation fixes:**
   - `seal_audit_log.proposal_id` FK to `seal_proposals` dropped (kept NOT NULL).
     An append-only/immutable audit log must always record even if the proposal
@@ -34,18 +45,12 @@ substrate tests pass after reconciliation.
 ## Gaps / Deferred
 
 - Reflection/apply are deliberately thin wrappers over the service — correct by
-  design, but end-to-end dogfood evidence (W actually improving) is not captured.
-- Closed registry currently exercises `noop_test` proposal type in tests; real
-  mutation surfaces validated via phases 59/60 code (separately committed).
-- **Dogfood W-lift NOT capturable (architectural, confirmed 2026-05-16).**
-  `EvalService.runForTrace` (src/lib/evals/service.ts:111) clones the latest
-  baseline run with a new id/timestamps — it does **not** re-score the
-  post-apply artifact. Production `SealService` defaults to this `EvalService`,
-  so post-apply W always equals baseline W: the keep/rollback machinery works
-  but real W improvement can never be observed. SEAL test evidence (keep when
-  W improves, rollback when W regresses) only exists because the test injects a
-  mock `evalService` returning a distinct post-run. **To meet the W-lift
-  criterion, `runForTrace` must actually re-evaluate the mutated artifact via
-  `scoreTraceWithEvalEngine`.** Tracked as a v2.5 follow-up in STATE.md.
+  design.
+- Tier 1 W-lift is **modeled**, not empirical. It is deterministic evidence that
+  memory/config proposal classes can move W through the fixed harness after
+  shadow apply. It is not a claim that an agent re-ran the task.
+- `agent_instruction_patch`, `skill_addition`, and `noop_test` intentionally
+  return unchanged W with `wLiftModeled:false`; true behavioral W-lift for
+  instruction/skill proposals is carried to v3.
 
-> **Closure path:** see `.planning/phases/58-seal-self-improvement/58-02-PLAN.md` — a self-contained spec to close the W-lift gap (Tier 1) in a separate session. Tier 2 (instruction/skill behavioral W-lift) is carried to v3.
+> Closure path completed for Tier 1 via `.planning/phases/58-seal-self-improvement/58-02-PLAN.md`. Tier 2 (instruction/skill behavioral W-lift) remains v3 scope.

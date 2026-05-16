@@ -7,6 +7,7 @@ import { goldenSetPathForTrace, loadGoldenSet } from "./golden-sets";
 import { scoreTraceWithEvalEngine } from "./engine";
 import { persistEvalRun } from "./persistence";
 import type { AgentEvalTrace, EvalRunResult } from "./types";
+import { rescorePostApply, type SealRescoreProposalContext } from "@/lib/seal/rescore";
 
 type EvalRunRow = {
   id: string;
@@ -122,5 +123,30 @@ export class EvalService {
       startedAt: new Date().toISOString(),
       completedAt: new Date().toISOString(),
     };
+  }
+
+  rescoreForProposal(proposal: SealRescoreProposalContext & { traceId: string; agentId: string; baselineRunId: string }): EvalRunResult {
+    const baseline = this.getRunById(proposal.baselineRunId) ?? this.getLatestRunForTrace(proposal.traceId);
+    if (!baseline) {
+      throw new Error(`No eval run found for proposal baseline ${proposal.baselineRunId}`);
+    }
+    if (baseline.agentId !== proposal.agentId) {
+      throw new Error(`Trace ${proposal.traceId} belongs to ${baseline.agentId}, not ${proposal.agentId}`);
+    }
+
+    const config = loadEvalConfig();
+    const goldenSetPath = goldenSetPathForTrace(config, { agentId: baseline.agentId, role: baseline.role });
+    const goldenSet = loadGoldenSet(goldenSetPath);
+    const result = rescorePostApply({
+      baseline,
+      proposalType: proposal.proposalType,
+      diff: proposal.diff,
+      forecastWDelta: proposal.forecastWDelta,
+      config,
+      goldenSet,
+      goldenSetPath,
+    });
+    persistEvalRun(this.db, result);
+    return result;
   }
 }

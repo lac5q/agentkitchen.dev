@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: Eval Engine + Self-Improvement Platform
-status: v2.5 NEAR-COMPLETE — golden sets + paths + phase 59 closed; 1 architectural gap
+status: v2.5 COMPLETE at Tier 1 — modeled SEAL W-lift closed; behavioral instruction/skill lift deferred to v3
 stopped_at: v2.5 finishing pass 2026-05-16
-last_updated: "2026-05-16T13:44:34.665Z"
-last_activity: 2026-05-16 — finished v2.5 gaps: golden sets, path ratification, phase 59 retro
+last_updated: "2026-05-16T14:30:00.000Z"
+last_activity: 2026-05-16 — implemented Phase 58 Plan 02 deterministic SEAL post-apply re-scoring
 progress:
   total_phases: 6
   completed_phases: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 **Core value:** Any agent framework plugs into Kitchen — and every agent, knowledge system, and skill becomes visible, connected, and self-improving.
-**Current focus:** v2.5 reconciliation — large uncommitted partial implementation needs decision (fix-then-commit vs WIP-park)
+**Current focus:** v2.5 Tier 1 closed; next milestone can plan v3 behavioral self-improvement.
 
 ## Current Position
 
-Phase: v2.5 (57-62) — COMMITTED, build green, tests green; PARTIAL feature completeness
-Plan: PARTIAL SUMMARYs written for 57,58,60,61,62 (phase 59 unplanned, no plan)
-Status: build passes, 593/593 tests; golden sets ~4% (top follow-up), no dogfood W-lift
-Last activity: 2026-05-16 — reconciliation complete + committed
+Phase: v2.5 (57-62) — Tier 1 feature completeness reached; v3 behavioral lift remains explicit future scope
+Plan: SUMMARYs written for 57,58,60,61,62; phase 59 retro-documented
+Status: golden sets populated to minimal viable bar; SEAL post-apply W moves through deterministic modeled re-score
+Last activity: 2026-05-16 — Phase 58 Plan 02 implemented
 
 ## Roadmap Summary (v2.0)
 
@@ -121,16 +121,17 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 - ✅ **Phase 59 retro-documented** — PLAN + PARTIAL SUMMARY authored; all 6
   MEMGEN reqs implemented + tested.
 
-### Remaining v2.5 gap (1)
+### v2.5 Tier 1 closure (2026-05-16)
 
-- **Dogfood W-lift — SPEC'D, ready for separate execution.** Root cause
-  confirmed: `EvalService.runForTrace` (src/lib/evals/service.ts:111) clones
-  the baseline instead of re-scoring. Full self-contained implementation spec
-  written for a fresh LLM session:
-  **`.planning/phases/58-seal-self-improvement/58-02-PLAN.md`** (Tier 1:
-  deterministic modeled re-score via the proven policy-lab pattern, ~0.5–1 day;
-  Tier 2 instruction/skill behavioral effect explicitly carried to v3). Execute
-  that plan in its own session; it needs no prior context.
+- ✅ **Dogfood W-lift closed at Tier 1:** `EvalService.rescoreForProposal`
+  now uses `lib/seal/rescore.ts` to run deterministic modeled post-apply
+  re-scoring through the real eval engine, golden-set loader, layer scorers,
+  judge, drift guard, persistence, and SEAL audit metadata. Keep and rollback
+  are both reachable without a mocked eval service.
+- ✅ **Honesty guardrail preserved:** memory/config proposal classes can move W
+  via the modeled fixed-harness delta. `agent_instruction_patch`,
+  `skill_addition`, and `noop_test` keep W unchanged with `wLiftModeled:false`.
+  True behavioral W-lift from instruction/skill changes remains v3.
 - Phase 59 scope classification (v2.5 vs v3) still open
 - Auth/63/64 code kept on main (build depends on it); tracked as v3 in ROADMAP
 

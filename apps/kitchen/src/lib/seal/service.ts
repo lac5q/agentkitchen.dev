@@ -7,6 +7,7 @@ import { EvalService } from "@/lib/evals/service";
 import type { EvalConfig, EvalRunResult } from "@/lib/evals/types";
 import { queryAuditLog, writeAuditEntry } from "./audit";
 import { ensureProposalType, registryEntryFor } from "./proposal-registry";
+import { sealRescoreMetadata, type SealRescoreProposalContext } from "./rescore";
 import type {
   ApplyResult,
   AuditFilter,
@@ -46,6 +47,9 @@ type DecisionInput = {
 export interface EvalServiceLike {
   getRunById(runId: string): EvalRunResult | null;
   runForTrace(traceId: string, agentId?: string, goldenSetPath?: string): EvalRunResult | Promise<EvalRunResult>;
+  rescoreForProposal?(
+    proposal: SealRescoreProposalContext & { traceId: string; agentId: string; baselineRunId: string }
+  ): EvalRunResult | Promise<EvalRunResult>;
 }
 
 export interface SealServiceOptions {
@@ -84,6 +88,11 @@ function deltas(baseline: EvalRunResult["layers"], post: EvalRunResult["layers"]
     l3: layerScore(post, "l3") - layerScore(baseline, "l3"),
     composite: postW - baselineW,
   };
+}
+
+function auditDetailForRun(postRun: EvalRunResult, detail: Record<string, unknown>): Record<string, unknown> {
+  const rescore = sealRescoreMetadata(postRun);
+  return rescore ? { ...detail, ...rescore } : detail;
 }
 
 export class SealService {
@@ -213,7 +222,16 @@ export class SealService {
       this.db.transaction(() => {
         entry.applyShadow(proposal.diff);
       })();
-      postRun = await this.evalService.runForTrace(proposal.traceId, proposal.agentId);
+      postRun = this.evalService.rescoreForProposal
+        ? await this.evalService.rescoreForProposal({
+            traceId: proposal.traceId,
+            agentId: proposal.agentId,
+            baselineRunId: proposal.baselineRunId,
+            proposalType: proposal.proposalType,
+            diff: proposal.diff,
+            forecastWDelta: proposal.forecastWDelta,
+          })
+        : await this.evalService.runForTrace(proposal.traceId, proposal.agentId);
     } catch (error) {
       const message = error instanceof Error ? error.message : "SEAL apply failed";
       writeAuditEntry({
@@ -247,7 +265,7 @@ export class SealService {
         deltaL2: delta.l2,
         deltaL3: delta.l3,
         deltaComposite: delta.composite,
-        detail: { evalRunId: postRun.id, decisionId: decision.id },
+        detail: auditDetailForRun(postRun, { evalRunId: postRun.id, decisionId: decision.id }),
       }, this.db);
       return {
         proposalId,
@@ -270,7 +288,7 @@ export class SealService {
       deltaL2: delta.l2,
       deltaL3: delta.l3,
       deltaComposite: delta.composite,
-      detail: { evalRunId: postRun.id },
+      detail: auditDetailForRun(postRun, { evalRunId: postRun.id }),
     }, this.db);
     return {
       proposalId,

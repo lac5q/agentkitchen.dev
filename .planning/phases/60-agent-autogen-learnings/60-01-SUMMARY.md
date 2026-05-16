@@ -16,14 +16,18 @@ requirements: [AGENTGEN-01, AGENTGEN-02, AGENTGEN-03, AGENTGEN-04, AGENTGEN-05, 
 
 Proposal types (`agent_instruction_patch`, `skill_addition`,
 `tool_routing_update`), trajectory scorer, and weight presets are implemented
-and tested. Per-role golden sets exist as **stubs only**. Two success criteria
-are NOT met.
+and tested. Per-role golden sets are populated to the minimal viable bar. The
+shared SEAL dogfood W-lift gap is closed for Tier 1 modeled memory/config-style
+proposal classes; true behavioral lift for instruction/skill proposals remains
+v3 scope.
 
 ## What Was Done
 
 - Registry entries for the 3 agent proposal types; `lib/evals/trajectory-scorer.ts`;
   weight presets in `memroos.eval.yaml` and `presets.ts`.
 - Per-role golden-set files (`sales/support/finance/ops`) scaffolded.
+- Shared SEAL apply path now supports deterministic modeled post-apply
+  re-scoring through `lib/seal/rescore.ts` and `EvalService.rescoreForProposal`.
 - Reconciliation fix: sidebar nav had duplicate labels — `/agent-autogen` and
   `/memory-autogen` both rendered as "Agents"/"Memory", colliding with existing
   nav. Relabeled to "Agent Autogen" / "Memory Autogen".
@@ -35,12 +39,13 @@ are NOT met.
   against the real judge: drift agreement ≥0.85 with both classes exercised
   (criterion 2 met at minimal-viable bar; full ~50-row sets still a follow-up).
   Reproducible via `golden-sets/.generate.mjs`.
-- **Dogfood W-lift still NOT capturable (architectural).** Same root cause as
-  phase 58: `EvalService.runForTrace` clones the baseline instead of re-scoring
-  the post-apply artifact, so agent-autogen proposals can never show real W
-  lift in production. Success criterion 5 remains unmet until `runForTrace`
-  re-evaluates via `scoreTraceWithEvalEngine`. See 58-01-SUMMARY.md.
-- Phase 60 now ~70% (golden sets done); remaining gap is the runForTrace
-  re-scoring architecture, shared with phase 58.
+- **Tier 1 dogfood W-lift is now capturable for modeled memory/config-style
+  proposal classes.** The shared Phase 58 re-score path produces deterministic
+  post-apply W movement through the real eval engine and records audit metadata
+  that labels it as modeled.
+- **Instruction/skill behavioral W-lift is intentionally not claimed.**
+  `agent_instruction_patch` and `skill_addition` change future behavior only if
+  the agent re-executes the task; v2.5 marks those as `wLiftModeled:false` and
+  carries true behavioral lift to v3.
 
-> **Closure path:** see `.planning/phases/58-seal-self-improvement/58-02-PLAN.md` — a self-contained spec to close the W-lift gap (Tier 1) in a separate session. Tier 2 (instruction/skill behavioral W-lift) is carried to v3.
+> Tier 1 closure path completed via `.planning/phases/58-seal-self-improvement/58-02-PLAN.md`. Tier 2 (instruction/skill behavioral W-lift) remains v3 scope.
