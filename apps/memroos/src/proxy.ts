@@ -155,7 +155,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   if (shouldRedirectToHttps(request, host)) {
     const httpsUrl = new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, `https://${host}`);
-    return NextResponse.redirect(httpsUrl, 308);
+    return NextResponse.redirect(httpsUrl, 307);
   }
 
   // Legacy host → permanent redirect to canonical domain

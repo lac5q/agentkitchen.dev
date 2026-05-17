@@ -10,7 +10,7 @@ describe("proxy", () => {
       })
     );
 
-    expect(response.status).toBe(308);
+    expect(response.status).toBe(307);
     expect(response.headers.get("location")).toBe("https://memroos.epiloguecapital.com/login");
   });
 });
