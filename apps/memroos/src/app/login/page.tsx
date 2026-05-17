@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,8 +23,8 @@ export default function LoginPage() {
         setError("Invalid email or password");
         return;
       }
-      // access_token is set as HttpOnly cookie by the server — nothing to do client-side
-      router.push("/");
+      // Force a document navigation so the first protected request carries the new HttpOnly cookie.
+      window.location.assign("/");
     } catch {
       setError("Login failed. Please try again.");
     } finally {

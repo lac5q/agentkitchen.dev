@@ -4,7 +4,7 @@ import { resolveOrchestrationHil } from "@/lib/orchestration/client";
 export const dynamic = "force-dynamic";
 
 interface RouteContext {
-  params: Promise<{ id: string }> | { id: string };
+  params: Promise<{ id: string }>;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

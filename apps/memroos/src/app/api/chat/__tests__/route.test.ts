@@ -15,7 +15,7 @@ async function loadRoute() {
   vi.stubEnv("PMO_AGENT_CONFIGS_PATH", pmoAgentsPath);
   vi.stubEnv("PMO_MODEL_ROUTING_PATH", pmoModelRoutingPath);
   vi.stubEnv("CONSOLIDATION_MODEL", "MiniMax-M2.7");
-  return import("../route");
+  return import("../chat-runtime");
 }
 
 describe("chat route model resolution", () => {
@@ -49,10 +49,10 @@ describe("chat route model resolution", () => {
   });
 
   it("uses Paperclip/PMO agent instructions instead of the consolidation model", async () => {
-    const { __chatTest } = await loadRoute();
+    const { buildAgentContext, resolveChatRuntime } = await loadRoute();
 
-    const context = await __chatTest.buildAgentContext("ceo");
-    const runtime = await __chatTest.resolveChatRuntime("ceo", context);
+    const context = await buildAgentContext("ceo");
+    const runtime = await resolveChatRuntime("ceo", context);
 
     expect(context.source).toBe("pmo");
     expect(context.agentInstructions).toContain("Qwen/Bailian");
@@ -62,10 +62,10 @@ describe("chat route model resolution", () => {
   it("falls back to the PMO default routing model for PMO agents", async () => {
     mkdirSync(path.join(pmoAgentsPath, "marketing_qa"), { recursive: true });
     writeFileSync(path.join(pmoAgentsPath, "marketing_qa", "AGENTS.md"), "# Marketing QA\n");
-    const { __chatTest } = await loadRoute();
+    const { buildAgentContext, resolveChatRuntime } = await loadRoute();
 
-    const context = await __chatTest.buildAgentContext("marketing-qa");
-    const runtime = await __chatTest.resolveChatRuntime("marketing-qa", context);
+    const context = await buildAgentContext("marketing-qa");
+    const runtime = await resolveChatRuntime("marketing-qa", context);
 
     expect(context.source).toBe("pmo");
     expect(runtime).toEqual({ runner: "opencode", model: "bailian/qwen3.5-plus" });
@@ -96,10 +96,10 @@ describe("chat route model resolution", () => {
 
   it("allows an explicit operator chat model override", async () => {
     vi.stubEnv("MEMROOS_CHAT_MODEL", "alibaba-coding-plan/qwen3.6-plus");
-    const { __chatTest } = await loadRoute();
+    const { buildAgentContext, resolveChatRuntime } = await loadRoute();
 
-    const context = await __chatTest.buildAgentContext("ceo");
-    const runtime = await __chatTest.resolveChatRuntime("ceo", context);
+    const context = await buildAgentContext("ceo");
+    const runtime = await resolveChatRuntime("ceo", context);
 
     expect(runtime).toEqual({ runner: "opencode", model: "alibaba-coding-plan/qwen3.6-plus" });
   });

@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
   // CR-01 fix: set access token as HttpOnly so JS cannot read it (XSS protection)
   const accessCookie = `access_token=${accessToken}; HttpOnly; SameSite=Lax${secureFlag}; Path=/; Max-Age=900`;
 
-  return Response.json(
+  const response = Response.json(
     {
       user: {
         id: user.id,
@@ -93,11 +93,9 @@ export async function POST(req: NextRequest) {
         role,
       },
     },
-    {
-      status: 200,
-      headers: {
-        'Set-Cookie': `${refreshCookie}, ${accessCookie}`,
-      },
-    }
+    { status: 200 }
   );
+  response.headers.append('Set-Cookie', refreshCookie);
+  response.headers.append('Set-Cookie', accessCookie);
+  return response;
 }
