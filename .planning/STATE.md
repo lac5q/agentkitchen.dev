@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: Context Reliability + Runtime Resilience
-status: complete
-stopped_at: Phase 69 complete; phases 63-69 implemented and verified
-last_updated: "2026-05-17T20:20:00.000Z"
+status: shipped
+stopped_at: all phases complete; security review closed (2026-05-17)
+last_updated: "2026-05-17T09:30:00.000Z"
 last_activity: 2026-05-17
 progress:
   total_phases: 69
   completed_phases: 69
   total_plans: 69
-  completed_plans: 81
+  completed_plans: 69
   percent: 100
 ---
 
@@ -145,10 +145,16 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-17T20:20:00.000Z
-Stopped at: Phase 69 complete; phases through 69 verified
+Last session: 2026-05-17T09:30:00.000Z
+Stopped at: all phases complete; 8 critical security findings fixed; 680 tests passing; deployed to Vercel
 Resume file: None
-Next action: run manual UAT on the local deployment or start the next milestone.
+Next action: v4.0 milestone planning
+
+## UAT Findings (2026-05-17)
+
+- **Root cause fixed:** `apps/memroos/.env.local` was missing `MEMROOS_JWT_SECRET`, `MEMROOS_ADMIN_EMAIL`, `MEMROOS_ADMIN_PASSWORD`. These live in root `.env` which Next.js doesn't load. Added to `.env.local` (gitignored).
+- **Tenant API key mismatch:** `tak-default-internal` hash was stale. Updated to match current `MEMROOS_OPERATOR_API_KEY` in `.env.local`.
+- **All 18 pages 200 OK**, 680 tests passing, eval engine E2E verified (W=0.7035), public API functional.
 
 ## Deferred Items
 

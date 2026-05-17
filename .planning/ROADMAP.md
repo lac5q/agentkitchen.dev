@@ -15,8 +15,8 @@
 - ✅ **v2.3 Agent Runtime Enhancements** — Phases 50-52 (shipped 2026-05-11)
 - ✅ **v2.4 Performance + Caching** — Phases 53-54 (shipped 2026-05-11)
 - ✅ **v2.5 Eval Engine + Self-Improvement Platform** — Phases 57-62 (Tier 1 shipped 2026-05-17; behavioral W-lift deferred to v3)
-- [ ] **v3.0 Compliance Platform + Finance Vertical** — Phases 63-68 (planned)
-- [ ] **v3.1 Context Reliability + Runtime Resilience** — Phase 69 (planned)
+- ✅ **v3.0 Compliance Platform + Finance Vertical** — Phases 63-68 (shipped 2026-05-17)
+- ✅ **v3.1 Context Reliability + Runtime Resilience** — Phase 69 (shipped 2026-05-17)
 
 ## Phases
 
