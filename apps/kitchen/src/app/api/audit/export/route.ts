@@ -69,14 +69,16 @@ export async function GET(req: NextRequest) {
 
   const db = getDb();
 
+  const enc = new TextEncoder();
+
   if (format === "csv") {
     const iterator = streamAuditEntries(filter, db);
     const stream = new ReadableStream({
       start(controller) {
         try {
-          controller.enqueue(CSV_HEADERS.join(",") + "\n");
+          controller.enqueue(enc.encode(CSV_HEADERS.join(",") + "\n"));
           for (const entry of iterator) {
-            controller.enqueue(entryToCsvRow(entry) + "\n");
+            controller.enqueue(enc.encode(entryToCsvRow(entry) + "\n"));
           }
           controller.close();
         } catch (err) {
@@ -99,7 +101,7 @@ export async function GET(req: NextRequest) {
     start(controller) {
       try {
         for (const entry of iterator) {
-          controller.enqueue(JSON.stringify(entry) + "\n");
+          controller.enqueue(enc.encode(JSON.stringify(entry) + "\n"));
         }
         controller.close();
       } catch (err) {
