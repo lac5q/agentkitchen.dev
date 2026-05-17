@@ -23,7 +23,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { KangarooMark } from "@/components/layout/brand-mark";
-import { OperatorHome } from "@/components/workspace/operator-home";
+import { OperationsNoc } from "@/components/operations";
 
 const PUBLIC_LANDING_HOSTS = new Set(["memroos.com", "www.memroos.com", "memroos.vercel.app"]);
 
@@ -686,5 +686,5 @@ function LandingPage() {
 
 export default async function HomePage() {
   const host = (await headers()).get("host") ?? "";
-  return isPublicLandingHost(host) ? <LandingPage /> : <OperatorHome />;
+  return isPublicLandingHost(host) ? <LandingPage /> : <OperationsNoc />;
 }
