@@ -26,7 +26,7 @@ export function Shell({
     <>
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <TopBar services={services} onMenuClick={() => setSidebarOpen(true)} />
-      <main className="ak-workspace mt-14 box-border min-h-screen max-w-full overflow-x-hidden p-4 lg:ml-72 lg:p-6">{children}</main>
+      <main className="ak-workspace mt-14 box-border min-h-screen max-w-full overflow-x-hidden bg-[#fafaf7] p-4 lg:ml-[232px] lg:p-6">{children}</main>
     </>
   );
 }

@@ -3,7 +3,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **memroos.com** (7312 symbols, 12690 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **memroos** (7669 symbols, 13258 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -26,10 +26,10 @@ This project is indexed by GitNexus as **memroos.com** (7312 symbols, 12690 rela
 
 | Resource | Use for |
 |----------|---------|
-| `gitnexus://repo/memroos.com/context` | Codebase overview, check index freshness |
-| `gitnexus://repo/memroos.com/clusters` | All functional areas |
-| `gitnexus://repo/memroos.com/processes` | All execution flows |
-| `gitnexus://repo/memroos.com/process/{name}` | Step-by-step execution trace |
+| `gitnexus://repo/memroos/context` | Codebase overview, check index freshness |
+| `gitnexus://repo/memroos/clusters` | All functional areas |
+| `gitnexus://repo/memroos/processes` | All execution flows |
+| `gitnexus://repo/memroos/process/{name}` | Step-by-step execution trace |
 
 ## CLI
 
