@@ -55,7 +55,7 @@ const MODE_COPY: Record<Mode, { label: string; description: string }> = {
   },
   standup: {
     label: "Standup",
-    description: "Run a structured check-in where each selected agent answers in turn.",
+    description: "Start a structured check-in with every selected room participant.",
   },
   conference: {
     label: "Conference",
@@ -177,6 +177,7 @@ export function AgentEngagementConsole() {
   const selectedId = selectedAgent?.id ?? "";
   const selectedLabel = selectedAgent ? formatAgent(selectedAgent) : "No agent selected";
   const activeParticipantIds = participants.length > 0 ? participants : selectedId ? [selectedId] : [];
+  const standupParticipantLabel = `${activeParticipantIds.length} agent${activeParticipantIds.length === 1 ? "" : "s"}`;
   const recentDelegations = delegationsData?.delegations ?? [];
 
   function toggleParticipant(agentId: string) {
@@ -538,6 +539,30 @@ export function AgentEngagementConsole() {
                 <p className="mt-1 text-xs leading-5 text-slate-500">{MODE_COPY[mode].description}</p>
               </div>
 
+              {mode === "standup" && (
+                <section className="rounded-md border border-cyan-200 bg-cyan-50 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-cyan-950">Live standup room</p>
+                      <p className="mt-1 text-xs leading-5 text-cyan-800">
+                        {activeParticipantIds.length > 0
+                          ? `Ready to ask ${standupParticipantLabel} for status, blockers, and next steps.`
+                          : "Select at least one Room participant on the left."}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={runStandup}
+                      disabled={busy || activeParticipantIds.length === 0}
+                      className="inline-flex items-center justify-center gap-2 rounded-md bg-cyan-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-900 disabled:opacity-40"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      {busy ? "Starting..." : `Start standup with ${standupParticipantLabel}`}
+                    </button>
+                  </div>
+                </section>
+              )}
+
               {(mode === "standup" || mode === "conference") && (
                 <div className="rounded-md border border-slate-200 bg-slate-950 p-3 text-white">
                   <div className="mb-3 flex items-center justify-between gap-3">
@@ -595,7 +620,9 @@ export function AgentEngagementConsole() {
               <div className="min-h-56 max-h-80 space-y-2 overflow-y-auto rounded-md border border-slate-200 bg-white p-3">
                 {history.length === 0 ? (
                   <p className="py-14 text-center text-sm text-slate-400">
-                    Start a room prompt and each selected agent will take a turn.
+                    {mode === "standup"
+                      ? "Click Start standup to ask each room participant for a status update."
+                      : "Start a room prompt and each selected agent will take a turn."}
                   </p>
                 ) : (
                   history.slice(-10).map((entry, index) => (
@@ -691,15 +718,9 @@ export function AgentEngagementConsole() {
                       placeholder="Reply with status, next step, and one risk."
                     />
                   </label>
-                  <button
-                    type="button"
-                    onClick={runStandup}
-                    disabled={busy || activeParticipantIds.length === 0 || (!standupFocus && !standupAsk)}
-                    className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    Start standup round
-                  </button>
+                  <p className="text-xs leading-5 text-slate-500">
+                    These fields shape the prompt sent when you click Start standup above.
+                  </p>
                   <button
                     type="button"
                     onClick={startVoiceCapture}

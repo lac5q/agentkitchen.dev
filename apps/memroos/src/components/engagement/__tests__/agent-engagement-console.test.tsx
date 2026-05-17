@@ -129,11 +129,20 @@ describe("AgentEngagementConsole", () => {
     fireEvent.change(screen.getByPlaceholderText("What changed since the last checkpoint?"), {
       target: { value: "runtime status" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /start standup round/i }));
+    fireEvent.click(screen.getByRole("button", { name: /start standup with 1 agent/i }));
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith("/api/chat", expect.objectContaining({ method: "POST" }));
       expect(screen.getByText("Runtime is healthy. No blockers.")).toBeInTheDocument();
     });
+  });
+
+  it("shows an obvious standup start action above the form", () => {
+    render(<AgentEngagementConsole />);
+
+    fireEvent.click(screen.getByRole("button", { name: "Standup" }));
+
+    expect(screen.getByRole("button", { name: /start standup with 1 agent/i })).toBeInTheDocument();
+    expect(screen.getByText(/Live standup room/i)).toBeInTheDocument();
   });
 });
