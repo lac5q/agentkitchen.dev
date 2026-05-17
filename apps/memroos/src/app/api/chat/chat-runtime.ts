@@ -1,5 +1,7 @@
 import { readFile } from "fs/promises";
 import path from "path";
+import { getRegisteredAgent } from "@/lib/agent-registry";
+import type { AgentPlatform } from "@/types";
 
 export type AgentContext = {
   systemPrompt: string;
@@ -27,6 +29,15 @@ const DEFAULT_ANTHROPIC_CHAT_MODEL =
   "claude-haiku-4-5-20251001";
 const DEFAULT_PAPERCLIP_CHAT_MODEL =
   process.env.PAPERCLIP_CHAT_MODEL || "bailian/qwen3.5-plus";
+const DEFAULT_GEMINI_CHAT_MODEL =
+  process.env.MEMROOS_GEMINI_CHAT_MODEL || "gemini-pro";
+const ANTHROPIC_CHAT_PLATFORMS = new Set<AgentPlatform>([
+  "claude",
+  "codex",
+  "hermes",
+  "openclaw",
+  "chatgpt",
+]);
 
 const MODEL_ALIASES: Record<string, string> = {
   "qwen3.5": "bailian/qwen3.5-plus",
@@ -159,6 +170,34 @@ function modelToRuntime(model: string): ChatRuntime {
   return { runner: "anthropic", model: normalized };
 }
 
+function anthropicModelForRegisteredAgent(agent: { id: string; name: string; role: string }): string {
+  const haystack = `${agent.id} ${agent.name} ${agent.role}`.toLowerCase();
+  if (haystack.includes("opus")) return normalizeModel("claude-opus");
+  if (haystack.includes("sonnet")) return normalizeModel("claude-sonnet");
+  return DEFAULT_ANTHROPIC_CHAT_MODEL;
+}
+
+function registeredPlatformRuntime(agent: {
+  id: string;
+  name: string;
+  role: string;
+  platform: AgentPlatform;
+}): ChatRuntime | null {
+  if (agent.platform === "gemini") {
+    return modelToRuntime(DEFAULT_GEMINI_CHAT_MODEL);
+  }
+
+  if (agent.platform === "qwen" || agent.platform === "opencode") {
+    return modelToRuntime(DEFAULT_PAPERCLIP_CHAT_MODEL);
+  }
+
+  if (ANTHROPIC_CHAT_PLATFORMS.has(agent.platform)) {
+    return modelToRuntime(anthropicModelForRegisteredAgent(agent));
+  }
+
+  return null;
+}
+
 async function pmoDefaultModelForAgent(agentId: string): Promise<string | null> {
   const routing = await tryRead(PMO_MODEL_ROUTING_PATH, 240);
   if (!routing) return null;
@@ -179,13 +218,19 @@ export async function resolveChatRuntime(agentId: string, context: AgentContext)
   const operatorOverride = process.env.MEMROOS_CHAT_MODEL;
   if (operatorOverride) return modelToRuntime(operatorOverride);
 
+  const registeredAgent = getRegisteredAgent(agentId);
+  const registeredRuntime = registeredAgent
+    ? registeredPlatformRuntime(registeredAgent)
+    : null;
   const instructions = context.agentInstructions ?? "";
   const explicitModel = instructions.match(/(?:default_model|default model|model)\s*[:=]\s*`?([a-zA-Z0-9_.:/+-]+)/i)?.[1];
   if (explicitModel) return modelToRuntime(explicitModel);
 
-  if (/qwen|bailian/i.test(instructions)) {
+  if (!registeredRuntime && /qwen|bailian/i.test(instructions)) {
     return modelToRuntime(DEFAULT_PAPERCLIP_CHAT_MODEL);
   }
+
+  if (registeredRuntime) return registeredRuntime;
 
   if (context.source === "pmo") {
     return modelToRuntime((await pmoDefaultModelForAgent(agentId)) ?? DEFAULT_PAPERCLIP_CHAT_MODEL);
