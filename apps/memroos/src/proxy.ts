@@ -5,6 +5,7 @@ import type { UserRole } from "@/lib/auth/types";
 
 const PUBLIC_HOSTS = new Set(["memroos.com", "www.memroos.com", "memroos.vercel.app"]);
 const LEGACY_HOSTS = new Set(["memroos.dev", "www.memroos.dev"]);
+const HTTPS_APP_HOSTS = new Set(["memroos.epiloguecapital.com"]);
 
 function normalizeHost(host: string): string {
   return host.split(":")[0]?.toLowerCase() ?? "";
@@ -22,6 +23,11 @@ function isLandingAsset(pathname: string): boolean {
     pathname.startsWith("/assets/") ||
     pathname.startsWith("/demo/")
   );
+}
+
+function shouldRedirectToHttps(request: NextRequest, host: string): boolean {
+  if (!HTTPS_APP_HOSTS.has(host)) return false;
+  return request.nextUrl.protocol === "http:" || request.headers.get("x-forwarded-proto") === "http";
 }
 
 /** Routes that require at least operator role */
@@ -146,6 +152,11 @@ async function enforceAuth(req: NextRequest): Promise<NextResponse> {
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   const host = normalizeHost(request.headers.get("host") ?? "");
   const { pathname } = request.nextUrl;
+
+  if (shouldRedirectToHttps(request, host)) {
+    const httpsUrl = new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, `https://${host}`);
+    return NextResponse.redirect(httpsUrl, 308);
+  }
 
   // Legacy host → permanent redirect to canonical domain
   if (LEGACY_HOSTS.has(host)) {
