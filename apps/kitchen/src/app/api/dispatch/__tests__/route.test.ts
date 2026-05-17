@@ -83,7 +83,11 @@ beforeEach(() => {
 });
 
 function makeRequest(body: object) {
-  return { json: async () => body } as Request;
+  return new Request("http://localhost/api/dispatch", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
 }
 
 describe("POST /api/dispatch", () => {
@@ -232,6 +236,19 @@ describe("POST /api/dispatch", () => {
     }));
     expect(mockSelectAdapter).not.toHaveBeenCalled();
     expect(hivePollStub.dispatch).not.toHaveBeenCalled();
+  });
+
+  it("derives from_agent from the authenticated route context instead of trusting body spoofing", async () => {
+    await POST(makeRequest({
+      to_agent: "sophia",
+      task_summary: "Draft blog post",
+      from_agent: "evil-client",
+    }) as any);
+
+    expect(mockCheckDispatchPolicy).toHaveBeenCalledWith("kitchen", expect.anything());
+    expect(mockWriteAuditLog).not.toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      actor: "evil-client",
+    }));
   });
 
   it("502 ADAPTER_REJECTED — adapter returns accepted:false", async () => {

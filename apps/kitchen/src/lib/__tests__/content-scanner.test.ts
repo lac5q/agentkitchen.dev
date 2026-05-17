@@ -86,12 +86,12 @@ describe('scanContent — MEDIUM severity patterns', () => {
 // scanContent — length guard
 // ────────────────────────────────────────────────────────────────
 describe('scanContent — length guard', () => {
-  it('skips scanning text longer than 4096 chars', () => {
+  it('blocks text longer than 4096 chars fail-closed', () => {
     const longText = 'A'.repeat(4097);
     const result = scanContent(longText);
-    expect(result.blocked).toBe(false);
-    expect(result.matches).toHaveLength(0);
-    expect(result.cleanContent).toBe(longText);
+    expect(result.blocked).toBe(true);
+    expect(result.matches[0]).toMatchObject({ patternName: 'input_too_long', severity: 'HIGH' });
+    expect(result.cleanContent).toBe('[REDACTED: input exceeds scanner limit]');
   });
 });
 

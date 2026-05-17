@@ -26,6 +26,7 @@ function isLandingAsset(pathname: string): boolean {
 
 /** Routes that require at least operator role */
 const OPERATOR_ROUTES: Array<{ method?: string; pattern: RegExp }> = [
+  { method: "POST", pattern: /^\/api\/onboarding\/invite$/ },
   { method: "PUT", pattern: /^\/api\/evals\/config$/ },
   { method: "POST", pattern: /^\/api\/evals\/run$/ },
   { method: "POST", pattern: /^\/api\/seal\// },
@@ -37,6 +38,15 @@ const OPERATOR_ROUTES: Array<{ method?: string; pattern: RegExp }> = [
 const ADMIN_ROUTES: Array<{ method?: string; pattern: RegExp }> = [
   { method: "POST", pattern: /^\/api\/auth\/invite$/ },
 ];
+
+function withSecurityHeaders(response: NextResponse): NextResponse {
+  response.headers.set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; connect-src 'self' http://localhost:* ws://localhost:*; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+  response.headers.set("X-Frame-Options", "DENY");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  return response;
+}
 
 function getTokenFromRequest(req: NextRequest): string | null {
   const auth = req.headers.get("authorization");
@@ -133,13 +143,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   // Public marketing host: serve landing assets, redirect everything else to "/"
   if (isPublicLandingHost(host)) {
     if (isLandingAsset(pathname)) {
-      return NextResponse.next();
+      return withSecurityHeaders(NextResponse.next());
     }
-    return NextResponse.redirect(new URL("/", request.url));
+    return withSecurityHeaders(NextResponse.redirect(new URL("/", request.url)));
   }
 
   // App host: enforce RBAC auth (formerly middleware.ts)
-  return enforceAuth(request);
+  return withSecurityHeaders(await enforceAuth(request));
 }
 
 export const config = {

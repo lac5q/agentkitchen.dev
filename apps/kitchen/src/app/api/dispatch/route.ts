@@ -1,7 +1,10 @@
 import type { NextRequest } from "next/server";
 import { getDb } from "@/lib/db";
+import { authenticateUser } from "@/lib/auth/session";
+import { ROLE_RANK } from "@/lib/auth/middleware-roles";
 import { scanContent } from "@/lib/content-scanner";
 import { scanIrisPreflight } from "@/lib/iris-scanner";
+import { authorizeRegistryWrite } from "@/lib/operator-auth";
 import { checkDispatchPolicy } from "@/lib/security-policy";
 import { writeAuditLog } from "@/lib/audit";
 import { getRemoteAgents, listRegisteredAgents } from "@/lib/agent-registry";
@@ -10,6 +13,29 @@ import type { DispatchTask } from "@/lib/dispatch/types";
 import type { RegisteredAgent, RemoteAgentConfig } from "@/types";
 
 export const dynamic = "force-dynamic";
+
+async function deriveDispatchActor(req: NextRequest | Request): Promise<
+  | { ok: true; actorId: string }
+  | { ok: false; response: Response }
+> {
+  const session = await authenticateUser(req).catch(() => null);
+  if (session) {
+    if (ROLE_RANK[session.role] < ROLE_RANK.operator) {
+      return { ok: false, response: Response.json({ ok: false, error: "insufficient permissions", code: "FORBIDDEN" }, { status: 403 }) };
+    }
+    return { ok: true, actorId: `user:${session.userId}` };
+  }
+
+  const agentId = req.headers?.get("x-agent-id");
+  if (agentId) return { ok: true, actorId: `agent:${agentId}` };
+
+  if (authorizeRegistryWrite(req)) return { ok: true, actorId: "kitchen" };
+
+  return {
+    ok: false,
+    response: Response.json({ ok: false, error: "authentication required", code: "AUTH_REQUIRED" }, { status: 401 }),
+  };
+}
 
 function agentToDispatchConfig(agent: RegisteredAgent, remote?: RemoteAgentConfig): RemoteAgentConfig {
   if (remote) return remote;
@@ -38,6 +64,9 @@ function agentToDispatchConfig(agent: RegisteredAgent, remote?: RemoteAgentConfi
 }
 
 export async function POST(req: NextRequest | Request) {
+  const actor = await deriveDispatchActor(req);
+  if (!actor.ok) return actor.response;
+
   const body = await req.json();
 
   if (!body.task_summary || typeof body.task_summary !== "string") {
@@ -71,7 +100,7 @@ export async function POST(req: NextRequest | Request) {
   const agent = agentToDispatchConfig(registeredAgent, remoteAgent);
 
   const db = getDb();
-  const from_agent: string = body.from_agent ?? "kitchen";
+  const from_agent = actor.actorId;
   const irisScan = scanIrisPreflight(body.task_summary);
 
   if (irisScan.blocked) {

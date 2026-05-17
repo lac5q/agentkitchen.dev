@@ -57,6 +57,16 @@ describe("getA2aConfig", () => {
       adkFixtureCardUrl: "https://adk.example.test/.well-known/agent-card.json",
     });
   });
+
+  it("denies private-network remote cards by default outside local/private profiles", () => {
+    process.env.KITCHEN_A2A_PROFILE = "cloud-https";
+    delete process.env.KITCHEN_A2A_ALLOW_PRIVATE_NETWORK_CARDS;
+
+    expect(getA2aConfig()).toMatchObject({
+      profile: "cloud-https",
+      allowPrivateNetworkCards: false,
+    });
+  });
 });
 
 describe("buildKitchenAgentCard", () => {

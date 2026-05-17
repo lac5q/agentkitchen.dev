@@ -165,9 +165,18 @@ export function scanContent(text: string): ScanResult {
   // Null-safe coerce
   const safeText: string = text == null ? '' : String(text);
 
-  // Length guard — skip scanning extremely long text to prevent ReDoS
+  // Length guard — fail closed instead of skipping scanning. Long prompt
+  // injection payloads can hide malicious instructions past scanner limits.
   if (safeText.length > MAX_SCAN_LEN) {
-    return { blocked: false, matches: [], cleanContent: safeText };
+    return {
+      blocked: true,
+      matches: [{
+        patternName: 'input_too_long',
+        severity: 'HIGH',
+        redacted: safeText.slice(0, 8) + '...',
+      }],
+      cleanContent: '[REDACTED: input exceeds scanner limit]',
+    };
   }
 
   const matches: ScanMatch[] = [];

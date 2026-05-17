@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from 'crypto';
 import { getDb } from '@/lib/db';
 import { signAccessToken } from '@/lib/auth/jwt';
+import { checkAuthRateLimit } from '@/lib/auth/rate-limit';
 import type { UserRole } from '@/lib/auth/types';
 
 type TokenRow = {
@@ -21,6 +22,9 @@ function parseCookie(cookieHeader: string | null, name: string): string | null {
 }
 
 export async function POST(req: Request) {
+  const rateLimited = checkAuthRateLimit(req, 'refresh');
+  if (rateLimited) return rateLimited;
+
   const rawToken = parseCookie(req.headers.get('cookie'), COOKIE_NAME);
   if (!rawToken) {
     return Response.json({ error: 'refresh token required' }, { status: 401 });

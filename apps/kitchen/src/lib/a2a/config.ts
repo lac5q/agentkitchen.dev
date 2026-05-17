@@ -59,9 +59,10 @@ export function getA2aConfig(): A2aConfig {
     process.env.KITCHEN_PUBLIC_BASE_URL,
     DEFAULT_PUBLIC_BASE_URL
   );
+  const profile = parseProfile(process.env.KITCHEN_A2A_PROFILE);
 
   return {
-    profile: parseProfile(process.env.KITCHEN_A2A_PROFILE),
+    profile,
     publicBaseUrl,
     endpointBaseUrl: normalizeBaseUrl(
       process.env.KITCHEN_A2A_ENDPOINT_BASE_URL,
@@ -72,7 +73,7 @@ export function getA2aConfig(): A2aConfig {
     remoteCardTimeoutMs: parseTimeout(process.env.KITCHEN_A2A_REMOTE_CARD_TIMEOUT_MS),
     allowPrivateNetworkCards: parseBoolean(
       process.env.KITCHEN_A2A_ALLOW_PRIVATE_NETWORK_CARDS,
-      true
+      profile === "local-dev" || profile === "private-network"
     ),
     adkFixtureCardUrl:
       process.env.KITCHEN_A2A_ADK_FIXTURE_CARD_URL?.trim() || DEFAULT_ADK_FIXTURE_CARD_URL,

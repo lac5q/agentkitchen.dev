@@ -34,7 +34,11 @@ function skillIds(skills: RemoteAgentConfig["skills"] | undefined): string[] {
 }
 
 function allowLegacyWhenUndeclared(ids: string[]): boolean {
-  return ids.length === 0;
+  if (ids.length !== 0) return false;
+  const profile = process.env.KITCHEN_A2A_PROFILE ?? "local-dev";
+  const explicit = process.env.KITCHEN_ALLOW_LEGACY_UNDECLARED_CAPABILITIES;
+  if (explicit !== undefined) return ["1", "true", "yes", "on"].includes(explicit.toLowerCase());
+  return process.env.NODE_ENV !== "production" && profile === "local-dev";
 }
 
 function hasAny(ids: string[], allowed: Set<string>): boolean {

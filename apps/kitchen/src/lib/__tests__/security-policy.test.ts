@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import {
   checkA2aSendPolicy,
   checkDispatchPolicy,
@@ -51,10 +51,23 @@ function remoteAgent(skills: RemoteAgentConfig["skills"] = []): RemoteAgentConfi
 }
 
 describe("security policy guards", () => {
+  afterEach(() => {
+    delete process.env.KITCHEN_A2A_PROFILE;
+    delete process.env.KITCHEN_ALLOW_LEGACY_UNDECLARED_CAPABILITIES;
+  });
+
   it("allows legacy agents with no declared capabilities", () => {
+    process.env.KITCHEN_A2A_PROFILE = "local-dev";
     expect(checkDispatchPolicy("kitchen", remoteAgent())).toEqual({ allowed: true });
     expect(checkA2aSendPolicy(registeredAgent())).toEqual({ allowed: true });
     expect(checkMemoryWritePolicy(registeredAgent(), "graph")).toEqual({ allowed: true });
+  });
+
+  it("denies legacy undeclared capabilities outside local-dev defaults", () => {
+    process.env.KITCHEN_A2A_PROFILE = "cloud-https";
+    expect(checkDispatchPolicy("kitchen", remoteAgent())).toMatchObject({ allowed: false, code: "MISSING_CAPABILITY" });
+    expect(checkA2aSendPolicy(registeredAgent())).toMatchObject({ allowed: false, code: "MISSING_CAPABILITY" });
+    expect(checkMemoryWritePolicy(registeredAgent(), "graph")).toMatchObject({ allowed: false, code: "MISSING_CAPABILITY" });
   });
 
   it("denies dispatch when a target declares capabilities but none permit dispatch", () => {

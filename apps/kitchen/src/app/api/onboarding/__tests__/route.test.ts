@@ -36,7 +36,7 @@ describe("agent onboarding routes", () => {
     delete process.env.KITCHEN_ONBOARDING_SECRET;
   });
 
-  it("issues a short bootstrap command without an operator key", async () => {
+  it("rejects invite minting without operator authorization", async () => {
     const { inviteRoute } = await loadRoutes();
 
     const response = await inviteRoute.POST(
@@ -53,13 +53,7 @@ describe("agent onboarding routes", () => {
       })
     );
 
-    expect(response.status).toBe(200);
-    const body = await response.json();
-    expect(body.command).toContain("/api/onboarding/script?token=");
-    expect(body.command).toContain("--id 'maria'");
-    expect(body.command).toContain("--mcp-target 'auto'");
-    expect(body.mcpUrl).toBe("https://kitchen.example.test/mcp");
-    expect(new Date(body.expiresAt).getTime()).toBeGreaterThan(Date.now());
+    expect(response.status).toBe(403);
   });
 
   it("issues a runnable generic invite command when no agent identity is scoped", async () => {

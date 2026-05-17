@@ -3,6 +3,7 @@ import { createHash, randomBytes } from 'crypto';
 import { getDb } from '@/lib/db';
 import { verifyPassword } from '@/lib/auth/password';
 import { signAccessToken } from '@/lib/auth/jwt';
+import { checkAuthRateLimit } from '@/lib/auth/rate-limit';
 import type { UserRole } from '@/lib/auth/types';
 
 interface LoginBody {
@@ -22,6 +23,9 @@ const REFRESH_TTL_DAYS = 7;
 const COOKIE_NAME = 'memoroos_refresh';
 
 export async function POST(req: NextRequest) {
+  const rateLimited = checkAuthRateLimit(req, 'login');
+  if (rateLimited) return rateLimited;
+
   let body: LoginBody;
   try {
     body = (await req.json()) as LoginBody;

@@ -1,4 +1,7 @@
 import { createAgentOnboardingToken, shellQuote } from "@/lib/agent-onboarding";
+import { authenticateUser } from "@/lib/auth/session";
+import { requireRole } from "@/lib/auth/middleware-roles";
+import { authorizeRegistryWrite, registryWriteUnauthorizedResponse } from "@/lib/operator-auth";
 import type { AgentPlatform, AgentProtocol, RegisteredAgentCapability } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +37,14 @@ function parseCapabilities(value: unknown): RegisteredAgentCapability[] | undefi
 }
 
 export async function POST(request: Request) {
+  const session = await authenticateUser(request);
+  if (session) {
+    const roleError = requireRole(session.role, "operator");
+    if (roleError) return roleError;
+  } else if (!authorizeRegistryWrite(request)) {
+    return registryWriteUnauthorizedResponse();
+  }
+
   const body = (await request.json().catch(() => ({}))) as unknown;
   const input = isRecord(body) ? body : {};
   const kitchenUrl = typeof input.kitchenUrl === "string" ? input.kitchenUrl : originFromRequest(request);
