@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v2.5
 milestone_name: Eval Engine + Self-Improvement Platform
-status: v2.5 COMPLETE at Tier 1 — modeled SEAL W-lift closed; behavioral instruction/skill lift deferred to v3
-stopped_at: v2.5 finishing pass 2026-05-16
-last_updated: "2026-05-16T14:30:00.000Z"
-last_activity: 2026-05-16 — implemented Phase 58 Plan 02 deterministic SEAL post-apply re-scoring
+status: golden sets populated to minimal viable bar; SEAL post-apply W moves through deterministic modeled re-score
+stopped_at: STATE.md corrected; awaiting user decision on commit strategy
+last_updated: "2026-05-17T00:48:25.264Z"
+last_activity: 2026-05-17
 progress:
   total_phases: 6
-  completed_phases: 0
-  total_plans: 5
-  completed_plans: 0
-  percent: 0
+  completed_phases: 6
+  total_plans: 7
+  completed_plans: 7
+  percent: 100
 ---
 
 # State: Agent Kitchen
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 ## Current Position
 
 Phase: v2.5 (57-62) — Tier 1 feature completeness reached; v3 behavioral lift remains explicit future scope
-Plan: SUMMARYs written for 57,58,60,61,62; phase 59 retro-documented
+Plan: SUMMARYs written for all 7 v2.5 plans across phases 57-62
 Status: golden sets populated to minimal viable bar; SEAL post-apply W moves through deterministic modeled re-score
-Last activity: 2026-05-16 — Phase 58 Plan 02 implemented
+Last activity: 2026-05-17
 
 ## Roadmap Summary (v2.0)
 
@@ -102,8 +102,10 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 - **BUILD BROKEN:** new untracked `apps/kitchen/src/middleware.ts` (auth, ph63/64)
   collides with `proxy.ts`. This Next.js replaced middleware→proxy; the two files
   hold *different* logic (RBAC vs host-redirect) and must be merged, not deleted.
+
 - **91/545 tests fail** (25 files): SEAL audit-log FK bug, L3 schema mismatch,
   plus mock-setup failures (hive lineage, memory tier routes).
+
 - Golden sets ~4% populated — drift guard / agreement criteria cannot be validated.
 - `bcryptjs` declared in package.json but may need `npm install`.
 - `.codex/` & `.agents/` untracked tool state — should be gitignored, NOT committed.
@@ -115,9 +117,11 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
   sales/support/finance/ops 15 each. Verified vs real judge — drift agreement
   ≥0.85 with positive + policy-leak negative classes. Reproducible via
   `golden-sets/.generate.mjs`. Full ~50-row sets still a future nice-to-have.
+
 - ✅ **Path/naming ratified** as-built for 61 (`lib/l3`) and 62
   (`/api/public/v1/*`) via plan amendments — rename deferred to external
   packaging. No longer open.
+
 - ✅ **Phase 59 retro-documented** — PLAN + PARTIAL SUMMARY authored; all 6
   MEMGEN reqs implemented + tested.
 
@@ -128,11 +132,15 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
   re-scoring through the real eval engine, golden-set loader, layer scorers,
   judge, drift guard, persistence, and SEAL audit metadata. Keep and rollback
   are both reachable without a mocked eval service.
+
 - ✅ **Honesty guardrail preserved:** memory/config proposal classes can move W
   via the modeled fixed-harness delta. `agent_instruction_patch`,
   `skill_addition`, and `noop_test` keep W unchanged with `wLiftModeled:false`.
   True behavioral W-lift from instruction/skill changes remains v3.
-- Phase 59 scope classification (v2.5 vs v3) still open
+
+- Phase 59 scope classification closed as v2.5 retro-documented; behavioral
+  instruction/skill W-lift remains v3 scope
+
 - Auth/63/64 code kept on main (build depends on it); tracked as v3 in ROADMAP
 
 ## Session Continuity
@@ -140,4 +148,13 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 Last session: 2026-05-16 — resume-work reconciliation audit
 Stopped at: STATE.md corrected; awaiting user decision on commit strategy
 Resume file: None
-Next action: user picks fix-then-commit vs park-as-WIP; then execute that path
+Next action: complete/archive the v2.5 milestone or begin Phase 63 for v3.0.
+
+## Deferred Items
+
+Items acknowledged and deferred at milestone close on 2026-05-17:
+
+| Category | Item | Status |
+|----------|------|--------|
+| context_questions | Phase 60 / 60-CONTEXT.md — trajectory authorship workflow, step count bounds, preset-change audit semantics | Deferred to v3 planning |
+| context_questions | Phase 63 / 63-CONTEXT.md — rename/auth decisions recorded as next-milestone context | Deferred to Phase 63 execution |

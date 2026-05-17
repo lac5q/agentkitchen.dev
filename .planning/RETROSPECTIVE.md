@@ -150,6 +150,47 @@
 
 ---
 
+## Milestone: v2.5 — Eval Engine + Self-Improvement Platform
+
+**Shipped:** 2026-05-17
+**Phases:** 6 (57-62) | **Plans:** 7
+
+### What Was Built
+
+- Eval engine core with scorer registry, 3-layer composite `W`, pinned judge, drift guard, persistence, config, and UI surface
+- SEAL self-improvement substrate with typed proposals, operator approval, shadow apply, keep/rollback, audit trail, and deterministic modeled post-apply W re-scoring
+- Memory autogen proposal family plus fixed-harness policy lab
+- Agent autogen proposal family, trajectory scorer, named weight presets, and minimal viable per-role golden sets
+- Business-ops L3 outcome layer with event store, scorer/poller, CRM/helpdesk/finance adapters, and dashboard surface
+- Public eval API plus TypeScript/Python SDKs with tenant isolation
+
+### What Worked
+
+- **Reconciliation-first closeout** — artifact analysis found the real missing item: `58-02-SUMMARY.md`, not more implementation.
+- **Honesty guardrail held** — Tier 1 W-lift is explicitly modeled and deterministic; behavioral instruction/skill lift was deferred instead of overclaimed.
+- **Minimal viable golden sets were enough to exercise drift guard** — positive and policy-leak negative examples made the 0.85 agreement floor meaningful.
+- **Full verification recovered confidence** — targeted SEAL tests, full Kitchen Vitest, and production build all passed before archival.
+
+### What Was Inefficient
+
+- **Planning docs drifted badly mid-milestone** — STATE.md previously claimed completion while multiple summaries and requirement checkboxes were missing.
+- **Phase 59 was retro-documented** — implementation existed before a phase contract, forcing summary/plan reconstruction after the fact.
+- **GSD milestone automation needed human cleanup** — SDK archive output was structurally useful but still required manual accomplishments, roadmap collapse, and state/project evolution.
+
+### Patterns Established
+
+- Summary parity is the canonical GSD completion signal: every PLAN.md must have a matching SUMMARY.md before advancing.
+- Modeled eval deltas must carry explicit metadata (`wLiftModeled`) so operators can distinguish fixed-harness evidence from empirical re-execution.
+- v3 planning should treat auth, immutable audit, compliance posture, and context-source reliability as product-owned platform layers, not cleanup chores.
+
+### Key Lessons
+
+- Run `gsd-sdk query roadmap.analyze` before trusting STATE.md; the artifact graph was more reliable than prose status.
+- Milestone close should include `audit-open` and record deferred context questions rather than burying them.
+- Complete milestone archival is safest as a two-part operation: archive and verify docs first, then commit/tag only after the whole worktree is clean.
+
+---
+
 ## Cross-Milestone Trends
 
 | Milestone | Phases | Plans | Days | LOC Added | Key Theme |
@@ -160,3 +201,4 @@
 | v1.4 | 1 | 1 | 1 | ~500 | Cookbooks page + model usage tracking |
 | v1.5 | 7 | 15 | 4 | ~8,000 | Agent coordination + voice |
 | v1.7 | 5 | 9 | 4 | ~5,000 | Tool gateway runtime + Python→TS algorithm port |
+| v2.5 | 6 | 7 | 2 | n/a | Eval engine + self-improvement substrate |

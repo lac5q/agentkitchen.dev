@@ -1,6 +1,6 @@
 # Project: Agent Kitchen
 
-*Last updated: 2026-05-11 — roadmap reprioritized for security and LLM optimization*
+*Last updated: 2026-05-17 — v2.5 archived; v3 compliance platform queued*
 
 ---
 
@@ -12,11 +12,11 @@ See `.planning/GOAL.md` for the full development goal and workflow loop.
 
 ---
 
-## Current Milestone: v2.5 Eval Engine + Self-Improvement Platform
+## Current State: v2.5 Eval Engine + Self-Improvement Platform — SHIPPED 2026-05-17
 
-**Goal:** A single 3-layer composite eval signal (`W` = L1 capability + L2 LLM-as-judge + L3 business outcome) drives every autogen learning loop — memory, agents, skills, tool routing — dogfooded internally on MemroOS itself, then shipped externally as a framework-agnostic eval + self-improvement platform for mid-market companies (50–500 employees) going agentic.
+**What shipped:** A single 3-layer composite eval signal (`W` = L1 capability + L2 LLM-as-judge + L3 business outcome) now drives the Tier 1 autogen learning substrate. The milestone shipped scorer registry, pinned judge, drift guard, eval persistence, SEAL proposals, deterministic modeled post-apply W re-scoring, memory/agent proposal families, L3 outcome adapters, and a tenant-isolated public eval API with TS/Python SDKs.
 
-**Target features:**
+**Delivered features:**
 - Eval Engine Core — scorer registry, composite W scalar, pinned cross-family LLM judge with drift guard, golden-set framework, `memroos.eval.yaml` config + UI panel
 - SEAL Self-Improvement Substrate — reflection → typed proposals → operator approval → apply → rerun-evals → keep-if-W-improved → rollback/audit (polymorphic over mutation surface)
 - Memory Autogen Learnings — 5 memory proposal types (rewrite / query_hint / salience / tier_route / eval_case_addition) + Karpathy-style fixed-harness memory policy lab
@@ -24,7 +24,19 @@ See `.planning/GOAL.md` for the full development goal and workflow loop.
 - Business-Ops Outcome Layer (L3) — post-hoc trace metrics (completion / escalation / TTR / approval / cost) + CRM, helpdesk, finance adapters + per-company KPI weighting
 - Public Eval API + SDK — framework-agnostic HTTP surface, OpenInference trace support, TS/Python SDKs, dogfooded by phases 59/60
 
+**Tier 1 caveat:** The v2.5 W-lift proof is modeled and deterministic, not empirical agent re-execution. True behavioral lift for `agent_instruction_patch` and `skill_addition` remains v3 scope.
+
 > Locked decision record: `.planning/notes/eval-engine-3-layer-composite.md`. External product packaging deferred — see `.planning/seeds/eval-engine-as-product.md`.
+
+## Next Milestone Goals: v3.0 Compliance Platform + Finance Vertical
+
+- Phase 63: Rename + Team Auth
+- Phase 64: Immutable Audit + HIL Escalation
+- Phase 65: Finance Reconciliation Vertical
+- Phase 66: Self-hosted Hardening + Compliance Posture
+- Phase 67: CoVe Integration
+- Phase 68: Security Boundary Hardening
+- Phase 69: Context Source Contracts + Runtime Resilience
 
 ---
 
@@ -129,6 +141,7 @@ Any agent framework plugs into Kitchen — and every agent, knowledge system, an
 
 ### Recent Milestones
 
+- [x] **v2.5 Eval Engine + Self-Improvement Platform (Phases 57-62)** — Composite W, SEAL substrate, memory/agent autogen proposal families, L3 outcome layer, public eval API + SDK; Tier 1 modeled W-lift shipped, behavioral W-lift deferred to v3.
 - [x] **v2.1 Security + Trust Layer (Phases 42-45)** — Agent Shield + Iris pre-flight foundation, tool permission guard, security operations UI, and progressive capability exposure
 - [x] **v2.2 LLM Optimization + Evaluation (Phases 46-49)** — Model-routing telemetry, recommendation API, eval rigs, quality scoring, optimization dashboard and reports
 - [x] **v2.3 Agent Runtime Enhancements (Phases 50-52)** — Agent-side middleware, memory client v2, local observability dashboard

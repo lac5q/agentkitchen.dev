@@ -1,10 +1,28 @@
 # Milestones
 
+## v2.5 Eval Engine + Self-Improvement Platform (Shipped: 2026-05-17)
+
+**Phases completed:** 6 phases, 7 plans, 0 tasks
+
+**Key accomplishments:**
+
+- 3-layer composite eval signal (`W`) with scorer registry, pinned judge, drift guard, persistence, and UI/config surface.
+- SEAL reflection/proposal/apply/rollback loop with deterministic modeled post-apply re-scoring and explicit audit metadata.
+- Memory and agent autogen proposal families registered on the shared SEAL substrate, with fixed-harness policy labs and trajectory scoring.
+- Minimal viable golden sets populated and verified against the real judge, making the drift guard meaningful at the Tier 1 bar.
+- L3 business outcome layer, public eval API, and TypeScript/Python SDKs established as the external product surface.
+- Behavioral W-lift for instruction/skill proposals intentionally deferred to v3 rather than overclaimed.
+
+**Known deferred items at close:** 2 context-question buckets acknowledged in `STATE.md`.
+
+---
+
 ## v2.1 Security + Trust Layer (Next)
 
 **Phases:** 42-45 | **Plans:** TBD
 
 **Scope:**
+
 1. **Agent Shield + Iris Pre-flight Foundation (Phase 42)** — Shipped in `4d03fae`: scan notes, `iris-scanner.ts`, Dispatch/A2A pre-flight rules, audit-compatible blocking, and tests.
 2. **Tool Permission Guard + Policy Enforcement (Phase 43)** — Implemented locally: shared policy helper, dispatch/A2A/memory tier checks, policy_denied audit rows, and tests.
 3. **Security Operations UI + Reports (Phase 44)** — Security event history, blocked-attempt drilldowns, scan health, severity trends, and release reports.
@@ -17,6 +35,7 @@
 **Phases:** 46-49 | **Plans:** TBD
 
 **Scope:**
+
 1. **Model Routing Telemetry Substrate (Phase 46)** — Track task type, model, cost, latency, quality score, success rate, and context tags.
 2. **Model Recommendation API + Knowledge Workspace (Phase 47)** — Agents query model recommendations before model choice and append outcomes after task completion.
 3. **Evaluation Rigs + Quality Scoring (Phase 48)** — Task-class eval sets, rubrics, regression checks, and model comparisons.
@@ -29,6 +48,7 @@
 **Phases:** 50-52 | **Plans:** TBD
 
 **Scope:**
+
 1. **Agent-Side Middleware (Phase 50)** — Pre/post-call hooks for validation, redaction, outcome logging, and skill health alerts.
 2. **Agent Memory Client v2 (Phase 51)** — Semantic search, relevance-scored context injection, compression, TTL, and backward compatibility.
 3. **Agent Observability Dashboard (Phase 52)** — Offline session timelines, tool events, decision points, token usage, error rates, and health scores.
@@ -40,6 +60,7 @@
 **Phases:** 53-54 | **Plans:** TBD
 
 **Scope:**
+
 1. **Response Caching Layer (Phase 53)** — Multi-tier LRU cache for API routes, MCP queries, memory lookups, Neo4j graph queries, and A2A task status.
 2. **Query Performance + Cold Start Elimination (Phase 54)** — Pre-warm caches on startup, SQLite/Neo4j query optimization, performance budgets, and CI regression detection.
 
