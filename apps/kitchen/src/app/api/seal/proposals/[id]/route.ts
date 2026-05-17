@@ -21,7 +21,11 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
 }
 
 export async function POST(req: NextRequest, ctx: Ctx) {
-  if (!authorizeRegistryWrite(req)) {
+  // Accept either human JWT auth (via middleware x-user-id header) or agent API key auth
+  const xUserId = req.headers.get("x-user-id");
+  const isHumanAuth = Boolean(xUserId);
+
+  if (!isHumanAuth && !authorizeRegistryWrite(req)) {
     return registryWriteUnauthorizedResponse();
   }
 
@@ -35,11 +39,18 @@ export async function POST(req: NextRequest, ctx: Ctx) {
     return Response.json({ error: "action must be approve, reject, or apply" }, { status: 400 });
   }
 
+  // Prefer authenticated user_id from middleware; fall back to body.operator for agent auth
+  const operator = xUserId ?? (typeof body.operator === "string" ? body.operator : undefined);
+
+  if (!operator) {
+    return Response.json({ error: "authentication required" }, { status: 401 });
+  }
+
   try {
     const service = new SealService();
     const result = await service.handleAction(id, body.action, {
       reasoning: typeof body.reasoning === "string" ? body.reasoning : undefined,
-      operator: typeof body.operator === "string" ? body.operator : undefined,
+      operator,
     });
     return Response.json({ ok: true, ...result, timestamp: new Date().toISOString() });
   } catch (error) {
