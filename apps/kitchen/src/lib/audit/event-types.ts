@@ -45,6 +45,16 @@ export const AUDIT_EVENT_TYPES = {
   /** SLA deadline passed without resolution (system event). */
   HIL_SLA_BREACHED: "hil.sla_breached",
 
+  // Finance reconciliation vertical
+  /** Finance transaction reconciled cleanly. */
+  FINANCE_RECONCILIATION_MATCHED: "finance.reconciliation_matched",
+  /** Finance transaction mismatched and may need review. */
+  FINANCE_RECONCILIATION_MISMATCHED: "finance.reconciliation_mismatched",
+  /** Finance transaction requires exception handling. */
+  FINANCE_RECONCILIATION_EXCEPTION: "finance.reconciliation_exception",
+  /** Finance transaction identified as duplicate. */
+  FINANCE_RECONCILIATION_DUPLICATE: "finance.reconciliation_duplicate",
+
   // Admin / system
   /** Annotation added to a prior entry (metadata_json.ref_entry_id). */
   AUDIT_ANNOTATION: "audit.annotation",
@@ -59,6 +69,7 @@ export const ENTITY_TYPES = {
   SEAL_PROPOSAL: "seal_proposal",
   EVAL_RUN: "eval_run",
   HIL_ESCALATION: "hil_escalation",
+  FINANCE_RECONCILIATION: "finance_reconciliation",
 } as const;
 
 export type EntityType = (typeof ENTITY_TYPES)[keyof typeof ENTITY_TYPES];

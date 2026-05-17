@@ -70,6 +70,13 @@ export function buildDefaultEvalConfig(): EvalConfig {
       poll_interval_seconds: 300,
       correlation_id_field: "kitchen_correlation_id",
     },
+    finance: {
+      enabled: false,
+      transactionLabel: "transaction",
+      reconciliationLabel: "reconciliation",
+      exceptionLabel: "exception",
+      goldenSet: "./golden-sets/finance-reconciliation.jsonl",
+    },
   };
 }
 
@@ -307,6 +314,13 @@ export function parseEvalConfigYaml(yaml: string): EvalConfig {
         defaults.businessOps.correlation_id_field
       ),
     },
+    finance: {
+      enabled: bool(values.get("finance.enabled"), defaults.finance.enabled),
+      transactionLabel: scalar(values.get("finance.transaction_label"), defaults.finance.transactionLabel),
+      reconciliationLabel: scalar(values.get("finance.reconciliation_label"), defaults.finance.reconciliationLabel),
+      exceptionLabel: scalar(values.get("finance.exception_label"), defaults.finance.exceptionLabel),
+      goldenSet: scalar(values.get("finance.golden_set"), defaults.finance.goldenSet),
+    },
   };
 
   // Validate company sub-weights on load (throws with actionable message on violation)
@@ -372,6 +386,13 @@ export function formatEvalConfigYaml(config: EvalConfig): string {
     "business_ops:",
     `  poll_interval_seconds: ${config.businessOps?.poll_interval_seconds ?? 300}`,
     `  correlation_id_field: ${config.businessOps?.correlation_id_field ?? "kitchen_correlation_id"}`,
+    "",
+    "finance:",
+    `  enabled: ${config.finance?.enabled ?? false}`,
+    `  transaction_label: ${config.finance?.transactionLabel ?? "transaction"}`,
+    `  reconciliation_label: ${config.finance?.reconciliationLabel ?? "reconciliation"}`,
+    `  exception_label: ${config.finance?.exceptionLabel ?? "exception"}`,
+    `  golden_set: ${config.finance?.goldenSet ?? "./golden-sets/finance-reconciliation.jsonl"}`,
     "",
     "companies:",
     ...(Object.entries(config.companies ?? {}).length > 0

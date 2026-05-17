@@ -45,6 +45,13 @@ business_ops:
   poll_interval_seconds: 300
   correlation_id_field: kitchen_correlation_id
 
+finance:
+  enabled: false
+  transaction_label: transaction
+  reconciliation_label: reconciliation
+  exception_label: exception
+  golden_set: ./golden-sets/finance-reconciliation.jsonl
+
 companies:
   default:
     l3_sub_weights:

@@ -72,6 +72,15 @@ export interface BusinessOpsConfig {
   correlation_id_field: string;
 }
 
+/** Phase 65: finance reconciliation terminology and golden set wiring. */
+export interface FinanceReconciliationConfig {
+  enabled: boolean;
+  transactionLabel: string;
+  reconciliationLabel: string;
+  exceptionLabel: string;
+  goldenSet: string;
+}
+
 export interface EvalConfig {
   judgeModel: EvalJudgeConfig;
   goldenSets: EvalGoldenSetConfig;
@@ -94,6 +103,8 @@ export interface EvalConfig {
   companies: Record<string, CompanyEvalConfig>;
   /** Phase 61: Business-ops adapter polling configuration. */
   businessOps: BusinessOpsConfig;
+  /** Phase 65: Finance reconciliation vertical configuration. */
+  finance: FinanceReconciliationConfig;
 }
 
 export interface AgentEvalTrace {
