@@ -79,8 +79,8 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   // Close sidebar on route change on mobile
   useEffect(() => {
     const nextHash = window.location.hash;
+    setCurrentHash(nextHash);
     window.setTimeout(() => {
-      setCurrentHash(nextHash);
       if (nextHash) scrollToHashTarget(nextHash);
     }, 0);
     if (onClose) onClose();
@@ -89,6 +89,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
 
   useEffect(() => {
     const syncHash = () => setCurrentHash(window.location.hash);
+    syncHash();
     window.addEventListener("hashchange", syncHash);
     return () => window.removeEventListener("hashchange", syncHash);
   }, []);
