@@ -5,7 +5,6 @@ import type { UserRole } from "@/lib/auth/types";
 
 const PUBLIC_HOSTS = new Set(["memroos.com", "www.memroos.com", "memroos.vercel.app"]);
 const LEGACY_HOSTS = new Set(["memroos.dev", "www.memroos.dev"]);
-const HTTPS_APP_HOSTS = new Set(["memroos.epiloguecapital.com"]);
 
 function normalizeHost(host: string): string {
   return host.split(":")[0]?.toLowerCase() ?? "";
@@ -25,8 +24,17 @@ function isLandingAsset(pathname: string): boolean {
   );
 }
 
+function getHttpsAppHosts(): Set<string> {
+  return new Set(
+    (process.env.MEMROOS_HTTPS_APP_HOSTS ?? "")
+      .split(",")
+      .map((host) => host.trim().toLowerCase())
+      .filter(Boolean)
+  );
+}
+
 function shouldRedirectToHttps(request: NextRequest, host: string): boolean {
-  if (!HTTPS_APP_HOSTS.has(host)) return false;
+  if (!getHttpsAppHosts().has(host)) return false;
   return request.nextUrl.protocol === "http:" || request.headers.get("x-forwarded-proto") === "http";
 }
 

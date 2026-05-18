@@ -97,14 +97,14 @@
   {
     "id": "gold-operational-recovery",
     "layer": "gold",
-    "scenario": "Agent needs MemroOS Cloudflare recovery procedure",
+    "scenario": "Agent needs MemroOS edge recovery procedure",
     "agentId": "ops-agent",
-    "taskPrompt": "Diagnose memroos.epiloguecapital.com returning 502.",
+    "taskPrompt": "Diagnose the MemroOS app host returning 502.",
     "fixtures": [
       {
         "id": "gold-cloudflare-recovery",
         "tier": "episodic",
-        "content": "MemroOS Cloudflare 502 usually means the Memroos origin on port 3002 is stopped or unreachable.",
+        "content": "MemroOS edge 502 usually means the Memroos origin on port 3002 is stopped or unreachable.",
         "metadata": { "topic": "ops-recovery", "source": "gold-suite" }
       }
     ],
