@@ -473,6 +473,7 @@ function LandingPage() {
                 alt="Diagram of MemroOS routing work requests through governed context packs, memory and knowledge stores, agent runtimes, and outcome capture."
                 fill
                 loading="eager"
+                unoptimized
                 sizes="(max-width: 768px) 100vw, 1180px"
                 className="object-contain"
               />

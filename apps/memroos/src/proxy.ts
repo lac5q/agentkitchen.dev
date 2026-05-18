@@ -20,6 +20,7 @@ function isLandingAsset(pathname: string): boolean {
     pathname === "/favicon.ico" ||
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/assets/") ||
+    pathname.startsWith("/diagrams/") ||
     pathname.startsWith("/demo/")
   );
 }
