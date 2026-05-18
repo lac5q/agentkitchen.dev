@@ -62,9 +62,32 @@ const loop = [
 ];
 
 const proofPoints = [
-  { value: "3", label: "first workflows", detail: "Product, sales, and engineering are the initial memory-critical surfaces." },
+  { value: "8", label: "operator groups", detail: "Operations, Memory, Skills, Agents, Engage, Improve, Governance, and Workflow Map stay in one console." },
   { value: "5", label: "memory moves", detail: "Capture, consolidate, retrieve, act, and improve become one operating loop." },
-  { value: "1", label: "context plane", detail: "One shared source of retained knowledge across agents, files, and decisions." },
+  { value: "1", label: "context plane", detail: "One shared source of retained knowledge across agents, files, decisions, skills, and outcomes." },
+];
+
+const operatorSurfaces = [
+  {
+    label: "Operations NOC",
+    value: "live",
+    detail: "Memory consumption, undigested work, agent workload, model utility, governance, savings, and waste are visible from the first screen.",
+  },
+  {
+    label: "Skills workflow",
+    value: "review",
+    detail: "Operators can inspect source, edit notes, request changes, approve general skills, and promote enterprise-ready procedures.",
+  },
+  {
+    label: "Dispatch rooms",
+    value: "15 min",
+    detail: "Direct chat and group-room standups ask agents what happened yesterday, what should happen today, and what is blocked.",
+  },
+  {
+    label: "Consistent shell",
+    value: "8 groups",
+    detail: "A calmer NOC visual language carries from public promise into authenticated product surfaces and child routes.",
+  },
 ];
 
 const topValueFeatures = [
@@ -86,14 +109,14 @@ const topValueFeatures = [
     number: "03",
     title: "One place to engage active agents",
     icon: MessageSquareText,
-    detail: "Chat, voice, dispatch, standups, live delegations, and agent status sit in one operator surface.",
-    outcome: "Small teams get a practical agent command center without enterprise ceremony.",
+    detail: "Direct chat, voice prompts, group-room standups, live delegations, and agent status sit in one operator surface.",
+    outcome: "Small teams get a practical agent command center that can ask the room what happened, what is next, and what is blocked.",
   },
   {
     number: "04",
     title: "Skills from repeated work",
     icon: Wrench,
-    detail: "Successful repeated workflows become durable procedures, playbooks, and reusable skill signals.",
+    detail: "Successful repeated workflows move through a review desk: inspect, edit, request changes, approve, and promote.",
     outcome: "Institutional knowledge compounds instead of living in one-off chats.",
   },
   {
@@ -125,6 +148,17 @@ const featureGroups = [
     ],
   },
   {
+    title: "Operator NOC",
+    icon: Gauge,
+    items: [
+      "Memory consumption and undigested-work panels",
+      "Agent workload and live activity",
+      "Model utility, savings, and waste signals",
+      "Governance strip for audit and trust",
+      "Consistent NOC UI across authenticated routes",
+    ],
+  },
+  {
     title: "Knowledge",
     icon: FileSearch,
     items: [
@@ -143,7 +177,18 @@ const featureGroups = [
       "Local, REST, UI, and A2A agents",
       "Agent cards and capabilities",
       "Dispatch and live delegations",
-      "Engagement console for standups",
+      "Direct chat and group-room standups",
+    ],
+  },
+  {
+    title: "Skills",
+    icon: Wrench,
+    items: [
+      "Review queue for discovered skill files",
+      "Draft notes and source previews",
+      "Request-change and approval workflow",
+      "Enterprise promotion path",
+      "Coverage and budget health signals",
     ],
   },
   {
@@ -165,7 +210,7 @@ const featureGroups = [
       "LLM recommendation surfaces",
       "Evaluation fixtures",
       "Quality reports",
-      "Skill extraction signals",
+      "Skill extraction and promotion signals",
     ],
   },
   {
@@ -217,6 +262,11 @@ const completedRoadmap = [
     phase: "Phases 53-54",
     label: "v2.4 Performance + Caching",
     detail: "Response caching, query-path tuning, and faster memory and knowledge retrieval for operator workflows.",
+  },
+  {
+    phase: "UI migration",
+    label: "Memory OS operator surface",
+    detail: "NOC-style home, 8-group navigation, Workflow Map, task-first Dispatch, Skills review workflow, and full authenticated page reskin.",
   },
 ];
 
@@ -282,7 +332,7 @@ function LandingPage() {
               Stop making every agent start from zero.
             </h1>
             <p className="mt-7 max-w-[62ch] text-[18px] leading-8 text-[#4a4a45]">
-              MemroOS is the shared memory layer for product, sales, and engineering agents: retain what the company learns, retrieve the right context at runtime, and turn repeated work into durable skills.
+              MemroOS is the shared memory layer for product, sales, and engineering agents: retain what the company learns, retrieve the right context at runtime, and operate every agent from one NOC-style console.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
@@ -308,7 +358,7 @@ function LandingPage() {
             <div className="mt-8 flex flex-wrap items-center gap-6 text-[12px] uppercase tracking-[0.1em] text-[#4a4a45]">
               <span className="font-semibold text-[#0f0f0e]">Agentic knowledge retention</span>
               <span className="border-l border-[#c9c9c2] pl-6">Runtime context packs</span>
-              <span className="border-l border-[#c9c9c2] pl-6">Skills from repeated work</span>
+              <span className="border-l border-[#c9c9c2] pl-6">NOC UI, standups, skills workflow</span>
             </div>
           </div>
 
@@ -327,7 +377,7 @@ function LandingPage() {
             </div>
 
             <div className="grid gap-px bg-[#c9c9c2] md:grid-cols-3">
-              {["97 memories", "5,854 files", "96 skills"].map((metric) => (
+              {["98 skills", "8 nav groups", "15 min standups"].map((metric) => (
                 <div key={metric} className="bg-[#fafaf7] p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4a4a45]">linked</p>
                   <p className="mt-2 text-[22px] font-semibold text-[#0f0f0e]">{metric}</p>
@@ -372,6 +422,31 @@ function LandingPage() {
               <article key={title} className="bg-[#171715] p-6">
                 <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#e7b6a8]">{title}</p>
                 <p className="mt-4 text-[20px] leading-8 text-white">{detail}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="operator-console" className="border-b border-[#c9c9c2] bg-white">
+        <div className="mx-auto max-w-[1180px] px-5 py-16 sm:px-8 lg:py-20">
+          <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
+            <div>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#7a2a1e]">New operator UI</p>
+              <h2 className="mt-3 text-[42px] font-semibold leading-tight tracking-normal text-[#0f0f0e]">
+                The memory promise now shows up in the product surface.
+              </h2>
+            </div>
+            <p className="text-[17px] leading-8 text-[#4a4a45]">
+              The new MemroOS UI turns retained context into daily operation: a memory-first home, grouped navigation, task-first dispatch, and a skill lifecycle that can move from local know-how to governed enterprise procedure.
+            </p>
+          </div>
+          <div className="mt-8 grid gap-px bg-[#c9c9c2] md:grid-cols-2 lg:grid-cols-4">
+            {operatorSurfaces.map((surface) => (
+              <article key={surface.label} className="bg-[#fafaf7] p-5">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#7a2a1e]">{surface.label}</p>
+                <p className="mt-5 text-[34px] font-semibold leading-none text-[#0f0f0e]">{surface.value}</p>
+                <p className="mt-5 text-[15px] leading-7 text-[#4a4a45]">{surface.detail}</p>
               </article>
             ))}
           </div>

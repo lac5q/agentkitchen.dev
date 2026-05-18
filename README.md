@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  MemroOS retains what product, sales, and engineering agents learn, retrieves the right context at runtime, and turns repeated work into durable skills.
+  MemroOS retains what product, sales, and engineering agents learn, retrieves the right context at runtime, and gives operators one NOC-style surface for memory, skills, dispatch, evals, and trust.
 </p>
 
 <p align="center">
@@ -37,8 +37,9 @@ MemroOS is the operating layer that gives agents a memory plane:
 
 - **Retain:** capture decisions, files, conversations, outcomes, and workflow history.
 - **Retrieve:** assemble permission-aware context packs before an agent starts work.
-- **Dispatch:** send work to local, REST, or A2A agents with source-backed context.
-- **Improve:** promote repeated successful workflows into durable skills and playbooks.
+- **Operate:** see memory health, model utility, live agents, governance, savings, and waste in one console.
+- **Dispatch:** chat with agents, run group-room standups, and send work to local, REST, or A2A agents with source-backed context.
+- **Improve:** review, edit, approve, and promote repeated successful workflows into durable skills and playbooks.
 
 The repository began as `memroos.dev`; some internal package names, paths, and environment variables still use `memroos` for compatibility. The public product and positioning are now MemroOS.
 
@@ -59,7 +60,7 @@ The repository began as `memroos.dev`; some internal package names, paths, and e
 </p>
 
 <p align="center">
-  <em>The public landing page leads with retained agent knowledge, runtime context packs, and product/sales/engineering workflows.</em>
+  <em>The public landing page leads with retained agent knowledge, runtime context packs, and the new operator console that turns memory into daily agent operations.</em>
 </p>
 
 <table>
@@ -76,8 +77,8 @@ The repository began as `memroos.dev`; some internal package names, paths, and e
     <td width="50%"><img src="docs/screenshots/readme-skills.png" alt="MemroOS skills page showing procedural playbooks and skill analytics"></td>
   </tr>
   <tr>
-    <td><strong>Engage</strong><br>Dispatch tasks, chat with agent runtimes, and inspect live delegation state.</td>
-    <td><strong>Skills</strong><br>See which repeated workflows are becoming reusable procedural playbooks.</td>
+    <td><strong>Engage</strong><br>Dispatch tasks, chat with agent runtimes, run standups, and inspect live delegation state.</td>
+    <td><strong>Skills</strong><br>Review, edit, approve, and promote reusable procedures from agent-local playbooks into enterprise-ready workflows.</td>
   </tr>
 </table>
 
@@ -117,8 +118,9 @@ After setup, you can:
 3. Inspect source corpus health in the Knowledge view.
 4. Register a local, REST, or A2A-compatible agent.
 5. Dispatch work and inspect live delegation state.
-6. Review skill proposals before they modify instructions or playbooks.
-7. Keep memory, knowledge, skills, agents, usage, and governance in one operator surface.
+6. Run a 15-minute group-room standup or direct agent chat from the Engage surface.
+7. Review skill proposals before they modify instructions or playbooks.
+8. Keep memory, knowledge, skills, agents, usage, and governance in one operator surface.
 
 ## Release 0.1
 
@@ -126,7 +128,10 @@ After setup, you can:
 
 The current release includes:
 
+- A new NOC-style operator console with grouped navigation, dense operational metrics, and a consistent public-to-product visual system.
 - A Next.js workspace with Memory, Knowledge, Skills, Agents, Workflow Map, Engage, Improvements, Usage, and Governance surfaces.
+- A Skills workflow for reviewing, editing, approving, and promoting procedures from agent-local playbooks into enterprise-ready workflows.
+- A task-first Dispatch room with direct chat, group-room standups, voice prompt controls, and inspectable participant context.
 - A canonical SQLite-backed agent registry for REST, UI, and A2A-visible agents.
 - A2A card ingestion, task routes, streaming subscription endpoints, and Google ADK compatibility fixtures.
 - REST reporting endpoints for heartbeats, memory writes, skill reports, and tool outcomes.
@@ -140,15 +145,18 @@ The current release includes:
 - **Phases 46-49: v2.2 LLM Optimization + Evaluation** - model-routing telemetry, recommendation surfaces, evaluation fixtures, optimization dashboards, and quality reports.
 - **Phases 50-52: v2.3 Agent Runtime Enhancements** - runtime middleware, memory client v2 paths, richer engagement state, and observability surfaces for live agents.
 - **Phases 53-54: v2.4 Performance + Caching** - response caching, query-path tuning, and faster memory/knowledge retrieval for operator workflows.
+- **UI migration: Memory OS operator surface** - NOC-style home, 8-group navigation, Workflow Map, full authenticated page reskin, task-first Dispatch, and a first-class Skills workflow.
 
 ## What MemroOS Does
 
 - **Memory search:** Search retained context before an agent starts work.
+- **Operations NOC:** Watch memory consumption, undigested work, agent workload, model utility, governance, savings, and waste from the first screen.
 - **Knowledge corpus:** Track files, freshness, collections, and source health.
-- **Skill analytics:** Watch repeatable workflows become procedural playbooks.
+- **Skill workflow:** Review, edit, approve, and promote repeatable procedures into governed skills.
 - **Agent registry:** Maintain one canonical roster for local, REST, UI, and A2A agents.
 - **A2A broker:** Expose agent cards, JSON-RPC endpoints, task lifecycle routes, SSE task updates, and outbound A2A delegation.
 - **REST shim:** Let agents report heartbeats, memories, skills, and outcomes before they speak A2A.
+- **Task-first dispatch:** Run direct chat, group-room standups, live delegations, and spoken prompts with inspectable context.
 - **Workflow map:** Visualize agents, memory, skills, dispatch paths, and infrastructure.
 - **Governance:** Gate registry writes, memory reads, destructive actions, and self-learning approvals.
 
