@@ -24,7 +24,7 @@ function Spark({ values, color = NOC.ink, w = 90, h = 28, fill }: SparkProps) {
     .join(" ");
   const dFill = fill ? `${d} L${w} ${h} L0 ${h} Z` : null;
   return (
-    <svg width={w} height={h} style={{ display: "block" }}>
+    <svg width={w} height={h} style={{ display: "block", height: h, maxWidth: "100%" }}>
       {dFill && <path d={dFill} fill={color} opacity="0.12" />}
       <path d={d} stroke={color} strokeWidth="1.4" fill="none" />
       <circle

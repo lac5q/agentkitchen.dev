@@ -14,9 +14,9 @@ function formatDateTime(dateStr: string): string {
 }
 
 function trackingTone(status: ApoProposal["status"]) {
-  if (status === "pending") return "border-amber-500/30 bg-amber-500/5 text-amber-200";
-  if (status === "approved") return "border-cyan-500/30 bg-cyan-500/5 text-cyan-200";
-  return "border-emerald-500/30 bg-emerald-500/5 text-emerald-200";
+  if (status === "pending") return "border-amber-200 bg-amber-50 text-amber-800";
+  if (status === "approved") return "border-cyan-200 bg-cyan-50 text-cyan-800";
+  return "border-emerald-200 bg-emerald-50 text-emerald-800";
 }
 
 function shortTarget(targetPath?: string) {
@@ -70,36 +70,36 @@ export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
   return (
     <Card
       className={[
-        "border-slate-800 bg-slate-900/50 p-4 cursor-pointer transition-colors",
-        "hover:border-slate-700 hover:bg-slate-800/60",
-        isPending ? "border-l-2 border-l-amber-500" : "",
-        isApproved ? "border-l-2 border-l-cyan-500" : "",
+        "cursor-pointer border-slate-200 bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,0.04)] transition-colors",
+        "hover:border-slate-300 hover:bg-slate-50",
+        isPending ? "border-l-2 border-l-amber-600" : "",
+        isApproved ? "border-l-2 border-l-cyan-700" : "",
       ].join(" ")}
       onClick={() => onClick(proposal)}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold text-slate-100 text-sm truncate">
+            <span className="truncate text-sm font-semibold text-slate-950">
               {proposal.skill}
             </span>
             <Badge
               variant="outline"
               className={
                 isPending
-                  ? "border-amber-500/50 text-amber-400 text-xs"
+                  ? "border-amber-300 text-amber-700 text-xs"
                   : isApproved
-                    ? "border-cyan-500/50 text-cyan-400 text-xs"
-                  : "border-slate-600 text-slate-400 text-xs"
+                    ? "border-cyan-300 text-cyan-700 text-xs"
+                  : "border-slate-300 text-stone-600 text-xs"
               }
             >
               {isApproved ? "queued" : proposal.status}
             </Badge>
           </div>
-          <p className="text-xs text-slate-500 mt-0.5">
-            subsystem: <span className="text-slate-400">{proposal.subsystem}</span>
+          <p className="text-xs text-stone-500 mt-0.5">
+            subsystem: <span className="text-stone-600">{proposal.subsystem}</span>
           </p>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-stone-500 mt-0.5">
             {formatDateTime(proposal.timestamp)}
           </p>
           <div
@@ -110,13 +110,13 @@ export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
           >
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-semibold">{tracking.label}</p>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-stone-500">
                 {formatDateTime(tracking.timestamp)}
               </p>
             </div>
-            <p className="mt-1 text-xs text-slate-400">{tracking.description}</p>
+            <p className="mt-1 text-xs text-stone-600">{tracking.description}</p>
             {(tracking.executorCli || tracking.targetKind || tracking.applied !== undefined) && (
-              <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-slate-400">
+              <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-stone-600">
                 {tracking.executorCli && <span>executor: {tracking.executorCli}</span>}
                 {tracking.targetKind && <span>target: {tracking.targetKind}</span>}
                 {tracking.applied !== undefined && (
@@ -125,12 +125,12 @@ export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
               </div>
             )}
             {tracking.targetPath && (
-              <p className="mt-1 truncate text-[11px] text-slate-500">
+              <p className="mt-1 truncate text-[11px] text-stone-500">
                 {shortTarget(tracking.targetPath)}
               </p>
             )}
           </div>
-          <p className="text-xs text-slate-400 mt-2 line-clamp-3 leading-relaxed">
+          <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-stone-600">
             {preview}
             {proposal.content.length > 200 && "…"}
           </p>
@@ -147,7 +147,7 @@ export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
             type="button"
             onClick={handleApprove}
             disabled={approveProposal.isPending}
-            className="shrink-0 rounded-md border border-emerald-500/50 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 transition-colors hover:border-emerald-400 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+            className="shrink-0 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition-colors hover:border-emerald-400 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {approveProposal.isPending ? "Approving…" : "Approve"}
           </button>

@@ -3,13 +3,14 @@
 import { Treemap, Tooltip, ResponsiveContainer } from "recharts";
 import type { KnowledgeCollection } from "@/types";
 import type { TreemapNode } from "recharts/types/chart/Treemap";
+import { NOC } from "@/lib/noc-theme";
 
 const CATEGORY_FILL: Record<KnowledgeCollection["category"], string> = {
-  business: "#0ea5e9",
-  agents: "#10b981",
-  marketing: "#f59e0b",
-  product: "#a855f7",
-  other: "#64748b",
+  business: NOC.info,
+  agents: NOC.success,
+  marketing: NOC.warn,
+  product: NOC.terra,
+  other: NOC.cold,
 };
 
 interface TreemapDatum {
@@ -73,7 +74,7 @@ function CustomContent(props: TreemapNode) {
         height={height}
         fill={fill}
         fillOpacity={0.75}
-        stroke="#1e293b"
+        stroke={NOC.ruleStrong}
         strokeWidth={2}
         rx={4}
       />
@@ -88,7 +89,7 @@ function CustomContent(props: TreemapNode) {
               dominantBaseline="middle"
               fontSize={11}
               fontWeight={600}
-              fill="#f8fafc"
+              fill={NOC.paper}
               style={{ pointerEvents: "none" }}
             >
               {line}
@@ -100,7 +101,7 @@ function CustomContent(props: TreemapNode) {
             textAnchor="middle"
             dominantBaseline="middle"
             fontSize={10}
-            fill="#cbd5e1"
+            fill={NOC.fog}
             style={{ pointerEvents: "none" }}
           >
             {docCount} files
@@ -121,9 +122,9 @@ function CustomTooltip({
   if (!active || !payload?.length) return null;
   const item = payload[0].payload;
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs shadow-xl">
-      <p className="font-semibold text-slate-100">{item.name}</p>
-      <p className="text-slate-400 mt-0.5">{item.docCount} files</p>
+    <div className="rounded-lg border px-3 py-2 text-xs shadow-xl" style={{ borderColor: NOC.ruleStrong, background: NOC.paper }}>
+      <p className="font-semibold" style={{ color: NOC.ink }}>{item.name}</p>
+      <p className="mt-0.5" style={{ color: NOC.soft }}>{item.docCount} files</p>
     </div>
   );
 }

@@ -13,20 +13,20 @@ function classifyLine(line: string): string {
   if (upper.includes("PROPOSAL")) {
     return "text-amber-400";
   }
-  return "text-slate-400";
+  return "text-stone-600";
 }
 
 export function LogViewer({ lines }: LogViewerProps) {
   if (lines.length === 0) {
     return (
-      <div className="rounded-md border border-slate-800 bg-slate-950 p-4">
-        <p className="text-xs text-slate-500 font-mono italic">No log data available.</p>
+      <div className="rounded-md border border-slate-200 bg-white p-4">
+        <p className="text-xs text-stone-500 font-mono italic">No log data available.</p>
       </div>
     );
   }
 
   return (
-    <div className="rounded-md border border-slate-800 bg-slate-950 p-3 max-h-[300px] overflow-y-auto">
+    <div className="max-h-[300px] overflow-y-auto rounded-md border border-slate-200 bg-white p-3">
       <div className="space-y-0.5">
         {lines.map((line, i) => (
           <p

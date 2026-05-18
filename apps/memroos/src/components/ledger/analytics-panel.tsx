@@ -14,9 +14,9 @@ export function LedgerAnalyticsPanel() {
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-semibold text-slate-200">Usage Trends</h3>
+      <h3 className="text-lg font-semibold text-stone-700">Usage Trends</h3>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+        <div className="rounded-xl border border-stone-200 bg-white/90 p-4">
           <TimeSeriesChart
             title="Docs Ingested"
             points={docsIngested.data?.points ?? []}
@@ -26,7 +26,7 @@ export function LedgerAnalyticsPanel() {
             lineColor={COLORS.accent}
           />
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+        <div className="rounded-xl border border-stone-200 bg-white/90 p-4">
           <TimeSeriesChart
             title="Memory Writes"
             points={memoryWrites.data?.points ?? []}
@@ -36,7 +36,7 @@ export function LedgerAnalyticsPanel() {
             lineColor={COLORS.info}
           />
         </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+        <div className="rounded-xl border border-stone-200 bg-white/90 p-4">
           <TimeSeriesChart
             title="Recall Queries"
             points={recallQueries.data?.points ?? []}

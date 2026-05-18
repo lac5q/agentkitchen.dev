@@ -13,6 +13,8 @@ import { AgentRegistrationForm } from "@/components/agents/agent-registration-fo
 import { AgentRegistryTable } from "@/components/agents/agent-registry-table";
 import { AgentSecurityModesPanel } from "@/components/agents/agent-security-modes-panel";
 import { Button } from "@/components/ui/button";
+import { Card, PageHeader, Stat } from "@/components/shared/ui";
+import { NOC } from "@/lib/noc-theme";
 import type { AgentProtocol, AgentStatus, RegisteredAgent } from "@/types";
 
 type ProtocolFilter = "all" | AgentProtocol;
@@ -96,27 +98,17 @@ export default function AgentRegistryPage() {
   const protocolCount = new Set(agents.map((agent) => agent.protocol)).size;
 
   return (
-    <div className="space-y-6 p-6">
-      <div>
-        <h1 className="text-2xl font-bold text-amber-500">Agents</h1>
-        <p className="mt-1 text-sm text-slate-400">
-          Runtime registry, credentials, capabilities, and liveness
-        </p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Agents"
+        title="Agents"
+        hint="Runtime registry, credentials, capabilities, security modes, and liveness."
+      />
 
       <div className="grid gap-3 sm:grid-cols-3">
-        <div className="border border-slate-800 bg-slate-900/40 p-4">
-          <p className="text-xs text-slate-500">Registered</p>
-          <p className="text-2xl font-bold text-slate-100">{agents.length}</p>
-        </div>
-        <div className="border border-slate-800 bg-slate-900/40 p-4">
-          <p className="text-xs text-slate-500">Active</p>
-          <p className="text-2xl font-bold text-emerald-500">{activeCount}</p>
-        </div>
-        <div className="border border-slate-800 bg-slate-900/40 p-4">
-          <p className="text-xs text-slate-500">Protocols</p>
-          <p className="text-2xl font-bold text-sky-500">{protocolCount}</p>
-        </div>
+        <Card><Stat label="Registered" value={agents.length} /></Card>
+        <Card><Stat label="Active" value={activeCount} tone="success" /></Card>
+        <Card><Stat label="Protocols" value={protocolCount} tone="info" /></Card>
       </div>
 
       <AgentSecurityModesPanel />
@@ -160,10 +152,10 @@ export default function AgentRegistryPage() {
       />
 
       {oneTimeKey && (
-        <div className="border border-amber-500/30 bg-amber-500/10 p-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-amber-400">One-time API key</p>
-          <code className="mt-1 block break-all text-sm text-amber-100">{oneTimeKey}</code>
-        </div>
+        <Card style={{ background: NOC.warnBg, borderColor: NOC.warnBg }}>
+          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: NOC.warn }}>One-time API key</p>
+          <code className="mt-1 block break-all text-sm" style={{ color: NOC.terraDeep }}>{oneTimeKey}</code>
+        </Card>
       )}
 
       {(inviteCommand || inviteStatus) && (
@@ -189,9 +181,9 @@ export default function AgentRegistryPage() {
               </Button>
             )}
           </div>
-          {inviteStatus && <p className={`mt-1 text-xs ${inviteCommand ? "text-slate-600" : "text-rose-100"}`}>{inviteStatus}</p>}
+          {inviteStatus && <p className={`mt-1 text-xs ${inviteCommand ? "text-stone-600" : "text-rose-100"}`}>{inviteStatus}</p>}
           {inviteCommand && (
-            <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap rounded-md border border-slate-200 bg-slate-950 p-3 font-mono text-sm leading-6 text-slate-50">
+            <pre className="mt-3 max-h-72 overflow-auto whitespace-pre-wrap border p-3 font-mono text-sm leading-6" style={{ background: NOC.fog, borderColor: NOC.rule, color: NOC.ink }}>
               {inviteCommand}
             </pre>
           )}
@@ -202,7 +194,12 @@ export default function AgentRegistryPage() {
         {(["all", "rest", "a2a", "ui", "local"] as ProtocolFilter[]).map((item) => (
           <button
             key={item}
-            className={`border px-3 py-1 text-sm ${protocol === item ? "border-amber-500 text-amber-400" : "border-slate-800 text-slate-400"}`}
+            className="border px-3 py-1 text-sm font-semibold"
+            style={{
+              borderColor: protocol === item ? NOC.terra : NOC.rule,
+              color: protocol === item ? NOC.terraDeep : NOC.muted,
+              background: protocol === item ? NOC.peach : NOC.paper,
+            }}
             onClick={() => setProtocol(item)}
           >
             {item}
@@ -211,7 +208,12 @@ export default function AgentRegistryPage() {
         {(["all", "active", "idle", "dormant", "error"] as StatusFilter[]).map((item) => (
           <button
             key={item}
-            className={`border px-3 py-1 text-sm ${status === item ? "border-amber-500 text-amber-400" : "border-slate-800 text-slate-400"}`}
+            className="border px-3 py-1 text-sm font-semibold"
+            style={{
+              borderColor: status === item ? NOC.terra : NOC.rule,
+              color: status === item ? NOC.terraDeep : NOC.muted,
+              background: status === item ? NOC.peach : NOC.paper,
+            }}
             onClick={() => setStatus(item)}
           >
             {item}

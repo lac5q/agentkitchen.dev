@@ -2,6 +2,7 @@
 
 import type { BusinessOutcomeEventRow } from "@/lib/api-client";
 import { useBusinessOutcomeEvents } from "@/lib/api-client";
+import { NOC } from "@/lib/noc-theme";
 
 const KNOWN_ADAPTERS = [
   { name: "hubspot", category: "CRM", live: true },
@@ -28,14 +29,14 @@ export function AdapterStatusPanel() {
   }, {});
 
   return (
-    <div className="rounded-sm border border-[#c9c9c2] bg-white p-4">
-      <h3 className="mb-3 text-sm font-semibold text-[#0f0f0e]">Adapter Status</h3>
+    <div className="rounded-sm border p-4" style={{ borderColor: NOC.ruleStrong, background: NOC.paper }}>
+      <h3 className="mb-3 text-sm font-semibold" style={{ color: NOC.ink }}>Adapter Status</h3>
       {isLoading ? (
-        <p className="text-xs text-[#73736b]">Loading...</p>
+        <p className="text-xs" style={{ color: NOC.soft }}>Loading...</p>
       ) : (
         <table className="w-full text-xs">
           <thead>
-            <tr className="border-b border-[#e4e4dd] text-left text-[#73736b]">
+            <tr className="border-b text-left" style={{ borderColor: NOC.rule, color: NOC.soft }}>
               <th className="pb-1.5 font-medium">Adapter</th>
               <th className="pb-1.5 font-medium">Category</th>
               <th className="pb-1.5 font-medium">Mode</th>
@@ -47,24 +48,24 @@ export function AdapterStatusPanel() {
             {KNOWN_ADAPTERS.map((adapter) => {
               const stats = eventsByAdapter[adapter.name];
               return (
-                <tr key={adapter.name} className="border-b border-[#f2f2ee]">
-                  <td className="py-1.5 font-medium text-[#0f0f0e]">{adapter.name}</td>
-                  <td className="py-1.5 text-[#4a4a45]">{adapter.category}</td>
+                <tr key={adapter.name} className="border-b" style={{ borderColor: NOC.fog }}>
+                  <td className="py-1.5 font-medium" style={{ color: NOC.ink }}>{adapter.name}</td>
+                  <td className="py-1.5" style={{ color: NOC.muted }}>{adapter.category}</td>
                   <td className="py-1.5">
                     <span
-                      className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${
-                        adapter.live
-                          ? "bg-green-50 text-green-700"
-                          : "bg-amber-50 text-amber-700"
-                      }`}
+                      className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium"
+                      style={{
+                        background: adapter.live ? NOC.successBg : NOC.warnBg,
+                        color: adapter.live ? NOC.success : NOC.warn,
+                      }}
                     >
                       {adapter.live ? "live" : "fixture"}
                     </span>
                   </td>
-                  <td className="py-1.5 text-right text-[#4a4a45]">
+                  <td className="py-1.5 text-right" style={{ color: NOC.muted }}>
                     {stats?.count ?? 0}
                   </td>
-                  <td className="py-1.5 text-right text-[#73736b]">
+                  <td className="py-1.5 text-right" style={{ color: NOC.soft }}>
                     {stats?.lastPolled
                       ? new Date(stats.lastPolled).toLocaleString(undefined, {
                           month: "short",

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useTokenStats, useModelUsage } from "@/lib/api-client";
-import { KpiCard } from "@/components/ledger/kpi-card";
 import { SavingsChart } from "@/components/ledger/savings-chart";
 import { ModelMixChart } from "@/components/ledger/model-mix-chart";
 import { CostCalculator } from "@/components/ledger/cost-calculator";
@@ -10,6 +9,8 @@ import { LedgerAnalyticsPanel } from "@/components/ledger/analytics-panel";
 import { ModelRoutingPanel } from "@/components/ledger/model-routing-panel";
 import { InfoTip } from "@/components/ui/info-tip";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Card, PageHeader, Stat } from "@/components/shared/ui";
+import { NOC } from "@/lib/noc-theme";
 
 function formatNum(n: number): string {
   if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
@@ -59,46 +60,50 @@ export default function LedgerPage() {
   return (
     <TooltipProvider>
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-amber-500">Usage</h1>
-        <p className="text-sm text-slate-400 mt-1">Token savings, model mix, and cost analytics</p>
-      </div>
+      <PageHeader
+        eyebrow="Operations"
+        title="Ledger"
+        hint="Token savings, model mix, routing quality, and cost analytics across retained work."
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KpiCard
-          label="Tokens Processed"
-          value={formatNum(tokensProcessed)}
-          valueColor="text-sky-400"
-          subtitle={`${formatNum(totalInput)} in / ${formatNum(totalOutput)} out`}
-          tooltip="Total tokens sent to and received from AI models — input (prompts) plus output (responses). Sourced from RTK's SQLite session log. Tracks cumulative usage across all Claude Code sessions."
-        />
-        <KpiCard
-          label="Tokens Saved"
-          value={formatNum(tokensSaved)}
-          valueColor="text-emerald-400"
-          subtitle={savingsPercent > 0 ? `${savingsPercent.toFixed(1)}% savings rate` : undefined}
-          tooltip="Tokens that would have been sent without RTK's output filtering. RTK compresses verbose CLI output (git, npm, etc.) before it reaches Claude, reducing token usage by 60–90% on dev operations."
-        />
-        <KpiCard
-          label="Total Commands"
-          value={formatNum(totalCommands)}
-          valueColor="text-amber-400"
-          tooltip="Number of CLI commands executed through the RTK proxy. Each command is a hook intercept where RTK filtered the output before it was passed to Claude as context."
-        />
-        <KpiCard
-          label="Avg Execution"
-          value={avgExecutionTime > 0 ? `${avgExecutionTime.toFixed(1)}s` : "N/A"}
-          valueColor="text-slate-100"
-          tooltip="Average wall-clock time per RTK-proxied command, in seconds. Measured from command start to output delivery. High values may indicate slow disk I/O or large repository operations."
-        />
+        <Card>
+          <Stat
+            label={<>Tokens Processed <InfoTip text="Total tokens sent to and received from AI models — input (prompts) plus output (responses). Sourced from RTK's SQLite session log. Tracks cumulative usage across all Claude Code sessions." /></>}
+            value={formatNum(tokensProcessed)}
+            tone="info"
+            sub={`${formatNum(totalInput)} in / ${formatNum(totalOutput)} out`}
+          />
+        </Card>
+        <Card>
+          <Stat
+            label={<>Tokens Saved <InfoTip text="Tokens that would have been sent without RTK's output filtering. RTK compresses verbose CLI output (git, npm, etc.) before it reaches Claude, reducing token usage by 60-90% on dev operations." /></>}
+            value={formatNum(tokensSaved)}
+            tone="success"
+            sub={savingsPercent > 0 ? `${savingsPercent.toFixed(1)}% savings rate` : undefined}
+          />
+        </Card>
+        <Card>
+          <Stat
+            label={<>Total Commands <InfoTip text="Number of CLI commands executed through the RTK proxy. Each command is a hook intercept where RTK filtered the output before it was passed to Claude as context." /></>}
+            value={formatNum(totalCommands)}
+            tone="terra"
+          />
+        </Card>
+        <Card>
+          <Stat
+            label={<>Avg Execution <InfoTip text="Average wall-clock time per RTK-proxied command, in seconds. Measured from command start to output delivery. High values may indicate slow disk I/O or large repository operations." /></>}
+            value={avgExecutionTime > 0 ? `${avgExecutionTime.toFixed(1)}s` : "N/A"}
+          />
+        </Card>
       </div>
 
       {/* Chart Tabs */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
+      <Card>
         {/* Tab List */}
         <div className="flex items-center gap-3 mb-5">
-          <div className="flex gap-1 w-fit rounded-lg bg-slate-800/60 p-1">
+          <div className="flex gap-1 w-fit p-1" style={{ background: NOC.fog, border: `1px solid ${NOC.rule}` }}>
             {TABS.map((tab) => {
               const isActive = activeTab === tab;
               return (
@@ -106,11 +111,16 @@ export default function LedgerPage() {
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={[
-                    "px-4 py-1.5 rounded-md text-sm font-medium transition-colors",
+                    "px-4 py-1.5 text-sm font-semibold transition-colors",
                     isActive
-                      ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                      : "text-slate-400 hover:text-slate-200",
+                      ? "border"
+                      : "",
                   ].join(" ")}
+                  style={{
+                    background: isActive ? NOC.peach : "transparent",
+                    borderColor: isActive ? NOC.terra : "transparent",
+                    color: isActive ? NOC.terraDeep : NOC.muted,
+                  }}
                 >
                   {tab}
                 </button>
@@ -132,12 +142,12 @@ export default function LedgerPage() {
         {activeTab === "Model Mix" && (
           <>
             <ModelMixChart data={modelMixData} />
-            <p className="mt-3 text-xs text-slate-500">
+            <p className="mt-3 text-xs" style={{ color: NOC.soft }}>
               Aggregated from Claude Code session logs (~/.claude/projects). Total tokens = input + output.
             </p>
           </>
         )}
-      </div>
+      </Card>
 
       {/* Cost Calculator */}
       <CostCalculator

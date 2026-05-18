@@ -334,8 +334,8 @@ function MiniOverview({ nodes, edges }: { nodes: Node[]; edges: Edge[] }) {
   return (
     <div className="pointer-events-none absolute bottom-4 right-4 z-10 w-56 rounded-xl border border-sky-100 bg-white/95 p-3 shadow-[0_18px_50px_rgba(15,23,42,0.14)] backdrop-blur">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Mini view</span>
-        <span className="text-[10px] text-slate-400">{flowNodes.length} nodes</span>
+        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-stone-500">Mini view</span>
+        <span className="text-[10px] text-stone-500">{flowNodes.length} nodes</span>
       </div>
       <svg viewBox={viewBox} className="h-28 w-full overflow-visible rounded-lg bg-slate-50">
         <rect x={minX - pad} y={minY - pad} width={width + pad * 2} height={height + pad * 2} rx="18" fill="#f8fafc" />
@@ -628,7 +628,7 @@ export function ReactFlowCanvas({
 
   return (
     <div className="relative h-[640px] w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_70px_rgba(15,23,42,0.08)]">
-      <div className="pointer-events-none absolute left-5 top-4 z-10 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 shadow-sm">
+      <div className="pointer-events-none absolute left-5 top-4 z-10 rounded-full border border-slate-200 bg-white/90 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500 shadow-sm">
         Live topology
       </div>
       <ReactFlow

@@ -351,7 +351,7 @@ export function FlowCanvas({
   });
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 overflow-x-auto">
+    <div className="rounded-xl border border-stone-200 bg-white/85 p-4 overflow-x-auto">
       <svg
         viewBox="0 0 900 500"
         className="w-full"

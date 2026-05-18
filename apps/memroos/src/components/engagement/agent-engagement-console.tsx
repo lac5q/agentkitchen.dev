@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   Circle,
@@ -19,7 +19,7 @@ import { InfoTip } from "@/components/ui/info-tip";
 import { LineageDrawer } from "@/components/dispatch/lineage-drawer";
 import type { RegisteredAgent } from "@/types";
 
-type Mode = "chat" | "voice" | "standup" | "conference";
+type Mode = "chat" | "room";
 type ChatMessage = { role: "user" | "assistant" | "system"; content: string; agentId?: string };
 type SpeechRecognitionResultLike = ArrayLike<{ transcript?: string }>;
 type SpeechRecognitionEventLike = {
@@ -46,27 +46,22 @@ type AgentCheck = {
 
 const MODE_COPY: Record<Mode, { label: string; description: string }> = {
   chat: {
-    label: "Chat",
-    description: "Direct text exchange with the selected agent through the chat runner.",
+    label: "Direct Chat",
+    description: "Talk to one selected agent with typed or spoken input.",
   },
-  voice: {
-    label: "Voice",
-    description: "Use browser speech recognition, then play the agent response through TTS when configured.",
-  },
-  standup: {
-    label: "Standup",
-    description: "Start a structured check-in with every selected room participant.",
-  },
-  conference: {
-    label: "Conference",
-    description: "Capture one spoken or typed prompt and let the room participants respond in sequence.",
+  room: {
+    label: "Group Room",
+    description: "Run one shared standup or conference prompt across every selected room participant.",
   },
 };
+
+const DEFAULT_ROOM_PROMPT =
+  "Start a concise group conference round. Each participant should share current state, what changed since yesterday, what they plan to do today, and what they need next.";
 
 const STATUS_STYLES: Record<string, string> = {
   active: "border-emerald-200 bg-emerald-50 text-emerald-700",
   idle: "border-sky-200 bg-sky-50 text-sky-700",
-  dormant: "border-slate-200 bg-slate-50 text-slate-500",
+  dormant: "border-slate-200 bg-slate-50 text-stone-500",
   error: "border-rose-200 bg-rose-50 text-rose-700",
   ready: "border-emerald-200 bg-emerald-50 text-emerald-700",
   warning: "border-amber-200 bg-amber-50 text-amber-700",
@@ -162,6 +157,7 @@ export function AgentEngagementConsole() {
   const [standupAsk, setStandupAsk] = useState("");
   const [history, setHistory] = useState<ChatMessage[]>([]);
   const [busy, setBusy] = useState(false);
+  const [roomInitialized, setRoomInitialized] = useState(false);
   const [activeSpeakerId, setActiveSpeakerId] = useState<string | null>(null);
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
@@ -176,9 +172,21 @@ export function AgentEngagementConsole() {
   );
   const selectedId = selectedAgent?.id ?? "";
   const selectedLabel = selectedAgent ? formatAgent(selectedAgent) : "No agent selected";
-  const activeParticipantIds = participants.length > 0 ? participants : selectedId ? [selectedId] : [];
-  const standupParticipantLabel = `${activeParticipantIds.length} agent${activeParticipantIds.length === 1 ? "" : "s"}`;
+  const roomParticipantIds = participants.length > 0 ? participants : selectedId ? [selectedId] : [];
+  const roomParticipantLabel = `${roomParticipantIds.length} agent${roomParticipantIds.length === 1 ? "" : "s"}`;
   const recentDelegations = delegationsData?.delegations ?? [];
+
+  useEffect(() => {
+    if (!selectedAgentId && defaultAgentId) {
+      setSelectedAgentId(defaultAgentId);
+    }
+  }, [defaultAgentId, selectedAgentId]);
+
+  useEffect(() => {
+    if (roomInitialized || roster.length === 0) return;
+    setParticipants(roster.map((agent) => agent.id));
+    setRoomInitialized(true);
+  }, [roomInitialized, roster]);
 
   function toggleParticipant(agentId: string) {
     setParticipants((current) =>
@@ -206,15 +214,15 @@ export function AgentEngagementConsole() {
       .join("\n\n");
   }
 
-  async function speak(text: string) {
-    if (!selectedId || !text.trim()) return;
+  async function speak(text: string, agentId = selectedId) {
+    if (!agentId || !text.trim()) return;
     audioRef.current?.pause();
     setSpeaking(true);
     try {
       const res = await fetch("/api/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agentId: selectedId, text }),
+        body: JSON.stringify({ agentId, text }),
       });
       if (!res.ok) throw new Error("TTS unavailable");
       const url = URL.createObjectURL(await res.blob());
@@ -277,20 +285,27 @@ export function AgentEngagementConsole() {
     }
   }
 
-  async function runMeetingRound(text: string) {
+  async function runMeetingRound(
+    text: string,
+    options: { label?: string; withVoice?: boolean } = {}
+  ) {
     const prompt = text.trim();
-    if (!prompt || activeParticipantIds.length === 0 || busy) return;
+    if (!prompt || roomParticipantIds.length === 0 || busy) return;
 
     setBusy(true);
     setMessage("");
     const userMsg: ChatMessage = { role: "user", content: prompt };
+    const roomMsg: ChatMessage = {
+      role: "system",
+      content: `${options.label ?? "Room session"} started with ${roomParticipantIds.map((id) => agentName(id)).join(", ")}.`,
+    };
     let meetingHistory: ChatMessage[] = [...history.slice(-12), userMsg];
-    setHistory((current) => [...current, userMsg]);
+    setHistory((current) => [...current, roomMsg, userMsg]);
 
     try {
-      for (const agentId of activeParticipantIds) {
+      for (const agentId of roomParticipantIds) {
         setActiveSpeakerId(agentId);
-        const participantNames = activeParticipantIds.map((id) => agentName(id)).join(", ");
+        const participantNames = roomParticipantIds.map((id) => agentName(id)).join(", ");
         const turnPrompt = [
           `You are in a live agent standup meeting with Luis and these participants: ${participantNames}.`,
           `Meeting transcript so far:\n${formatMeetingTranscript(meetingHistory)}`,
@@ -321,6 +336,7 @@ export function AgentEngagementConsole() {
               return updated;
             });
           });
+          if (options.withVoice && finalText) await speak(finalText, agentId);
           meetingHistory = [...meetingHistory, { role: "assistant", content: finalText, agentId }];
         } catch (error) {
           const detail = error instanceof Error ? error.message : "Chat failed";
@@ -345,18 +361,22 @@ export function AgentEngagementConsole() {
   }
 
   async function runStandup() {
-    const summary = [
-      "Standup check-in",
-      standupFocus ? `Focus: ${standupFocus}` : null,
-      standupBlockers ? `Blockers: ${standupBlockers}` : null,
-      standupAsk ? `Ask: ${standupAsk}` : null,
+    const prompt = [
+      "Run a 15-minute standup for the room.",
+      "Each participant should answer in a concise, operator-readable format:",
+      "1. Yesterday: what happened since the last checkpoint?",
+      "2. Today: what will you do next?",
+      "3. Blockers: what is blocked, stale, or missing?",
+      "4. Next 15 minutes: what concrete move can happen now?",
+      standupFocus ? `Focus: ${standupFocus}` : "Focus: make the dispatch room reliable and easy to operate.",
+      standupBlockers ? `Known blockers: ${standupBlockers}` : null,
+      standupAsk ? `Operator ask: ${standupAsk}` : "Operator ask: be brief, specific, and name the next action.",
     ].filter(Boolean).join("\n");
-    await runMeetingRound(summary);
+    await runMeetingRound(prompt, { label: "15-minute standup" });
   }
 
   async function runConferencePrompt(text = message) {
-    if (!text.trim()) return;
-    await runMeetingRound(text);
+    await runMeetingRound(text.trim() ? text : DEFAULT_ROOM_PROMPT, { label: "Conference round" });
   }
 
   async function runAgentTests(ids = roster.map((agent) => agent.id)) {
@@ -384,7 +404,10 @@ export function AgentEngagementConsole() {
     if (!Recognition) {
       setHistory((current) => [
         ...current,
-        { role: "system", content: "Voice capture is not supported in this browser. Use Chrome or type the prompt." },
+        {
+          role: "system",
+          content: "Voice capture is not supported in this browser. Type the prompt, then use Start conference round or Run 15-minute standup.",
+        },
       ]);
       return;
     }
@@ -408,8 +431,8 @@ export function AgentEngagementConsole() {
         .trim();
       setListening(false);
       if (!transcript) return;
-      if (mode === "conference" || mode === "standup") {
-        void runMeetingRound(transcript);
+      if (mode === "room") {
+        void runMeetingRound(transcript, { label: "Spoken room prompt", withVoice: true });
       } else {
         void sendChatMessage(transcript, true);
       }
@@ -425,8 +448,8 @@ export function AgentEngagementConsole() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-normal text-slate-950">Agent Engagement</h1>
-            <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-              Chat, voice, standups, conference prompts, and dispatch checks for the active agent fleet.
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-stone-600">
+              Direct agent chat plus one room for 15-minute standups, spoken prompts, and conference rounds.
             </p>
           </div>
           <button
@@ -450,11 +473,11 @@ export function AgentEngagementConsole() {
             </h2>
             <Pill value={`${roster.length}`} />
           </div>
-          {agentsLoading && <p className="text-sm text-slate-500">Loading agents...</p>}
+          {agentsLoading && <p className="text-sm text-stone-500">Loading agents...</p>}
           <div className="max-h-[34rem] space-y-2 overflow-y-auto pr-1">
             {roster.map((agent) => {
               const selected = selectedId === agent.id;
-              const participating = activeParticipantIds.includes(agent.id);
+              const participating = roomParticipantIds.includes(agent.id);
               const check = checks[agent.id];
               return (
                 <article
@@ -469,18 +492,17 @@ export function AgentEngagementConsole() {
                     type="button"
                     onClick={() => {
                       setSelectedAgentId(agent.id);
-                      if (!participants.includes(agent.id)) setParticipants([agent.id]);
                     }}
                     className="flex w-full items-start justify-between gap-3 text-left"
                   >
                     <span className="min-w-0">
                       <span className="block truncate text-sm font-semibold text-slate-950">{agent.name}</span>
-                      <span className="mt-0.5 block truncate text-xs text-slate-500">{PLATFORM_LABELS[agent.platform] ?? agent.platform} - {agent.role}</span>
+                      <span className="mt-0.5 block truncate text-xs text-stone-500">{PLATFORM_LABELS[agent.platform] ?? agent.platform} - {agent.role}</span>
                     </span>
                     <Pill value={agent.status} />
                   </button>
                   <div className="mt-3 flex items-center justify-between gap-2">
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-stone-500">
                       {check ? `${check.dispatch.adapter} / ${check.chat.runner}` : "Not tested"}
                     </span>
                     <button
@@ -489,7 +511,7 @@ export function AgentEngagementConsole() {
                         event.stopPropagation();
                         toggleParticipant(agent.id);
                       }}
-                      className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-600"
+                      className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-stone-600"
                     >
                       {participating ? <CheckCircle2 className="h-3.5 w-3.5 text-cyan-600" /> : <Circle className="h-3.5 w-3.5" />}
                       Room
@@ -507,9 +529,9 @@ export function AgentEngagementConsole() {
               <div>
                 <h2 className="flex items-center text-base font-semibold text-slate-950">
                   Engagement Controls
-                  <InfoTip text="Choose a mode, select one or more room participants, then send chat, voice, standup, or conference prompts." />
+                  <InfoTip text="Use Direct Chat for one agent, or Group Room to ask selected participants for a standup or conference round." />
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">{selectedLabel}</p>
+                <p className="mt-1 text-sm text-stone-500">{selectedLabel}</p>
               </div>
               <div className="flex rounded-md border border-slate-200 bg-slate-50 p-1">
                 {(Object.keys(MODE_COPY) as Mode[]).map((nextMode) => (
@@ -518,7 +540,7 @@ export function AgentEngagementConsole() {
                     type="button"
                     onClick={() => setMode(nextMode)}
                     className={`rounded px-3 py-1.5 text-xs font-semibold transition ${
-                      mode === nextMode ? "bg-white text-slate-950 shadow-sm" : "text-slate-500 hover:text-slate-900"
+                      mode === nextMode ? "bg-white text-slate-950 shadow-sm" : "text-stone-500 hover:text-slate-900"
                     }`}
                     title={MODE_COPY[nextMode].description}
                   >
@@ -536,46 +558,70 @@ export function AgentEngagementConsole() {
                   {MODE_COPY[mode].label}
                   <InfoTip text={MODE_COPY[mode].description} />
                 </p>
-                <p className="mt-1 text-xs leading-5 text-slate-500">{MODE_COPY[mode].description}</p>
+                <p className="mt-1 text-xs leading-5 text-stone-500">{MODE_COPY[mode].description}</p>
               </div>
 
-              {mode === "standup" && (
+              {mode === "room" && (
                 <section className="rounded-md border border-cyan-200 bg-cyan-50 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-cyan-950">Live standup room</p>
+                      <p className="text-sm font-semibold text-cyan-950">Room session</p>
                       <p className="mt-1 text-xs leading-5 text-cyan-800">
-                        {activeParticipantIds.length > 0
-                          ? `Ready to ask ${standupParticipantLabel} for status, blockers, and next steps.`
+                        {roomParticipantIds.length > 0
+                          ? `Ready to ask ${roomParticipantLabel} what happened yesterday, what should happen today, and what is blocked.`
                           : "Select at least one Room participant on the left."}
                       </p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={runStandup}
-                      disabled={busy || activeParticipantIds.length === 0}
-                      className="inline-flex items-center justify-center gap-2 rounded-md bg-cyan-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-900 disabled:opacity-40"
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      {busy ? "Starting..." : `Start standup with ${standupParticipantLabel}`}
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={runStandup}
+                        disabled={busy || roomParticipantIds.length === 0}
+                        className="inline-flex items-center justify-center gap-2 rounded-md bg-cyan-950 px-4 py-2 text-sm font-semibold text-stone-50 transition hover:bg-cyan-900 disabled:opacity-40"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        {busy ? "Running..." : `Run 15-minute standup with ${roomParticipantLabel}`}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => runConferencePrompt()}
+                        disabled={busy || roomParticipantIds.length === 0}
+                        className="inline-flex items-center justify-center gap-2 rounded-md border border-cyan-300 bg-white px-4 py-2 text-sm font-semibold text-cyan-900 transition hover:bg-cyan-100 disabled:opacity-40"
+                      >
+                        <PhoneCall className="h-4 w-4" />
+                        Start conference round
+                      </button>
+                      <button
+                        type="button"
+                        onClick={startVoiceCapture}
+                        disabled={busy || roomParticipantIds.length === 0}
+                        className={`inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-semibold transition disabled:opacity-40 ${
+                          listening
+                            ? "border-rose-200 bg-rose-50 text-rose-700"
+                            : "border-cyan-300 bg-white text-cyan-900 hover:bg-cyan-100"
+                        }`}
+                      >
+                        <Mic className="h-4 w-4" />
+                        {listening ? "Listening..." : "Speak to room"}
+                      </button>
+                    </div>
                   </div>
                 </section>
               )}
 
-              {(mode === "standup" || mode === "conference") && (
-                <div className="rounded-md border border-slate-200 bg-slate-950 p-3 text-white">
+              {mode === "room" && (
+                <div className="rounded-md border border-slate-200 bg-white p-3 text-stone-950">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <Video className="h-4 w-4 text-cyan-300" />
                       <p className="text-sm font-semibold">Live room</p>
                     </div>
-                    <span className="text-xs text-slate-300">
-                      {busy && activeSpeakerId ? `${agentName(activeSpeakerId)} speaking` : `${activeParticipantIds.length} seats`}
+                    <span className="text-xs text-stone-600">
+                      {busy && activeSpeakerId ? `${agentName(activeSpeakerId)} speaking` : `${roomParticipantIds.length} seats`}
                     </span>
                   </div>
                   <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                    {activeParticipantIds.map((agentId) => {
+                    {roomParticipantIds.map((agentId) => {
                       const agent = agents.find((item) => item.id === agentId);
                       const speakingNow = activeSpeakerId === agentId;
                       const initials = (agent?.name ?? agentId)
@@ -590,16 +636,16 @@ export function AgentEngagementConsole() {
                           className={`min-h-28 rounded-md border p-3 transition ${
                             speakingNow
                               ? "border-cyan-300 bg-cyan-500/15 shadow-[0_0_0_1px_rgba(103,232,249,0.45)]"
-                              : "border-slate-700 bg-slate-900"
+                              : "border-stone-300 bg-white"
                           }`}
                         >
                           <div className="flex h-full flex-col justify-between">
                             <div className="flex items-start justify-between gap-2">
-                              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-slate-800 text-sm font-semibold text-cyan-100">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-md bg-stone-100 text-sm font-semibold text-cyan-900">
                                 {initials}
                               </div>
                               <span className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold ${
-                                speakingNow ? "bg-cyan-300 text-slate-950" : "bg-slate-800 text-slate-300"
+                                speakingNow ? "bg-cyan-300 text-slate-950" : "bg-stone-100 text-stone-600"
                               }`}>
                                 <Mic className="h-3 w-3" />
                                 {speakingNow ? "Live" : "Ready"}
@@ -607,7 +653,7 @@ export function AgentEngagementConsole() {
                             </div>
                             <div>
                               <p className="truncate text-sm font-semibold">{agent?.name ?? agentId}</p>
-                              <p className="truncate text-xs text-slate-400">{PLATFORM_LABELS[agent?.platform ?? ""] ?? agent?.platform ?? agentId}</p>
+                              <p className="truncate text-xs text-stone-500">{PLATFORM_LABELS[agent?.platform ?? ""] ?? agent?.platform ?? agentId}</p>
                             </div>
                           </div>
                         </div>
@@ -619,10 +665,10 @@ export function AgentEngagementConsole() {
 
               <div className="min-h-56 max-h-80 space-y-2 overflow-y-auto rounded-md border border-slate-200 bg-white p-3">
                 {history.length === 0 ? (
-                  <p className="py-14 text-center text-sm text-slate-400">
-                    {mode === "standup"
-                      ? "Click Start standup to ask each room participant for a status update."
-                      : "Start a room prompt and each selected agent will take a turn."}
+                  <p className="py-14 text-center text-sm text-stone-500">
+                    {mode === "room"
+                      ? "Run the 15-minute standup or start a conference round to let each selected agent take a turn."
+                      : "Send a direct prompt or speak to the selected agent."}
                   </p>
                 ) : (
                   history.slice(-10).map((entry, index) => (
@@ -636,7 +682,7 @@ export function AgentEngagementConsole() {
                             : "border-amber-200 bg-amber-50 text-amber-800"
                       }`}
                     >
-                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-500">
                         {entry.role === "user" ? "You" : entry.role === "assistant" ? agentName(entry.agentId) : "System"}
                       </p>
                       <p className="whitespace-pre-wrap leading-6">{entry.content || "..."}</p>
@@ -645,97 +691,84 @@ export function AgentEngagementConsole() {
                 )}
               </div>
 
-              {(mode === "chat" || mode === "voice" || mode === "conference") && (
+              <div className="space-y-3">
+                {mode === "room" && (
+                  <div className="grid gap-3">
+                    <label className="text-sm font-semibold text-slate-700">
+                      Standup focus <InfoTip text="What each selected agent should report progress against." />
+                      <input
+                        aria-label="Standup focus"
+                        value={standupFocus}
+                        onChange={(event) => setStandupFocus(event.target.value)}
+                        className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-cyan-400"
+                        placeholder="What changed yesterday and what should happen today?"
+                      />
+                    </label>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      <label className="text-sm font-semibold text-slate-700">
+                        Blockers <InfoTip text="Ask agents to surface missing context, permissions, or runtime failures." />
+                        <input
+                          value={standupBlockers}
+                          onChange={(event) => setStandupBlockers(event.target.value)}
+                          className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-cyan-400"
+                          placeholder="Anything blocked or stale?"
+                        />
+                      </label>
+                      <label className="text-sm font-semibold text-slate-700">
+                        Ask <InfoTip text="The exact response or action expected from each participant." />
+                        <input
+                          value={standupAsk}
+                          onChange={(event) => setStandupAsk(event.target.value)}
+                          className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-cyan-400"
+                          placeholder="Reply with status, next step, and one risk."
+                        />
+                      </label>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <textarea
+                    suppressHydrationWarning
+                    aria-label={mode === "room" ? "Room prompt" : "Direct message"}
                     value={message}
                     onChange={(event) => setMessage(event.target.value)}
                     onKeyDown={(event) => {
-                      if (event.key === "Enter" && !event.shiftKey && mode !== "conference") {
+                      if (event.key === "Enter" && !event.shiftKey && mode === "chat") {
                         event.preventDefault();
-                        void sendChatMessage(message, mode === "voice");
+                        void sendChatMessage(message);
                       }
                     }}
                     rows={2}
-                    placeholder={mode === "conference" ? "Say something to the room..." : `Message ${selectedAgent?.name ?? "agent"}...`}
-                    className="min-h-16 flex-1 resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-cyan-400"
+                    placeholder={mode === "room" ? "Ask the room something, or leave blank and start the default conference round..." : `Message ${selectedAgent?.name ?? "agent"}...`}
+                    className="min-h-16 flex-1 resize-none rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition placeholder:text-stone-500 focus:border-cyan-400"
                   />
                   <div className="flex flex-col gap-2">
                     <button
                       type="button"
-                      onClick={() => (mode === "conference" ? runConferencePrompt() : sendChatMessage(message, mode === "voice"))}
-                      disabled={busy || !message.trim() || !selectedId}
-                      className="inline-flex h-9 items-center justify-center rounded-md bg-slate-950 px-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40"
-                      aria-label={mode === "conference" ? "Start room round" : "Send message"}
+                      onClick={() => (mode === "room" ? runConferencePrompt() : sendChatMessage(message))}
+                      disabled={busy || (mode === "chat" ? !message.trim() || !selectedId : roomParticipantIds.length === 0)}
+                      className="inline-flex h-9 items-center justify-center rounded-md bg-white px-3 text-sm font-semibold text-stone-950 transition hover:bg-stone-100 disabled:opacity-40"
+                      aria-label={mode === "room" ? "Send room prompt" : "Send message"}
                     >
                       <Send className="h-4 w-4" />
                     </button>
-                    {(mode === "voice" || mode === "conference") && (
-                      <button
-                        type="button"
-                        onClick={startVoiceCapture}
-                        disabled={busy}
-                        className={`inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-semibold transition ${
-                          listening
-                            ? "border-rose-200 bg-rose-50 text-rose-700"
-                            : "border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100"
-                        }`}
-                        aria-label={listening ? "Stop voice capture" : "Start voice capture"}
-                      >
-                        <Mic className="h-4 w-4" />
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={startVoiceCapture}
+                      disabled={busy || (mode === "room" && roomParticipantIds.length === 0)}
+                      className={`inline-flex h-9 items-center justify-center rounded-md border px-3 text-sm font-semibold transition ${
+                        listening
+                          ? "border-rose-200 bg-rose-50 text-rose-700"
+                          : "border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100"
+                      }`}
+                      aria-label={mode === "room" ? "Record room prompt" : "Speak to agent"}
+                    >
+                      <Mic className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
-              )}
-
-              {mode === "standup" && (
-                <div className="grid gap-3">
-                  <label className="text-sm font-semibold text-slate-700">
-                    Focus <InfoTip text="What each selected agent should report progress against." />
-                    <input
-                      value={standupFocus}
-                      onChange={(event) => setStandupFocus(event.target.value)}
-                      className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-cyan-400"
-                      placeholder="What changed since the last checkpoint?"
-                    />
-                  </label>
-                  <label className="text-sm font-semibold text-slate-700">
-                    Blockers <InfoTip text="Ask agents to surface missing context, permissions, or runtime failures." />
-                    <input
-                      value={standupBlockers}
-                      onChange={(event) => setStandupBlockers(event.target.value)}
-                      className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-cyan-400"
-                      placeholder="Anything blocked or stale?"
-                    />
-                  </label>
-                  <label className="text-sm font-semibold text-slate-700">
-                    Ask <InfoTip text="The exact response or action expected from each participant." />
-                    <input
-                      value={standupAsk}
-                      onChange={(event) => setStandupAsk(event.target.value)}
-                      className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm font-normal text-slate-900 outline-none focus:border-cyan-400"
-                      placeholder="Reply with status, next step, and one risk."
-                    />
-                  </label>
-                  <p className="text-xs leading-5 text-slate-500">
-                    These fields shape the prompt sent when you click Start standup above.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={startVoiceCapture}
-                    disabled={busy}
-                    className={`inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-semibold transition ${
-                      listening
-                        ? "border-rose-200 bg-rose-50 text-rose-700"
-                        : "border-cyan-200 bg-cyan-50 text-cyan-800 hover:bg-cyan-100"
-                    }`}
-                  >
-                    <Mic className="h-4 w-4" />
-                    {listening ? "Listening" : "Speak to room"}
-                  </button>
-                </div>
-              )}
+              </div>
             </div>
 
             <aside className="border-t border-slate-200 p-4 2xl:border-l 2xl:border-t-0">
@@ -743,17 +776,17 @@ export function AgentEngagementConsole() {
                 <div>
                   <h3 className="flex items-center text-sm font-semibold text-slate-950">
                     Room
-                    <InfoTip text="Selected agents receive standup and conference prompts. Chat and voice use the primary selected agent." />
+                    <InfoTip text="Selected agents receive standup and conference prompts. Direct Chat uses the primary selected agent." />
                   </h3>
-                  <p className="mt-1 text-xs text-slate-500">{activeParticipantIds.length} participant{activeParticipantIds.length === 1 ? "" : "s"}</p>
+                  <p className="mt-1 text-xs text-stone-500">{roomParticipantIds.length} participant{roomParticipantIds.length === 1 ? "" : "s"}</p>
                 </div>
                 <div className="space-y-2">
-                  {activeParticipantIds.map((agentId) => {
+                  {roomParticipantIds.map((agentId) => {
                     const agent = agents.find((item) => item.id === agentId);
                     return (
                       <div key={agentId} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
                         <p className="truncate text-sm font-semibold text-slate-900">{agent?.name ?? agentId}</p>
-                        <p className="truncate text-xs text-slate-500">{agentId}</p>
+                        <p className="truncate text-xs text-stone-500">{agentId}</p>
                       </div>
                     );
                   })}
@@ -765,19 +798,19 @@ export function AgentEngagementConsole() {
                     <InfoTip text="Tests chat configuration, dispatch delivery mode, and server-side TTS prerequisites for selected agents." />
                   </h3>
                   <div className="mt-2 space-y-2">
-                    {activeParticipantIds.map((agentId) => {
+                    {roomParticipantIds.map((agentId) => {
                       const check = checks[agentId];
                       return (
                         <div key={agentId} className="rounded-md border border-slate-200 bg-white p-3 text-xs">
                           <p className="mb-2 font-semibold text-slate-900">{agents.find((agent) => agent.id === agentId)?.name ?? agentId}</p>
                           {check ? (
                             <div className="space-y-1.5">
-                              <p><Pill value={check.chat.status} /> <span className="ml-1 text-slate-500">chat: {check.chat.detail}</span></p>
-                              <p><Pill value={check.dispatch.status} /> <span className="ml-1 text-slate-500">dispatch: {check.dispatch.detail}</span></p>
-                              <p><Pill value={check.voice.status} /> <span className="ml-1 text-slate-500">voice: {check.voice.detail}</span></p>
+                              <p><Pill value={check.chat.status} /> <span className="ml-1 text-stone-500">chat: {check.chat.detail}</span></p>
+                              <p><Pill value={check.dispatch.status} /> <span className="ml-1 text-stone-500">dispatch: {check.dispatch.detail}</span></p>
+                              <p><Pill value={check.voice.status} /> <span className="ml-1 text-stone-500">voice: {check.voice.detail}</span></p>
                             </div>
                           ) : (
-                            <p className="text-slate-500">Run tests to verify this agent.</p>
+                            <p className="text-stone-500">Run tests to verify this agent.</p>
                           )}
                         </div>
                       );
@@ -800,20 +833,20 @@ export function AgentEngagementConsole() {
                         </div>
                       </div>
                     ))}
-                    {recentDelegations.length === 0 && <p className="text-xs text-slate-500">No delegations yet.</p>}
+                    {recentDelegations.length === 0 && <p className="text-xs text-stone-500">No delegations yet.</p>}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                    <PhoneCall className="h-4 w-4 text-slate-500" />
-                    <p className="mt-2 text-xs font-semibold text-slate-900">Conference</p>
-                    <p className="text-[11px] leading-4 text-slate-500">Live room turns.</p>
+                    <PhoneCall className="h-4 w-4 text-stone-500" />
+                    <p className="mt-2 text-xs font-semibold text-slate-900">Group room</p>
+                    <p className="text-[11px] leading-4 text-stone-500">Standup and conference turns.</p>
                   </div>
                   <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                    <Volume2 className="h-4 w-4 text-slate-500" />
-                    <p className="mt-2 text-xs font-semibold text-slate-900">Voice</p>
-                    <p className="text-[11px] leading-4 text-slate-500">{speaking ? "Speaking now" : "Mic plus TTS"}</p>
+                    <Volume2 className="h-4 w-4 text-stone-500" />
+                    <p className="mt-2 text-xs font-semibold text-slate-900">Speak</p>
+                    <p className="text-[11px] leading-4 text-stone-500">{speaking ? "Speaking now" : "Mic plus TTS"}</p>
                   </div>
                 </div>
               </div>

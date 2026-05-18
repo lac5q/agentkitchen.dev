@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Key, Plus, Copy, Check, Trash2 } from "lucide-react";
+import { Plus, Copy, Check, Trash2 } from "lucide-react";
+import { Btn, Card, PageHeader } from "@/components/shared/ui";
+import { NOC } from "@/lib/noc-theme";
 
 interface ApiKey {
   id: string;
@@ -117,47 +119,49 @@ export default function ApiKeysPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Key className="h-6 w-6 text-amber-500" />
-          <h1 className="text-xl font-semibold text-zinc-100">API Keys</h1>
-        </div>
-        <button
+        <PageHeader
+          eyebrow="Governance"
+          title="API Keys"
+          hint="Programmatic bearer token access for MemroOS agents and integrations."
+        />
+        <Btn
           onClick={() => {
             setShowNewKeyForm(true);
             setNewKeyRaw(null);
             setNewLabel("");
           }}
-          className="flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-amber-400 transition"
+          variant="terra"
         >
-          <Plus className="h-4 w-4" />
+          <Plus data-icon="inline-start" />
           Generate key
-        </button>
+        </Btn>
       </div>
 
-      <p className="text-sm text-zinc-400">
+      <p className="text-sm" style={{ color: NOC.muted }}>
         API keys let you authenticate programmatically with Bearer tokens. Keys are shown only
-        once — store them securely.
+        once; store them securely.
       </p>
 
       {/* New key form modal */}
       {showNewKeyForm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="w-full max-w-md space-y-4 rounded-2xl border border-zinc-700 bg-zinc-900 p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-full max-w-md space-y-4 border p-6" style={{ background: NOC.paper, borderColor: NOC.rule }}>
             {newKeyRaw ? (
               <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-zinc-100">API key generated</h2>
+                <h2 className="text-lg font-semibold" style={{ color: NOC.ink }}>API key generated</h2>
                 <p className="text-sm text-red-400">
                   Copy this key now. You won&apos;t be able to see it again.
                 </p>
-                <div className="flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2">
-                  <span className="flex-1 truncate text-xs font-mono text-zinc-300">
+                <div className="flex items-center gap-2 border px-3 py-2" style={{ background: NOC.fog, borderColor: NOC.rule }}>
+                  <span className="flex-1 truncate text-xs font-mono" style={{ color: NOC.muted }}>
                     {newKeyRaw}
                   </span>
                   <button
                     onClick={() => void handleCopy()}
-                    className="flex-shrink-0 text-zinc-400 hover:text-zinc-100"
+                    className="flex-shrink-0"
+                    style={{ color: NOC.muted }}
                   >
                     {copied ? (
                       <Check className="h-4 w-4 text-green-400" />
@@ -171,7 +175,8 @@ export default function ApiKeysPage() {
                     setShowNewKeyForm(false);
                     setNewKeyRaw(null);
                   }}
-                  className="w-full rounded-lg border border-zinc-600 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+                  className="w-full border px-4 py-2 text-sm"
+                  style={{ borderColor: NOC.ruleStrong, color: NOC.muted }}
                 >
                   Done
                 </button>
@@ -184,10 +189,11 @@ export default function ApiKeysPage() {
                 }}
                 className="space-y-4"
               >
-                <h2 className="text-lg font-semibold text-zinc-100">New API key</h2>
+                <h2 className="text-lg font-semibold" style={{ color: NOC.ink }}>New API key</h2>
                 <div>
                   <label
-                    className="block text-sm font-medium text-zinc-300"
+                    className="block text-sm font-medium"
+                    style={{ color: NOC.muted }}
                     htmlFor="keyLabel"
                   >
                     Label (optional)
@@ -198,7 +204,8 @@ export default function ApiKeysPage() {
                     value={newLabel}
                     onChange={(e) => setNewLabel(e.target.value)}
                     placeholder="e.g. CI/CD pipeline"
-                    className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-amber-500 focus:outline-none"
+                    className="mt-1 w-full border px-3 py-2 text-sm focus:outline-none"
+                    style={{ background: NOC.paper, borderColor: NOC.ruleStrong, color: NOC.ink }}
                   />
                 </div>
                 {genError && <p className="text-sm text-red-400">{genError}</p>}
@@ -206,14 +213,16 @@ export default function ApiKeysPage() {
                   <button
                     type="button"
                     onClick={() => setShowNewKeyForm(false)}
-                    className="flex-1 rounded-lg border border-zinc-600 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+                    className="flex-1 border px-4 py-2 text-sm"
+                    style={{ borderColor: NOC.ruleStrong, color: NOC.muted }}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={createMutation.isPending}
-                    className="flex-1 rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 hover:bg-amber-400 disabled:opacity-50"
+                    className="flex-1 px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                    style={{ background: NOC.terra, color: NOC.cream }}
                   >
                     {createMutation.isPending ? "Generating…" : "Generate"}
                   </button>
@@ -226,24 +235,25 @@ export default function ApiKeysPage() {
 
       {/* Keys list */}
       {isLoading ? (
-        <div className="text-sm text-zinc-400">Loading API keys…</div>
+        <div className="text-sm" style={{ color: NOC.soft }}>Loading API keys...</div>
       ) : (
         <div className="space-y-2">
           {keysData?.apiKeys.length === 0 ? (
-            <div className="rounded-xl border border-zinc-800 px-4 py-8 text-center text-sm text-zinc-500">
+            <Card className="px-4 py-8 text-center text-sm" style={{ color: NOC.soft }}>
               No API keys yet. Generate one to get started.
-            </div>
+            </Card>
           ) : (
             keysData?.apiKeys.map((key) => (
               <div
                 key={key.id}
-                className="flex items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3"
+                className="flex items-center justify-between border px-4 py-3"
+                style={{ background: NOC.paper, borderColor: NOC.rule }}
               >
                 <div className="space-y-0.5">
-                  <p className="text-sm font-medium text-zinc-100">
-                    {key.label || <span className="text-zinc-500 italic">Unlabeled</span>}
+                  <p className="text-sm font-medium" style={{ color: NOC.ink }}>
+                    {key.label || <span className="italic" style={{ color: NOC.soft }}>Unlabeled</span>}
                   </p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs" style={{ color: NOC.soft }}>
                     Created {new Date(key.createdAt).toLocaleDateString()}
                     {key.lastUsedAt &&
                       ` · Last used ${new Date(key.lastUsedAt).toLocaleDateString()}`}

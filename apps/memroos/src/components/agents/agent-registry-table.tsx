@@ -38,15 +38,15 @@ export function AgentRegistryTable({
 }: AgentRegistryTableProps) {
   if (agents.length === 0) {
     return (
-      <div className="border border-slate-800 bg-slate-900/40 px-4 py-10 text-center text-sm text-slate-500">
+      <div className="border border-stone-200 bg-white/90 px-4 py-10 text-center text-sm text-stone-500">
         No registered agents match this view.
       </div>
     );
   }
 
   return (
-    <div className="overflow-hidden border border-slate-800 bg-slate-900/40">
-      <div className="grid grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_1fr_1fr_0.6fr] border-b border-slate-800 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+    <div className="overflow-hidden border border-stone-200 bg-white/90">
+      <div className="grid grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_1fr_1fr_0.6fr] border-b border-stone-200 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-stone-500">
         <span>Agent</span>
         <span>Protocol</span>
         <span>Platform</span>
@@ -58,36 +58,36 @@ export function AgentRegistryTable({
       {agents.map((agent) => (
         <div
           key={agent.id}
-          className="grid grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_1fr_1fr_0.6fr] items-center border-b border-slate-800/70 px-3 py-3 text-sm last:border-b-0 hover:bg-slate-800/40"
+          className="grid grid-cols-[1.2fr_0.7fr_0.7fr_0.7fr_1fr_1fr_0.6fr] items-center border-b border-stone-200 px-3 py-3 text-sm last:border-b-0 hover:bg-stone-100"
         >
           <button
             className="min-w-0 text-left"
             onClick={() => onSelect(agent)}
           >
-            <span className="block truncate font-medium text-slate-100">{agent.name}</span>
-            <span className="block truncate text-xs text-slate-500">{agent.role}</span>
+            <span className="block truncate font-medium text-stone-950">{agent.name}</span>
+            <span className="block truncate text-xs text-stone-500">{agent.role}</span>
           </button>
           <div className="flex flex-wrap gap-1">
             {agent.protocol === "a2a" ? (
               <Badge variant="outline" className="border-sky-700 text-sky-300">A2A</Badge>
             ) : (
-              <span className="text-slate-300">{agent.protocol}</span>
+              <span className="text-stone-600">{agent.protocol}</span>
             )}
             {isAdkAgent(agent) && (
               <Badge variant="outline" className="border-sky-700 text-sky-300">ADK</Badge>
             )}
           </div>
-          <span className="text-slate-300">{PLATFORM_LABELS[agent.platform] ?? agent.platform}</span>
+          <span className="text-stone-600">{PLATFORM_LABELS[agent.platform] ?? agent.platform}</span>
           <span style={{ color: STATUS_COLORS[agent.status] }}>{agent.status}</span>
-          <span className="text-xs text-slate-400">{formatHeartbeat(agent.lastHeartbeat)}</span>
+          <span className="text-xs text-stone-500">{formatHeartbeat(agent.lastHeartbeat)}</span>
           <div className="flex min-w-0 flex-wrap gap-1">
             {agent.capabilities.slice(0, 2).map((capability) => (
-              <Badge key={capability.id} variant="outline" className="border-slate-700 text-slate-300">
+              <Badge key={capability.id} variant="outline" className="border-stone-300 text-stone-600">
                 {capability.name}
               </Badge>
             ))}
             {agent.capabilities.length > 2 && (
-              <Badge variant="outline" className="border-slate-700 text-slate-500">
+              <Badge variant="outline" className="border-stone-300 text-stone-500">
                 +{agent.capabilities.length - 2}
               </Badge>
             )}

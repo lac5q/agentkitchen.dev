@@ -53,33 +53,33 @@ export function SecurityOperationsPanel() {
       </div>
 
       <div className="grid gap-3 sm:grid-cols-4">
-        <div className="border border-slate-800 bg-slate-950/30 p-3">
-          <p className="text-xs text-slate-500">Security Events</p>
-          <p className="mt-1 text-2xl font-semibold text-slate-100">{summary?.securityEvents ?? 0}</p>
+        <div className="border border-stone-200 bg-white p-3">
+          <p className="text-xs text-stone-500">Security Events</p>
+          <p className="mt-1 text-2xl font-semibold text-stone-950">{summary?.securityEvents ?? 0}</p>
         </div>
-        <div className="border border-slate-800 bg-slate-950/30 p-3">
-          <p className="text-xs text-slate-500">Blocked</p>
+        <div className="border border-stone-200 bg-white p-3">
+          <p className="text-xs text-stone-500">Blocked</p>
           <p className="mt-1 text-2xl font-semibold text-rose-300">{summary?.blockedAttempts ?? 0}</p>
         </div>
-        <div className="border border-slate-800 bg-slate-950/30 p-3">
-          <p className="text-xs text-slate-500">High Severity</p>
+        <div className="border border-stone-200 bg-white p-3">
+          <p className="text-xs text-stone-500">High Severity</p>
           <p className="mt-1 text-2xl font-semibold text-amber-300">{summary?.highSeverity ?? 0}</p>
         </div>
-        <div className="border border-slate-800 bg-slate-950/30 p-3">
-          <p className="text-xs text-slate-500">Last Event</p>
-          <p className="mt-2 text-sm font-medium text-slate-200">
+        <div className="border border-stone-200 bg-white p-3">
+          <p className="text-xs text-stone-500">Last Event</p>
+          <p className="mt-2 text-sm font-medium text-stone-700">
             {formatRelativeTime(summary?.lastEventAt ?? summary?.lastAuditAt ?? null)}
           </p>
         </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-        <div className="border border-slate-800 bg-slate-950/30 p-3">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Controls</p>
+        <div className="border border-stone-200 bg-white p-3">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">Controls</p>
           <div className="space-y-2">
             {(data?.controls ?? []).map((control) => (
               <div key={control.id} className="flex items-center justify-between gap-2 text-xs">
-                <span className="text-slate-300">{control.label}</span>
+                <span className="text-stone-600">{control.label}</span>
                 <span className="rounded border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-emerald-300">
                   {control.status}
                 </span>
@@ -88,9 +88,9 @@ export function SecurityOperationsPanel() {
           </div>
         </div>
 
-        <div className="border border-slate-800 bg-slate-950/30 p-3">
+        <div className="border border-stone-200 bg-white p-3">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
               {showingSecurityEvents ? "Recent Security Events" : "Recent Audit Activity"}
             </p>
             {!showingSecurityEvents && auditActivity.length > 0 && (
@@ -100,20 +100,20 @@ export function SecurityOperationsPanel() {
             )}
           </div>
           {visibleEvents.length === 0 ? (
-            <p className="py-5 text-center text-sm text-slate-500">No audit events yet.</p>
+            <p className="py-5 text-center text-sm text-stone-500">No audit events yet.</p>
           ) : (
             <ul className="space-y-2">
               {visibleEvents.map((event) => (
-                <li key={event.id} className="grid gap-1 border-b border-slate-800/80 pb-2 last:border-0 last:pb-0">
+                <li key={event.id} className="grid gap-1 border-b border-stone-200 pb-2 last:border-0 last:pb-0">
                   <div className="flex flex-wrap items-center gap-2 text-xs">
-                    <span className="font-medium text-slate-200">{event.actor}</span>
-                    <span className="rounded border border-slate-700 bg-slate-800/60 px-1.5 py-0.5 text-slate-300">
+                    <span className="font-medium text-stone-700">{event.actor}</span>
+                    <span className="rounded border border-stone-300 bg-stone-100 px-1.5 py-0.5 text-stone-600">
                       {event.action}
                     </span>
-                    <span className="text-slate-500">{formatRelativeTime(event.timestamp)}</span>
+                    <span className="text-stone-500">{formatRelativeTime(event.timestamp)}</span>
                   </div>
-                  <p className="text-xs text-slate-400">{event.target}</p>
-                  {event.detail && <p className="line-clamp-2 text-xs text-slate-500">{event.detail}</p>}
+                  <p className="text-xs text-stone-500">{event.target}</p>
+                  {event.detail && <p className="line-clamp-2 text-xs text-stone-500">{event.detail}</p>}
                 </li>
               ))}
             </ul>

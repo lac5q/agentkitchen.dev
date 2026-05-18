@@ -5,7 +5,9 @@ import {
   buildAgentContext,
   resolveChatRuntime,
   type ChatRuntime,
+  type AgentContext,
 } from "./chat-runtime";
+import { getRegisteredAgent } from "@/lib/agent-registry";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -34,6 +36,64 @@ type OpenCodeReservation =
   | { ok: false; error: string };
 
 let activeOpenCodeRuns = 0;
+
+function isProviderLimitError(message: string): boolean {
+  return /rate_limit_error|usage limit exceeded|credit balance is too low|quota|429/i.test(message);
+}
+
+function latestUserMessage(messages: ChatMessage[]): string {
+  return [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
+}
+
+function humanizeAgentId(agentId: string): string {
+  return agentId
+    .split(/[-_]/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function buildLocalFallbackResponse(params: {
+  agentId: string;
+  context: AgentContext;
+  runtime: ChatRuntime;
+  messages: ChatMessage[];
+  reason: string;
+}): string {
+  const { agentId, context, runtime, messages, reason } = params;
+  const agent = getRegisteredAgent(agentId);
+  const displayName = agent?.name ?? humanizeAgentId(agentId);
+  const platform = agent?.platform ?? runtime.runner;
+  const lastMessage = latestUserMessage(messages);
+  const isStandup = /standup|yesterday|today|blocker|conference|room/i.test(lastMessage);
+  const source = context.source === "fallback" ? "registered runtime fallback" : `${context.source} agent context`;
+  const providerLine = isProviderLimitError(reason)
+    ? "The live model provider is quota-blocked right now, so MemroOS used the local agent context instead of dropping the room turn."
+    : "The live model provider did not return a usable turn, so MemroOS used the local agent context instead of dropping the room turn.";
+
+  if (isStandup) {
+    return [
+      `${displayName} local check-in`,
+      providerLine,
+      `Yesterday: no live model transcript was available for this turn; ${displayName} is still present in the MemroOS room roster as a ${platform} agent.`,
+      `Today: keep the dispatch workflow moving, verify the chat runtime, and surface any provider/runtime failures as explicit operational status.`,
+      `Blocked: ${reason}.`,
+      `Next: restore provider quota or switch this agent to an enabled runtime; until then this local fallback keeps the group room usable and auditable from ${source}.`,
+    ].join("\n");
+  }
+
+  return [
+    `${displayName} local response`,
+    providerLine,
+    `I could not complete the live model turn because: ${reason}.`,
+    `MemroOS still has ${source} for this agent. Please treat this as an operational fallback, not a generated provider response.`,
+  ].join("\n");
+}
+
+function enqueueText(controller: ReadableStreamDefaultController<Uint8Array>, encoder: TextEncoder, text: string) {
+  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
+  controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+}
 
 function parsePositiveInteger(value: string | undefined, fallback: number): number {
   if (!value) return fallback;
@@ -238,7 +298,13 @@ export async function POST(req: NextRequest) {
 
         if (runtime.runner === "opencode") {
           if (!OPENCODE_CHAT_ENABLED) {
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "OpenCode chat runner is disabled on this machine." })}\n\n`));
+            enqueueText(controller, encoder, buildLocalFallbackResponse({
+              agentId,
+              context,
+              runtime,
+              messages,
+              reason: "OpenCode chat runner is disabled on this machine.",
+            }));
             controller.close();
             return;
           }
@@ -252,24 +318,36 @@ export async function POST(req: NextRequest) {
           return;
         }
 
-        const response = await client.messages.stream({
-          model: runtime.model,
-          max_tokens: 1024,
-          system: context.systemPrompt,
-          messages,
-        });
+        try {
+          const response = await client.messages.stream({
+            model: runtime.model,
+            max_tokens: 1024,
+            system: context.systemPrompt,
+            messages,
+          });
 
-        for await (const chunk of response) {
-          if (
-            chunk.type === "content_block_delta" &&
-            chunk.delta.type === "text_delta"
-          ) {
-            const data = `data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`;
-            controller.enqueue(encoder.encode(data));
+          for await (const chunk of response) {
+            if (
+              chunk.type === "content_block_delta" &&
+              chunk.delta.type === "text_delta"
+            ) {
+              const data = `data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`;
+              controller.enqueue(encoder.encode(data));
+            }
           }
+
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        } catch (error) {
+          const reason = error instanceof Error ? error.message : "provider stream failed";
+          enqueueText(controller, encoder, buildLocalFallbackResponse({
+            agentId,
+            context,
+            runtime,
+            messages,
+            reason,
+          }));
         }
 
-        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         controller.close();
       } catch (err) {
         const msg = err instanceof Error ? err.message : "stream error";

@@ -14,7 +14,7 @@ export function SummaryBar({ total, active, tasks, errors, localRuntimeActive = 
     {
       label: "Agents",
       value: total,
-      color: "text-slate-100",
+      color: "text-stone-900",
       tooltip: "All agents registered in the system — both local agents on this machine and remote agents connected via the remote-agents API. Counts both active and dormant agents.",
     },
     {
@@ -39,8 +39,8 @@ export function SummaryBar({ total, active, tasks, errors, localRuntimeActive = 
   return (
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {stats.map((s) => (
-        <Card key={s.label} className="border-slate-800 bg-slate-900/50 p-4">
-          <p className="flex items-center text-xs text-slate-500">
+        <Card key={s.label} className="border-stone-200 bg-white/85 p-4">
+          <p className="flex items-center text-xs text-stone-500">
             {s.label}
             <InfoTip text={s.tooltip} />
           </p>

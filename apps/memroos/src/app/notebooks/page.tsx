@@ -3,12 +3,13 @@
 import { useState } from "react";
 import { useMemory, useMultiMemorySearch } from "@/lib/api-client";
 import type { MemoryEntry } from "@/types";
-import { Card } from "@/components/ui/card";
 import { MemoryList } from "@/components/notebooks/memory-list";
 import { CalendarHeatmap } from "@/components/notebooks/calendar-heatmap";
 import { ContentViewer } from "@/components/notebooks/content-viewer";
 import { InfoTip } from "@/components/ui/info-tip";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Card, PageHeader, Stat } from "@/components/shared/ui";
+import { NOC } from "@/lib/noc-theme";
 
 type FilterTab = "All" | "Feedback" | "Project" | "User";
 const TABS: FilterTab[] = ["All", "Feedback", "Project", "User"];
@@ -22,21 +23,21 @@ const TIER_STYLES = {
 function StatCard({
   label,
   value,
-  valueColor = "text-slate-100",
+  tone = "neutral",
   tooltip,
 }: {
   label: string;
   value: number | string;
-  valueColor?: string;
+  tone?: "neutral" | "terra" | "success" | "warn" | "info";
   tooltip?: string;
 }) {
   return (
-    <Card className="border-slate-800 bg-slate-900/50 p-4">
-      <p className="flex items-center text-xs text-slate-500">
-        {label}
-        {tooltip && <InfoTip text={tooltip} />}
-      </p>
-      <p className={`text-3xl font-bold mt-1 ${valueColor}`}>{value}</p>
+    <Card>
+      <Stat
+        label={<>{label}{tooltip && <InfoTip text={tooltip} />}</>}
+        value={value}
+        tone={tone}
+      />
     </Card>
   );
 }
@@ -74,41 +75,35 @@ export default function NotebooksPage() {
   return (
     <TooltipProvider>
     <div className="flex flex-col gap-6">
-      {/* Title */}
-      <div>
-        <h1 className="flex items-center text-2xl font-bold text-amber-500">
-          Memory
-          <InfoTip text="Claude's persistent memory store. Entries are written by Claude Code agents using the mem0 memory skill and stored as structured JSONL files. Browse, filter, and inspect individual memory entries here." />
-        </h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Retained agent context, activity heatmap, and source inspection
-        </p>
-      </div>
-
+      <PageHeader
+        eyebrow="Memory"
+        title={<>Memory <InfoTip text="Claude's persistent memory store. Entries are written by Claude Code agents using the mem0 memory skill and stored as structured JSONL files. Browse, filter, and inspect individual memory entries here." /></>}
+        hint="Retained agent context, activity heatmap, and source inspection."
+      />
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard
           label="Total Memories"
           value={allEntries.length}
-          valueColor="text-sky-400"
+          tone="info"
           tooltip="Total number of memory entries stored for this Claude instance. Each entry is a structured fact, preference, or correction that Claude has learned across sessions."
         />
         <StatCard
           label="Added Today"
           value={addedToday}
-          valueColor="text-emerald-400"
+          tone="success"
           tooltip="Memory entries whose date field matches today's date. A high count means Claude is actively learning from this session; zero means no new memories have been written today."
         />
         <StatCard
           label="Feedback"
           value={feedbackCount}
-          valueColor="text-amber-400"
+          tone="warn"
           tooltip="Entries of type 'feedback' — corrections or adjustments Luis has made to Claude's behavior. These are the most important entries as they shape how Claude responds in future sessions."
         />
         <StatCard
           label="Project"
           value={projectCount}
-          valueColor="text-purple-400"
+          tone="terra"
           tooltip="Entries of type 'project' — context facts about specific repositories, codebases, or ongoing work. Help Claude recall architectural decisions and project-specific conventions."
         />
       </div>
@@ -120,7 +115,7 @@ export default function NotebooksPage() {
               Multi-Memory Search
               <InfoTip text="Searches semantic/vector memory, graph memory, and local episodic memory together. Each result shows the tier that produced it so you can see what agents can retrieve." />
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-stone-500">
               Find retained context across vector, graph, and episodic memory before handing work to an agent.
             </p>
           </div>
@@ -159,7 +154,11 @@ export default function NotebooksPage() {
           <button
             type="submit"
             disabled={!searchInput.trim() || search.isFetching}
-            className="min-h-10 rounded-md bg-cyan-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+            className="min-h-10 rounded-md px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:bg-slate-300"
+            style={{
+              background: searchInput.trim() && !search.isFetching ? NOC.info : NOC.ruleStrong,
+              color: NOC.cream,
+            }}
           >
             {search.isFetching ? "Searching..." : "Search Memory"}
           </button>
@@ -172,7 +171,7 @@ export default function NotebooksPage() {
                 Memory search failed. Check the memory services and try again.
               </div>
             ) : search.data && search.data.results.length === 0 ? (
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-6 text-center text-sm text-slate-500">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-6 text-center text-sm text-stone-500">
                 No retained context found for <span className="font-medium text-slate-700">{searchQuery}</span>.
               </div>
             ) : (
@@ -184,12 +183,12 @@ export default function NotebooksPage() {
                         {result.tier}
                       </span>
                       {typeof result.score === "number" && (
-                        <span className="text-xs text-slate-400">{result.score.toFixed(2)}</span>
+                        <span className="text-xs text-stone-500">{result.score.toFixed(2)}</span>
                       )}
                     </div>
                     <h3 className="text-sm font-semibold text-slate-950">{result.title}</h3>
-                    <p className="mt-1 line-clamp-4 text-sm leading-6 text-slate-600">{result.content}</p>
-                    {result.source && <p className="mt-2 text-xs text-slate-400">{result.source}</p>}
+                    <p className="mt-1 line-clamp-4 text-sm leading-6 text-stone-600">{result.content}</p>
+                    {result.source && <p className="mt-2 text-xs text-stone-500">{result.source}</p>}
                   </article>
                 ))}
               </div>
@@ -199,7 +198,7 @@ export default function NotebooksPage() {
       </section>
 
       {/* Heatmap */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
+      <div className="rounded-xl border border-slate-200 bg-white/85 p-5 shadow-[0_18px_42px_rgba(15,23,42,0.05)]">
         <CalendarHeatmap entries={allEntries} />
       </div>
 
@@ -207,7 +206,7 @@ export default function NotebooksPage() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Left: tab switcher + memory list */}
         <div className="flex flex-col gap-3">
-          <div className="flex gap-1 w-fit rounded-lg bg-slate-800/60 p-1">
+          <div className="flex w-fit gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
             {TABS.map((tab) => {
               const isActive = activeTab === tab;
               return (
@@ -220,8 +219,8 @@ export default function NotebooksPage() {
                   className={[
                     "px-3 py-1.5 rounded-md text-sm font-medium transition-colors",
                     isActive
-                      ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                      : "text-slate-400 hover:text-slate-200",
+                      ? "border border-amber-300 bg-amber-50 text-amber-700"
+                      : "text-stone-500 hover:bg-white hover:text-slate-800",
                   ].join(" ")}
                 >
                   {tab}

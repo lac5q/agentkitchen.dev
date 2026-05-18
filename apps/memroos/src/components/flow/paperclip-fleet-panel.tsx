@@ -86,7 +86,7 @@ export function PaperclipFleetPanel({ fleet, isLoading }: PaperclipFleetPanelPro
     return (
       <div className="flex items-center justify-center py-6">
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-slate-600 border-t-amber-500" />
-        <span className="ml-2 text-xs text-slate-500">Loading fleet...</span>
+        <span className="ml-2 text-xs text-stone-500">Loading fleet...</span>
       </div>
     );
   }
@@ -95,7 +95,7 @@ export function PaperclipFleetPanel({ fleet, isLoading }: PaperclipFleetPanelPro
   if (!fleet) {
     return (
       <div className="py-4 text-center">
-        <p className="text-xs text-slate-500">Fleet offline — Paperclip unreachable</p>
+        <p className="text-xs text-stone-500">Fleet offline — Paperclip unreachable</p>
       </div>
     );
   }
@@ -106,46 +106,46 @@ export function PaperclipFleetPanel({ fleet, isLoading }: PaperclipFleetPanelPro
     <div className="space-y-3">
       {/* ── Summary cards ── */}
       <div className="grid grid-cols-2 gap-1.5">
-        <div className="rounded bg-slate-900 p-2 border border-slate-800">
-          <p className="text-xs text-slate-500">Status</p>
-          <p className={`text-sm font-bold ${summary.fleetStatus === "active" ? "text-emerald-400" : summary.fleetStatus === "degraded" ? "text-amber-400" : "text-slate-500"}`}>
+        <div className="rounded bg-white p-2 border border-stone-200">
+          <p className="text-xs text-stone-500">Status</p>
+          <p className={`text-sm font-bold ${summary.fleetStatus === "active" ? "text-emerald-400" : summary.fleetStatus === "degraded" ? "text-amber-400" : "text-stone-500"}`}>
             {summary.fleetStatus}
           </p>
         </div>
-        <div className="rounded bg-slate-900 p-2 border border-slate-800">
-          <p className="text-xs text-slate-500">Agents</p>
-          <p className="text-sm font-bold text-slate-200">
+        <div className="rounded bg-white p-2 border border-stone-200">
+          <p className="text-xs text-stone-500">Agents</p>
+          <p className="text-sm font-bold text-stone-800">
             {summary.activeAgents}/{summary.totalAgents}
           </p>
         </div>
-        <div className="rounded bg-slate-900 p-2 border border-slate-800">
-          <p className="text-xs text-slate-500">Active Tasks</p>
-          <p className="text-sm font-bold text-slate-200">{summary.activeTasks}</p>
+        <div className="rounded bg-white p-2 border border-stone-200">
+          <p className="text-xs text-stone-500">Active Tasks</p>
+          <p className="text-sm font-bold text-stone-800">{summary.activeTasks}</p>
         </div>
-        <div className="rounded bg-slate-900 p-2 border border-slate-800">
-          <p className="text-xs text-slate-500">Paused</p>
-          <p className="text-sm font-bold text-slate-200">{summary.pausedRecoveries}</p>
+        <div className="rounded bg-white p-2 border border-stone-200">
+          <p className="text-xs text-stone-500">Paused</p>
+          <p className="text-sm font-bold text-stone-800">{summary.pausedRecoveries}</p>
         </div>
       </div>
 
       {/* ── Per-agent list (DASH-03) ── */}
       {agents.length > 0 && (
         <div>
-          <p className="text-xs font-medium text-slate-500 mb-1.5">Agents</p>
+          <p className="text-xs font-medium text-stone-500 mb-1.5">Agents</p>
           <div className="space-y-1.5">
             {agents.map(agent => (
-              <div key={agent.id} className="flex items-start gap-2 rounded bg-slate-900 border border-slate-800 p-2">
+              <div key={agent.id} className="flex items-start gap-2 rounded bg-white border border-stone-200 p-2">
                 {/* Status dot */}
                 <div className={`mt-1 h-2 w-2 flex-shrink-0 rounded-full ${STATUS_DOT[agent.status] ?? STATUS_DOT.dormant}`} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-xs font-semibold text-slate-200">{agent.name}</span>
+                    <span className="text-xs font-semibold text-stone-800">{agent.name}</span>
                     {/* Autonomy badge (PAPER-03) */}
                     <span className={`inline-block rounded border px-1 py-0.5 text-[9px] font-semibold ${AUTONOMY_COLORS[agent.autonomyMode]}`}>
                       {agent.autonomyMode}
                     </span>
                   </div>
-                  <p className="mt-0.5 text-[10px] text-slate-400 truncate">
+                  <p className="mt-0.5 text-[10px] text-stone-500 truncate">
                     {agent.activeTask ?? "idle"}
                   </p>
                   <p className="text-[9px] text-slate-600">
@@ -161,22 +161,22 @@ export function PaperclipFleetPanel({ fleet, isLoading }: PaperclipFleetPanelPro
       {/* ── Recovery operations (PAPER-04) ── */}
       {operations.length > 0 && (
         <div>
-          <p className="text-xs font-medium text-slate-500 mb-1.5">Recovery</p>
+          <p className="text-xs font-medium text-stone-500 mb-1.5">Recovery</p>
           <div className="space-y-1.5">
             {operations.map(op => (
-              <div key={op.sessionId} className="rounded bg-slate-900 border border-slate-800 p-2 text-[10px]">
+              <div key={op.sessionId} className="rounded bg-white border border-stone-200 p-2 text-[10px]">
                 <div className="flex items-center justify-between gap-1 mb-0.5">
-                  <span className="font-mono text-slate-400">{truncate(op.sessionId, 14)}</span>
+                  <span className="font-mono text-stone-500">{truncate(op.sessionId, 14)}</span>
                   <span className={`rounded px-1 py-0.5 text-[9px] font-semibold border ${
                     op.status === "active"  ? "bg-emerald-900 text-emerald-300 border-emerald-700" :
                     op.status === "paused"  ? "bg-amber-900 text-amber-300 border-amber-700" :
                     op.status === "failed"  ? "bg-rose-900 text-rose-300 border-rose-700" :
-                    "bg-slate-800 text-slate-400 border-slate-700"
+                    "bg-stone-100 text-stone-500 border-stone-300"
                   }`}>
                     {op.status}
                   </span>
                 </div>
-                <p className="text-slate-500">
+                <p className="text-stone-500">
                   {op.completedSteps.length} step{op.completedSteps.length !== 1 ? "s" : ""} completed
                   {op.resumeFrom ? ` · resume: ${op.resumeFrom}` : ""}
                 </p>
@@ -188,7 +188,7 @@ export function PaperclipFleetPanel({ fleet, isLoading }: PaperclipFleetPanelPro
 
       {/* ── Dispatch form (PAPER-02) ── */}
       <div>
-        <p className="text-xs font-medium text-slate-500 mb-1.5">Dispatch Task</p>
+        <p className="text-xs font-medium text-stone-500 mb-1.5">Dispatch Task</p>
         <form onSubmit={handleDispatch} className="space-y-2">
           <input
             type="text"
@@ -198,7 +198,7 @@ export function PaperclipFleetPanel({ fleet, isLoading }: PaperclipFleetPanelPro
               if (dispatchStatus.state !== "idle") setDispatchStatus({ state: "idle" });
             }}
             placeholder="Task summary to dispatch..."
-            className="w-full rounded bg-slate-900 border border-slate-700 px-2 py-1.5 text-xs text-slate-200 placeholder-slate-600 focus:border-amber-600 focus:outline-none"
+            className="w-full rounded bg-white border border-stone-300 px-2 py-1.5 text-xs text-stone-800 placeholder-stone-400 focus:border-amber-600 focus:outline-none"
           />
           <button
             type="submit"

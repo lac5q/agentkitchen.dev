@@ -32,7 +32,7 @@ export function CacheHealthPanel() {
         <button
           type="button"
           onClick={() => purge.mutate(undefined)}
-          className="border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-amber-500 hover:text-amber-300"
+          className="border border-stone-300 px-3 py-1.5 text-xs text-stone-600 hover:border-amber-500 hover:text-amber-300"
         >
           Purge
         </button>
@@ -45,30 +45,30 @@ export function CacheHealthPanel() {
       ) : (
         <>
           <div className="grid gap-3 sm:grid-cols-4">
-            <div className="border border-slate-800 bg-slate-950/30 p-3">
-              <p className="text-xs text-slate-500">Entries</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-100">{stats?.entries ?? 0}</p>
+            <div className="border border-stone-200 bg-white p-3">
+              <p className="text-xs text-stone-500">Entries</p>
+              <p className="mt-1 text-2xl font-semibold text-stone-950">{stats?.entries ?? 0}</p>
             </div>
-            <div className="border border-slate-800 bg-slate-950/30 p-3">
-              <p className="text-xs text-slate-500">Hit Rate</p>
+            <div className="border border-stone-200 bg-white p-3">
+              <p className="text-xs text-stone-500">Hit Rate</p>
               <p className="mt-1 text-2xl font-semibold text-emerald-300">{hitRate}%</p>
             </div>
-            <div className="border border-slate-800 bg-slate-950/30 p-3">
-              <p className="text-xs text-slate-500">Memory</p>
+            <div className="border border-stone-200 bg-white p-3">
+              <p className="text-xs text-stone-500">Memory</p>
               <p className="mt-1 text-2xl font-semibold text-sky-300">{formatBytes(stats?.memoryBytes ?? 0)}</p>
             </div>
-            <div className="border border-slate-800 bg-slate-950/30 p-3">
-              <p className="text-xs text-slate-500">Invalidations</p>
+            <div className="border border-stone-200 bg-white p-3">
+              <p className="text-xs text-stone-500">Invalidations</p>
               <p className="mt-1 text-2xl font-semibold text-amber-300">{stats?.invalidations ?? 0}</p>
             </div>
           </div>
 
-          <div className="border border-slate-800 bg-slate-950/30 p-3">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">Latency Budgets</p>
+          <div className="border border-stone-200 bg-white p-3">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">Latency Budgets</p>
             <div className="grid gap-2 md:grid-cols-2">
               {(data?.performance.routes ?? []).map((route) => (
                 <div key={route.route} className="flex items-center justify-between gap-3 text-xs">
-                  <span className="truncate text-slate-300">{route.route}</span>
+                  <span className="truncate text-stone-600">{route.route}</span>
                   <span className={route.status === "pass" ? "text-emerald-300" : "text-rose-300"}>
                     p95 {route.p95Ms}ms / {route.budgetMs}ms
                   </span>

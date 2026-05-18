@@ -9,9 +9,9 @@ interface CalendarHeatmapProps {
 function getLast90Days(): string[] {
   const days: string[] = [];
   const today = new Date();
+  const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
   for (let i = 89; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
+    const d = new Date(todayUtc - i * 86_400_000);
     days.push(d.toISOString().slice(0, 10));
   }
   return days;
@@ -33,7 +33,7 @@ export function CalendarHeatmap({ entries }: CalendarHeatmapProps) {
 
   return (
     <div>
-      <h2 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-stone-500">
         Activity — Last 90 Days
       </h2>
       <div className="flex flex-wrap gap-[2px]">
@@ -42,8 +42,8 @@ export function CalendarHeatmap({ entries }: CalendarHeatmapProps) {
           const opacity = count === 0 ? 0 : Math.max(0.15, count / maxCount);
           const bgStyle =
             count === 0
-              ? "bg-slate-800"
-              : `bg-amber-500`;
+              ? "bg-slate-200"
+              : "bg-amber-600";
 
           return (
             <div

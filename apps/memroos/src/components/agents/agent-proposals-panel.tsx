@@ -14,7 +14,7 @@ const STATUS_STYLES: Record<string, string> = {
   approved: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
   rejected: "border-rose-500/30 bg-rose-500/10 text-rose-300",
   applied: "border-sky-500/30 bg-sky-500/10 text-sky-300",
-  rolled_back: "border-slate-500/30 bg-slate-500/10 text-slate-400",
+  rolled_back: "border-slate-500/30 bg-slate-500/10 text-stone-500",
 };
 
 function TypeBadge({ type }: { type: string }) {
@@ -27,7 +27,7 @@ function TypeBadge({ type }: { type: string }) {
 }
 
 function StatusBadge({ status }: { status: AgentProposal["status"] }) {
-  const styles = STATUS_STYLES[status] ?? "border-slate-700 text-slate-400";
+  const styles = STATUS_STYLES[status] ?? "border-stone-300 text-stone-500";
   return (
     <span className={`rounded border px-2 py-0.5 text-[10px] font-semibold uppercase ${styles}`}>
       {status}
@@ -37,7 +37,7 @@ function StatusBadge({ status }: { status: AgentProposal["status"] }) {
 
 function DiffViewer({ diff }: { diff: Record<string, unknown> }) {
   return (
-    <pre className="mt-1 max-h-24 overflow-auto rounded border border-slate-800 bg-slate-950 p-2 text-[10px] leading-relaxed text-slate-400">
+    <pre className="mt-1 max-h-24 overflow-auto rounded border border-stone-200 bg-white p-2 text-[10px] leading-relaxed text-stone-500">
       {JSON.stringify(diff, null, 2)}
     </pre>
   );
@@ -52,18 +52,18 @@ function ProposalRow({ proposal }: { proposal: AgentProposal }) {
   const isApproved = proposal.status === "approved";
 
   return (
-    <div className="flex flex-col gap-2 border-b border-slate-800 py-4 last:border-0">
+    <div className="flex flex-col gap-2 border-b border-stone-200 py-4 last:border-0">
       <div className="flex flex-wrap items-center gap-2">
         <TypeBadge type={proposal.proposalType} />
         <StatusBadge status={proposal.status} />
-        <span className="font-mono text-xs text-slate-400">{proposal.agentId}</span>
-        <span className="ml-auto text-xs text-slate-500">
+        <span className="font-mono text-xs text-stone-500">{proposal.agentId}</span>
+        <span className="ml-auto text-xs text-stone-500">
           {proposal.forecastWDelta >= 0 ? "+" : ""}
           {proposal.forecastWDelta.toFixed(3)} W-delta
         </span>
       </div>
 
-      <p className="text-xs text-slate-400">{proposal.rationale}</p>
+      <p className="text-xs text-stone-500">{proposal.rationale}</p>
 
       <DiffViewer diff={proposal.diff} />
 
@@ -113,13 +113,13 @@ export function AgentProposalsPanel() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="border border-slate-800 bg-slate-900/40 p-4">
+      <section className="border border-stone-200 bg-white/90 p-4">
         <div className="mb-3 flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-amber-500">
             Agent Proposals
           </span>
           <div className="h-px flex-1 bg-amber-900/40" />
-          <span className="text-xs text-slate-500">{proposals.length} proposal{proposals.length !== 1 ? "s" : ""}</span>
+          <span className="text-xs text-stone-500">{proposals.length} proposal{proposals.length !== 1 ? "s" : ""}</span>
         </div>
 
         {isLoading ? (
@@ -127,7 +127,7 @@ export function AgentProposalsPanel() {
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
           </div>
         ) : proposals.length === 0 ? (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-stone-500">
             No agent proposals yet. Run an eval for an agent with W below the reflection threshold to generate proposals.
           </p>
         ) : (
@@ -139,12 +139,12 @@ export function AgentProposalsPanel() {
         )}
       </section>
 
-      <section className="border border-slate-800 bg-slate-900/40 p-4">
+      <section className="border border-stone-200 bg-white/90 p-4">
         <div className="mb-2 flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-amber-500">Proposal Types</span>
           <div className="h-px flex-1 bg-amber-900/40" />
         </div>
-        <div className="flex flex-col gap-1.5 text-xs text-slate-400">
+        <div className="flex flex-col gap-1.5 text-xs text-stone-500">
           <div><TypeBadge type="agent_instruction_patch" /> <span className="ml-2">Edits the agent system prompt / operating instructions</span></div>
           <div><TypeBadge type="skill_addition" /> <span className="ml-2">Registers a new skill when a capability gap is observed</span></div>
           <div><TypeBadge type="tool_routing_update" /> <span className="ml-2">Adjusts tool preference weight for a context pattern</span></div>

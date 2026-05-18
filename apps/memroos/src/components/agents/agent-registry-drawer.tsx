@@ -78,8 +78,8 @@ function streamingLabel(value: unknown): string {
 function MetadataRow({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="mb-1 text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="break-words text-slate-200">{value}</p>
+      <p className="mb-1 text-xs uppercase tracking-wide text-stone-500">{label}</p>
+      <p className="break-words text-stone-700">{value}</p>
     </div>
   );
 }
@@ -90,37 +90,37 @@ export function AgentRegistryDrawer({ agent, open, onOpenChange }: AgentRegistry
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="border-slate-800 bg-slate-950 text-slate-100 sm:max-w-md">
-        <SheetHeader className="border-b border-slate-800 pb-4">
-          <SheetTitle className="text-slate-100">{agent.name}</SheetTitle>
-          <SheetDescription className="text-slate-400">{agent.role}</SheetDescription>
+      <SheetContent side="right" className="border-stone-200 bg-white text-stone-950 sm:max-w-md">
+        <SheetHeader className="border-b border-stone-200 pb-4">
+          <SheetTitle className="text-stone-950">{agent.name}</SheetTitle>
+          <SheetDescription className="text-stone-500">{agent.role}</SheetDescription>
         </SheetHeader>
         <div className="flex flex-col gap-5 p-4 text-sm">
           <div className="flex flex-wrap gap-2">
-            <Badge variant="outline" className="border-slate-700 text-slate-300">{agent.protocol}</Badge>
+            <Badge variant="outline" className="border-stone-300 text-stone-600">{agent.protocol}</Badge>
             {agent.protocol === "a2a" && (
               <Badge variant="outline" className="border-sky-700 text-sky-300">A2A</Badge>
             )}
             {a2a.source === "adk" && (
               <Badge variant="outline" className="border-sky-700 text-sky-300">ADK</Badge>
             )}
-            <Badge variant="outline" className="border-slate-700 text-slate-300">
+            <Badge variant="outline" className="border-stone-300 text-stone-600">
               {PLATFORM_LABELS[agent.platform] ?? agent.platform}
             </Badge>
-            <Badge variant="outline" className="border-slate-700 text-slate-300">{agent.status}</Badge>
+            <Badge variant="outline" className="border-stone-300 text-stone-600">{agent.status}</Badge>
           </div>
           <div>
-            <p className="mb-1 text-xs uppercase tracking-wide text-slate-500">Last heartbeat</p>
-            <p className="text-slate-200">{agent.lastHeartbeat ?? "never"}</p>
+            <p className="mb-1 text-xs uppercase tracking-wide text-stone-500">Last heartbeat</p>
+            <p className="text-stone-700">{agent.lastHeartbeat ?? "never"}</p>
           </div>
           <div>
-            <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">Capabilities</p>
+            <p className="mb-2 text-xs uppercase tracking-wide text-stone-500">Capabilities</p>
             <div className="flex flex-wrap gap-2">
               {agent.capabilities.length === 0 ? (
-                <span className="text-slate-500">None declared</span>
+                <span className="text-stone-500">None declared</span>
               ) : (
                 agent.capabilities.map((capability) => (
-                  <Badge key={capability.id} variant="outline" className="border-slate-700 text-slate-300">
+                  <Badge key={capability.id} variant="outline" className="border-stone-300 text-stone-600">
                     {capability.name}
                   </Badge>
                 ))
@@ -129,12 +129,12 @@ export function AgentRegistryDrawer({ agent, open, onOpenChange }: AgentRegistry
           </div>
           {agent.currentTask && (
             <div>
-              <p className="mb-1 text-xs uppercase tracking-wide text-slate-500">Current task</p>
-              <p className="text-slate-200">{agent.currentTask}</p>
+              <p className="mb-1 text-xs uppercase tracking-wide text-stone-500">Current task</p>
+              <p className="text-stone-700">{agent.currentTask}</p>
             </div>
           )}
           {agent.protocol === "a2a" && (
-            <div className="border border-slate-800 bg-slate-900/50 p-3">
+            <div className="border border-stone-200 bg-white/90 p-3">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-sky-400">A2A connection</p>
               <div className="grid gap-3">
                 <MetadataRow label="Endpoint host" value={urlHost(a2a.endpointUrl)} />

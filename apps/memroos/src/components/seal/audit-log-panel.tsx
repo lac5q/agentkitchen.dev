@@ -11,7 +11,7 @@ function EventBadge({ event }: { event: SealAuditLogEntry["event"] }) {
     apply_started: "border-sky-500/40 bg-sky-500/10 text-sky-300",
     apply_succeeded: "border-sky-500/40 bg-sky-500/10 text-sky-300",
     apply_failed: "border-orange-500/40 bg-orange-500/10 text-orange-300",
-    rolled_back: "border-slate-500/40 bg-slate-500/10 text-slate-400",
+    rolled_back: "border-slate-500/40 bg-slate-500/10 text-stone-500",
   };
   return (
     <span
@@ -23,7 +23,7 @@ function EventBadge({ event }: { event: SealAuditLogEntry["event"] }) {
 }
 
 function DeltaCell({ value }: { value: number | null }) {
-  if (value === null) return <span className="text-slate-600">—</span>;
+  if (value === null) return <span className="text-stone-600">—</span>;
   const positive = value >= 0;
   return (
     <span
@@ -37,21 +37,21 @@ function DeltaCell({ value }: { value: number | null }) {
 
 function AuditRow({ entry }: { entry: SealAuditLogEntry }) {
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-slate-800 py-2 text-xs last:border-0">
+    <div className="flex flex-wrap items-center gap-3 border-b border-stone-200 py-2 text-xs last:border-0">
       <EventBadge event={entry.event} />
-      <span className="w-24 shrink-0 truncate font-mono text-slate-500" title={entry.proposalId}>
+      <span className="w-24 shrink-0 truncate font-mono text-stone-500" title={entry.proposalId}>
         {entry.proposalId.slice(0, 8)}
       </span>
-      <span className="flex items-center gap-1 text-slate-500">
+      <span className="flex items-center gap-1 text-stone-500">
         W<sub>base</sub>: <DeltaCell value={entry.baselineW} />
       </span>
-      <span className="flex items-center gap-1 text-slate-500">
+      <span className="flex items-center gap-1 text-stone-500">
         W<sub>post</sub>: <DeltaCell value={entry.postApplyW} />
       </span>
-      <span className="flex items-center gap-1 text-slate-500">
+      <span className="flex items-center gap-1 text-stone-500">
         &Delta;: <DeltaCell value={entry.deltaComposite} />
       </span>
-      <span className="ml-auto shrink-0 text-slate-600">
+      <span className="ml-auto shrink-0 text-stone-600">
         {new Date(entry.timestamp).toLocaleString()}
       </span>
     </div>
@@ -63,13 +63,13 @@ export function AuditLogPanel() {
   const entries = data?.entries ?? [];
 
   return (
-    <section className="border border-slate-800 bg-slate-900/40 p-4">
+    <section className="border border-stone-200 bg-white/90 p-4">
       <div className="mb-3 flex items-center gap-2">
         <span className="text-xs font-semibold uppercase tracking-wide text-amber-500">
           Audit Log
         </span>
         <div className="h-px flex-1 bg-amber-900/40" />
-        <span className="text-xs text-slate-500">{entries.length} events</span>
+        <span className="text-xs text-stone-500">{entries.length} events</span>
       </div>
 
       {isLoading ? (
@@ -77,7 +77,7 @@ export function AuditLogPanel() {
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
         </div>
       ) : entries.length === 0 ? (
-        <p className="text-xs text-slate-500">No audit events yet.</p>
+        <p className="text-xs text-stone-500">No audit events yet.</p>
       ) : (
         <div>
           {entries.map((entry) => (

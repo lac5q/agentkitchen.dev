@@ -80,7 +80,7 @@ export function AgentRegistrationForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="border border-slate-800 bg-slate-900/40 p-4">
+    <form onSubmit={handleSubmit} className="border border-stone-200 bg-white/90 p-4">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Button
           type="button"
@@ -98,18 +98,18 @@ export function AgentRegistrationForm({
         >
           A2A card URL
         </Button>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-stone-500">
           Stored bearer tokens and API keys are never displayed after creation.
         </span>
       </div>
 
       {mode === "a2a" ? (
         <div className="flex flex-col gap-3">
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-stone-500">
             Paste the agent-card URL exposed by the remote agent. The registry will validate the card,
             security scheme, endpoint, and declared skills before adding it to the registry.
           </p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-stone-500">
             For Google ADK, use the agent-card URL from an A2A-enabled ADK server, for example an
             agent served with adk api_server --a2a. Private network or Tailscale URLs are recommended
             for startup multi-machine deployments.
@@ -123,7 +123,7 @@ export function AgentRegistrationForm({
             />
             <select
               aria-label="A2A source"
-              className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm text-slate-200"
+              className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm text-stone-700"
               value={source}
               onChange={(event) => setSource(event.target.value as "adk" | "a2a" | "manual")}
             >
@@ -159,7 +159,7 @@ export function AgentRegistrationForm({
             />
             <select
               aria-label="Agent platform"
-              className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm text-slate-200"
+              className="h-8 rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm text-stone-700"
               value={platform}
               onChange={(event) => setPlatform(event.target.value as AgentPlatform)}
             >

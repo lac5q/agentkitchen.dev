@@ -58,20 +58,20 @@ export function ActivityFeed({ events, onNodeHover, highlightedNode }: ActivityF
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
               className={`flex items-start gap-2 text-xs rounded px-1 py-0.5 cursor-pointer transition-colors ${
-                isHighlighted ? "bg-slate-800/80" : "hover:bg-slate-800/40"
+                isHighlighted ? "bg-stone-100" : "hover:bg-stone-100/80"
               }`}
               onMouseEnter={() => onNodeHover?.(event.node)}
               onMouseLeave={() => onNodeHover?.(null)}
             >
               <span>{icon}</span>
-              <span className="text-slate-500 shrink-0 w-14">{timeLabel}</span>
+              <span className="text-stone-500 shrink-0 w-14">{timeLabel}</span>
               <span
                 className="shrink-0 w-20 font-medium"
                 style={{ color }}
               >
                 {event.node}
               </span>
-              <span className="text-slate-400 truncate">{event.message}</span>
+              <span className="text-stone-500 truncate">{event.message}</span>
             </motion.div>
           );
         })}

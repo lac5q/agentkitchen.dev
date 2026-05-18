@@ -77,7 +77,7 @@ export function Waste() {
           marginTop: 12,
           padding: 10,
           background: NOC.warnBg,
-          border: `1px solid #ecd9b1`,
+          border: `1px solid ${NOC.warnBg}`,
         }}
       >
         <div style={{ fontSize: 11.5, color: NOC.warn, fontWeight: 600 }}>

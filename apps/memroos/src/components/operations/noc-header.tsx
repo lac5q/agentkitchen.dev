@@ -1,7 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { NOC, NOC_FONT_MONO } from "@/lib/noc-theme";
 import { PillBtn } from "./noc-primitives";
+
+const QUICK_LINKS = [
+  { label: "Ledger", href: "/ledger" },
+  { label: "Memory", href: "/notebooks" },
+  { label: "Dispatch", href: "/dispatch" },
+  { label: "Governance", href: "/audit" },
+];
 
 export function NocHeader() {
   return (
@@ -46,7 +54,30 @@ export function NocHeader() {
           Run the agent fleet like infrastructure: memory consumption, model utility, skill drift, savings vs waste — and engage any agent without leaving this screen.
         </div>
       </div>
-      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end", flexShrink: 0 }}>
+        {QUICK_LINKS.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            style={{
+              alignItems: "center",
+              background: NOC.paper,
+              border: `1px solid ${NOC.ruleStrong}`,
+              color: NOC.ink,
+              display: "inline-flex",
+              fontFamily: NOC_FONT_MONO,
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.04em",
+              minHeight: 30,
+              padding: "4px 9px",
+              textDecoration: "none",
+              textTransform: "uppercase",
+            }}
+          >
+            {link.label}
+          </Link>
+        ))}
         <PillBtn>Last 24h ▾</PillBtn>
         <PillBtn>All workspaces ▾</PillBtn>
         <PillBtn variant="solid">Export report</PillBtn>

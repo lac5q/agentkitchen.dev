@@ -4,6 +4,7 @@ import path from "path";
 import { SKILLS_PATH, SKILL_CONTRIBUTIONS_LOG, FAILURES_LOG } from "@/lib/constants";
 import { parseFailuresLog, aggregateFailures } from "@/lib/failures-parser";
 import { readSkillBudgetReport } from "@/lib/skill-budget";
+import { buildSkillWorkflowItems, readSkillReviewState } from "@/lib/skill-workflow";
 
 export const dynamic = "force-dynamic";
 
@@ -163,10 +164,19 @@ export async function GET() {
         : a.skill.localeCompare(b.skill)
     );
   const skillBudget = await readSkillBudgetReport();
+  const reviewState = await readSkillReviewState();
+  const skillDetails = await buildSkillWorkflowItems({
+    skillsPath: SKILLS_PATH,
+    skillNames: skillDirNames,
+    coverageGaps,
+    skillUsage,
+    reviewState,
+  });
 
   return NextResponse.json({
     totalSkills,
     allSkills: skillDirNames,
+    skillDetails,
     contributedByHermes,
     contributedByGwen,
     recentContributions,

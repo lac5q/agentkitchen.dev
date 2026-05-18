@@ -11,7 +11,7 @@ export function PulseStrip() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(6, 1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))",
           gap: 8,
         }}
       >
@@ -21,6 +21,7 @@ export function PulseStrip() {
             style={{
               background: NOC.paper,
               border: `1px solid ${NOC.rule}`,
+              minWidth: 0,
               padding: 12,
             }}
           >

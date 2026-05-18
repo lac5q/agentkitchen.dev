@@ -9,7 +9,7 @@ const SEVERITY_COLORS: Record<
   { text: string; bg: string; border: string }
 > = {
   info: {
-    text: "text-slate-300",
+    text: "text-stone-500",
     bg: "bg-slate-500/15",
     border: "border-slate-500/30",
   },
@@ -26,7 +26,7 @@ const SEVERITY_COLORS: Record<
 };
 
 const DEFAULT_COLOR = {
-  text: "text-slate-300",
+  text: "text-stone-500",
   bg: "bg-slate-500/15",
   border: "border-slate-500/30",
 };
@@ -58,7 +58,7 @@ export function AuditLogPanel({ limit = 20 }: { limit?: number }) {
   const entries = data?.entries ?? [];
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+    <div className="rounded-lg border border-stone-200 bg-white/85 p-4">
       {/* Section header */}
       <div className="mb-4 flex items-center gap-2">
         <span className="text-xs font-medium uppercase tracking-wide text-amber-500">
@@ -76,7 +76,7 @@ export function AuditLogPanel({ limit = 20 }: { limit?: number }) {
 
       {/* Empty state */}
       {!isLoading && entries.length === 0 && (
-        <p className="py-10 text-center text-sm text-slate-500">
+        <p className="py-10 text-center text-sm text-stone-500">
           No audit events yet.
         </p>
       )}
@@ -89,10 +89,10 @@ export function AuditLogPanel({ limit = 20 }: { limit?: number }) {
             return (
               <li
                 key={entry.id}
-                className="flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-slate-800/40"
+                className="flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-stone-100/80"
               >
                 {/* Actor */}
-                <span className="w-24 shrink-0 truncate text-xs font-medium text-slate-300">
+                <span className="w-24 shrink-0 truncate text-xs font-medium text-stone-500">
                   {entry.actor}
                 </span>
 
@@ -104,12 +104,12 @@ export function AuditLogPanel({ limit = 20 }: { limit?: number }) {
                 </span>
 
                 {/* Target */}
-                <span className="min-w-0 flex-1 truncate text-xs text-slate-200">
+                <span className="min-w-0 flex-1 truncate text-xs text-stone-800">
                   {entry.target}
                 </span>
 
                 {/* Timestamp */}
-                <span className="shrink-0 tabular-nums text-xs text-slate-500">
+                <span className="shrink-0 tabular-nums text-xs text-stone-500">
                   {formatRelativeTime(entry.timestamp)}
                 </span>
               </li>

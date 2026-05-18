@@ -12,7 +12,7 @@ function InfoTip({ text }: { text: string }) {
     <span className="group relative ml-1.5 inline-flex">
       <span
         aria-label="More information"
-        className="inline-flex items-center text-slate-600 transition-colors hover:text-slate-400"
+        className="inline-flex items-center text-stone-600 transition-colors hover:text-stone-500"
         role="img"
       >
         <Info size={12} />
@@ -53,7 +53,7 @@ export function HealthPanel({ collections, totalFiles }: HealthPanelProps) {
   return (
     <div className="flex flex-col gap-4">
         {/* Meetings tracking indicator */}
-        <Card className="border-slate-800 bg-slate-900/60">
+        <Card className="border-stone-200 bg-white/90">
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -66,7 +66,7 @@ export function HealthPanel({ collections, totalFiles }: HealthPanelProps) {
                         : "bg-slate-600"
                   }`}
                 />
-                <span className="text-xs font-medium text-slate-300">
+                <span className="text-xs font-medium text-stone-600">
                   Meeting + Call Recordings
                 </span>
                 <InfoTip text="The meet-recordings and spark-recordings QMD collections. Green = Google Meet, Apple Notes call recordings, and Spark meeting transcripts are indexed and searchable. Amber = one meeting collection is missing. Grey = no meeting collections found." />
@@ -76,7 +76,7 @@ export function HealthPanel({ collections, totalFiles }: HealthPanelProps) {
                   {meetingDocCount} files indexed
                 </span>
               ) : (
-                <span className="text-xs text-slate-600">not found</span>
+                <span className="text-xs text-stone-600">not found</span>
               )}
             </div>
             {!hasAllMeetingCollections && (
@@ -89,7 +89,7 @@ export function HealthPanel({ collections, totalFiles }: HealthPanelProps) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* Coverage Gaps */}
-          <Card className="border-slate-800 bg-slate-900/60">
+          <Card className="border-stone-200 bg-white/90">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-sm font-semibold text-amber-400">
                 Coverage Gaps
@@ -98,7 +98,7 @@ export function HealthPanel({ collections, totalFiles }: HealthPanelProps) {
             </CardHeader>
             <CardContent>
               {coverageGaps.length === 0 ? (
-                <p className="text-xs text-slate-500">All collections look healthy.</p>
+                <p className="text-xs text-stone-500">All collections look healthy.</p>
               ) : (
                 <ul className="space-y-1.5">
                   {coverageGaps.map((c) => (
@@ -118,7 +118,7 @@ export function HealthPanel({ collections, totalFiles }: HealthPanelProps) {
           </Card>
 
           {/* Freshness Alerts */}
-          <Card className="border-slate-800 bg-slate-900/60">
+          <Card className="border-stone-200 bg-white/90">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center text-sm font-semibold text-rose-400">
                 Freshness Alerts
@@ -127,7 +127,7 @@ export function HealthPanel({ collections, totalFiles }: HealthPanelProps) {
             </CardHeader>
             <CardContent>
               {freshnessAlerts.length === 0 ? (
-                <p className="text-xs text-slate-500">All collections are up to date.</p>
+                <p className="text-xs text-stone-500">All collections are up to date.</p>
               ) : (
                 <ul className="space-y-1.5">
                   {freshnessAlerts.map((c) => (
@@ -153,32 +153,32 @@ export function HealthPanel({ collections, totalFiles }: HealthPanelProps) {
         </div>
 
         {/* Stats summary */}
-        <Card className="border-slate-800 bg-slate-900/60">
+        <Card className="border-stone-200 bg-white/90">
           <CardContent className="pt-4">
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
-                <p className="text-2xl font-bold text-slate-100">
+                <p className="text-2xl font-bold text-stone-950">
                   {totalFiles.toLocaleString()}
                 </p>
-                <p className="mt-0.5 flex items-center justify-center gap-1 text-xs text-slate-500">
+                <p className="mt-0.5 flex items-center justify-center gap-1 text-xs text-stone-500">
                   Knowledge Files
                   <InfoTip text="Sum of all .md, .mdx, and .txt files across every configured QMD collection. Counted live from disk on each page load — not cached. Conversation memories are shown separately below." />
                 </p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-100">
+                <p className="text-2xl font-bold text-stone-950">
                   {collections.length}
                 </p>
-                <p className="mt-0.5 flex items-center justify-center gap-1 text-xs text-slate-500">
+                <p className="mt-0.5 flex items-center justify-center gap-1 text-xs text-stone-500">
                   Collections
                   <InfoTip text="Number of configured collection folders under ~/github/knowledge/. These are knowledge file stores, separate from conversation memory entries." />
                 </p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-slate-100">
+                <p className="text-2xl font-bold text-stone-950">
                   {avgSize.toLocaleString()}
                 </p>
-                <p className="mt-0.5 flex items-center justify-center gap-1 text-xs text-slate-500">
+                <p className="mt-0.5 flex items-center justify-center gap-1 text-xs text-stone-500">
                   Avg Size
                   <InfoTip text="Knowledge Files ÷ Collections. A low average means many thin, sparse collections. Aim for 50+ files per collection for reliable retrieval." />
                 </p>

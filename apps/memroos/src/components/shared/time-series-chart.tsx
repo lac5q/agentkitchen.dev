@@ -38,8 +38,8 @@ function DarkTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs shadow-xl">
-      <p className="mb-1 font-medium text-slate-200">{label}</p>
+    <div className="rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs shadow-xl">
+      <p className="mb-1 font-medium text-stone-800">{label}</p>
       <p className="text-amber-400">{payload[0].value.toLocaleString()}</p>
     </div>
   );
@@ -59,7 +59,7 @@ function TimeSeriesChart({
     <div className="space-y-3">
       {/* Header: title + window toggle */}
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-slate-300">{title}</span>
+        <span className="text-sm font-medium text-stone-500">{title}</span>
         <div className="flex gap-1">
           {WINDOWS.map((w) => (
             <button
@@ -69,7 +69,7 @@ function TimeSeriesChart({
                 "px-2 py-0.5 text-xs rounded transition-colors",
                 w.value === window
                   ? "text-amber-500 bg-amber-500/10"
-                  : "text-slate-500 hover:text-slate-300",
+                  : "text-stone-500 hover:text-stone-500",
               ].join(" ")}
             >
               {w.label}
@@ -88,7 +88,7 @@ function TimeSeriesChart({
       {/* Empty state */}
       {!isLoading && points.length === 0 && (
         <div className="h-48 flex items-center justify-center">
-          <p className="text-slate-500 text-sm">No data for this period</p>
+          <p className="text-stone-500 text-sm">No data for this period</p>
         </div>
       )}
 

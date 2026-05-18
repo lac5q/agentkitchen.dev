@@ -258,6 +258,40 @@ export interface ModelRoutingDashboardResponse {
   timestamp: string;
 }
 
+export type SkillWorkflowStage = "agent-limited" | "general" | "enterprise";
+export type SkillReviewStatus =
+  | "unreviewed"
+  | "in-review"
+  | "changes-requested"
+  | "approved"
+  | "enterprise-ready";
+
+export interface SkillWorkflowItem {
+  name: string;
+  title: string;
+  path: string;
+  description: string;
+  bodyPreview: string;
+  stage: SkillWorkflowStage;
+  reviewStatus: SkillReviewStatus;
+  reviewNotes: string;
+  draftBody: string;
+  owner: string;
+  tags: string[];
+  health: "ready" | "coverage-gap" | "needs-source" | "stale";
+  lastActivityAt: string | null;
+  maturityScore: number;
+  updatedAt: string | null;
+  approvedAt: string | null;
+}
+
+export interface SkillReviewInput {
+  skillName: string;
+  action: "save-draft" | "request-changes" | "approve-general" | "promote-enterprise";
+  notes?: string;
+  draftBody?: string;
+}
+
 export interface ModelRoutingEvalsResponse {
   dimensions: Array<{ id: string; label: string; rubric: string }>;
   referenceTasks: Array<{ id: string; taskType: string; strategy: string }>;
@@ -794,6 +828,7 @@ export function useSkills() {
       fetchJSON<{
         totalSkills: number;
         allSkills: string[];
+        skillDetails: SkillWorkflowItem[];
         contributedByHermes: number;
         contributedByGwen: number;
         recentContributions: Array<{
@@ -834,6 +869,36 @@ export function useSkills() {
         timestamp: string;
       }>("/api/skills"),
     refetchInterval: POLL_INTERVALS.skills,
+  });
+}
+
+export function updateSkillReview(input: SkillReviewInput) {
+  return mutateJSON<{
+    ok: boolean;
+    skillName: string;
+    review: {
+      stage: SkillWorkflowStage;
+      status: SkillReviewStatus;
+      notes: string;
+      draftBody: string;
+      updatedAt: string;
+      updatedBy: string;
+      approvedAt?: string | null;
+    };
+    timestamp: string;
+  }>("/api/skills/review", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+}
+
+export function useUpdateSkillReviewMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: updateSkillReview,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["skills"] });
+    },
   });
 }
 

@@ -15,7 +15,7 @@ function StatusBadge({ status }: { status: SealProposal["status"] }) {
     approved: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
     rejected: "border-rose-500/40 bg-rose-500/10 text-rose-300",
     applied: "border-sky-500/40 bg-sky-500/10 text-sky-300",
-    rolled_back: "border-slate-500/40 bg-slate-500/10 text-slate-400",
+    rolled_back: "border-slate-500/40 bg-slate-500/10 text-stone-500",
   };
   return (
     <span
@@ -55,26 +55,26 @@ function ProposalRow({ proposal }: { proposal: SealProposal }) {
     approveMutation.error ?? rejectMutation.error ?? applyMutation.error;
 
   return (
-    <div className="border-b border-slate-800 py-3 last:border-0">
+    <div className="border-b border-stone-200 py-3 last:border-0">
       <div className="flex flex-wrap items-start gap-3">
         {/* Meta */}
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-xs font-semibold text-slate-200">
+            <span className="font-mono text-xs font-semibold text-stone-700">
               {proposal.proposalType}
             </span>
             <StatusBadge status={proposal.status} />
-            <span className="text-xs text-slate-500">{proposal.agentId}</span>
+            <span className="text-xs text-stone-500">{proposal.agentId}</span>
           </div>
-          <p className="mt-1 text-xs text-slate-400 line-clamp-2">{proposal.rationale}</p>
-          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-stone-500 line-clamp-2">{proposal.rationale}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-stone-500">
             <span>
               Baseline W={proposal.baselineW.toFixed(4)}
             </span>
             <span>
               Forecast delta: <DeltaBadge delta={proposal.forecastWDelta} />
             </span>
-            <span className="text-slate-600">
+            <span className="text-stone-600">
               {new Date(proposal.createdAt).toLocaleString()}
             </span>
           </div>
@@ -116,7 +116,7 @@ function ProposalRow({ proposal }: { proposal: SealProposal }) {
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
-              className="border border-slate-700 px-2 py-1 text-xs text-slate-500 hover:border-slate-500 hover:text-slate-300"
+              className="border border-stone-300 px-2 py-1 text-xs text-stone-500 hover:border-slate-500 hover:text-stone-600"
             >
               {expanded ? "▲" : "▼"}
             </button>
@@ -131,19 +131,19 @@ function ProposalRow({ proposal }: { proposal: SealProposal }) {
 
       {/* Diff preview */}
       {expanded && (
-        <div className="mt-3 rounded border border-slate-800 bg-slate-900/60 p-3">
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+        <div className="mt-3 rounded border border-stone-200 bg-white/90 p-3">
+          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-stone-500">
             Diff
           </p>
-          <pre className="overflow-x-auto text-[11px] text-slate-300">
+          <pre className="overflow-x-auto text-[11px] text-stone-600">
             {JSON.stringify(proposal.diff, null, 2)}
           </pre>
           <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
             {(["l1", "l2", "l3"] as const).map((layer) => {
               const score = proposal.baselineLayers[layer]?.score;
               return (
-                <div key={layer} className="text-slate-500">
-                  <span className="font-mono text-slate-400">{layer}</span>{" "}
+                <div key={layer} className="text-stone-500">
+                  <span className="font-mono text-stone-500">{layer}</span>{" "}
                   {score !== undefined ? score.toFixed(4) : "—"}
                 </div>
               );
@@ -168,13 +168,13 @@ export function ApprovalQueuePanel() {
   const ordered = [...pending, ...approved, ...rest];
 
   return (
-    <section className="border border-slate-800 bg-slate-900/40 p-4">
+    <section className="border border-stone-200 bg-white/90 p-4">
       <div className="mb-3 flex items-center gap-2">
         <span className="text-xs font-semibold uppercase tracking-wide text-amber-500">
           Approval Queue
         </span>
         <div className="h-px flex-1 bg-amber-900/40" />
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-stone-500">
           {pending.length} pending
         </span>
       </div>
@@ -184,7 +184,7 @@ export function ApprovalQueuePanel() {
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
         </div>
       ) : ordered.length === 0 ? (
-        <p className="text-xs text-slate-500">No proposals yet.</p>
+        <p className="text-xs text-stone-500">No proposals yet.</p>
       ) : (
         <div>
           {ordered.map((proposal) => (

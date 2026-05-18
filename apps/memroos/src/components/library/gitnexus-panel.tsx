@@ -21,8 +21,8 @@ function fmt(n: number): string {
 export function GitNexusPanel({ repos }: { repos: GitNexusRepo[] }) {
   if (repos.length === 0) {
     return (
-      <Card className="border-slate-800 bg-slate-900/50 p-4">
-        <p className="text-sm text-slate-500">No GitNexus indexes found. Run <code className="text-amber-400">npx gitnexus analyze</code> in a repo to index it.</p>
+      <Card className="border-stone-200 bg-white/90 p-4">
+        <p className="text-sm text-stone-500">No GitNexus indexes found. Run <code className="text-amber-400">npx gitnexus analyze</code> in a repo to index it.</p>
       </Card>
     );
   }
@@ -30,10 +30,10 @@ export function GitNexusPanel({ repos }: { repos: GitNexusRepo[] }) {
   return (
     <div className="space-y-3">
       {repos.map((repo) => (
-        <Card key={repo.name} className="border-slate-800 bg-slate-900/50 p-4">
+        <Card key={repo.name} className="border-stone-200 bg-white/90 p-4">
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-semibold text-amber-500">{repo.name}</p>
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-stone-600">
               {repo.lastIndexed ? new Date(repo.lastIndexed).toLocaleDateString() : "Never indexed"}
             </p>
           </div>
@@ -45,8 +45,8 @@ export function GitNexusPanel({ repos }: { repos: GitNexusRepo[] }) {
               { icon: "🫧", label: "Clusters", value: fmt(repo.clusters) },
             ].map((stat) => (
               <div key={stat.label}>
-                <p className="text-xs text-slate-500">{stat.icon} {stat.label}</p>
-                <p className="text-sm font-bold text-slate-200">{stat.value}</p>
+                <p className="text-xs text-stone-500">{stat.icon} {stat.label}</p>
+                <p className="text-sm font-bold text-stone-700">{stat.value}</p>
               </div>
             ))}
           </div>

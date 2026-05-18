@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useEscalations, useResolveEscalation } from "@/lib/api-client";
 import type { EscalationWithCountdown } from "@/lib/api-client";
+import { Btn, Card, PageHeader, Pill } from "@/components/shared/ui";
+import { NOC } from "@/lib/noc-theme";
 
 type TabStatus = "open" | "resolved" | "sla_breached" | "all";
 
@@ -38,42 +40,23 @@ function EscalationCard({
   const isResolved = escalation.status === "resolved";
 
   return (
-    <div
-      className={[
-        "rounded-lg border p-4 space-y-2",
-        isOverdue && !isResolved
-          ? "border-red-300 bg-red-50"
-          : "border-[#c9c9c2] bg-white",
-      ].join(" ")}
+    <Card
+      className="space-y-2"
+      style={isOverdue && !isResolved ? { background: NOC.warnBg, borderColor: NOC.warn } : undefined}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="space-y-1 flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-block rounded px-1.5 py-0.5 text-[11px] font-semibold bg-[#e4e4dd] text-[#4a4a45]">
-              {escalation.entity_type}
-            </span>
-            <span className="inline-block rounded px-1.5 py-0.5 text-[11px] font-semibold bg-blue-100 text-blue-700">
-              {escalation.escalation_type}
-            </span>
+            <Pill>{escalation.entity_type}</Pill>
+            <Pill tone="info">{escalation.escalation_type}</Pill>
             {isOverdue && !isResolved && (
-              <span className="inline-block rounded px-1.5 py-0.5 text-[11px] font-bold bg-red-200 text-red-700">
-                SLA BREACHED
-              </span>
+              <Pill tone="warn">SLA breached</Pill>
             )}
-            <span
-              className={[
-                "inline-block rounded px-1.5 py-0.5 text-[11px] font-semibold",
-                escalation.status === "resolved"
-                  ? "bg-green-100 text-green-700"
-                  : escalation.status === "sla_breached"
-                  ? "bg-red-100 text-red-700"
-                  : "bg-yellow-100 text-yellow-700",
-              ].join(" ")}
-            >
+            <Pill tone={escalation.status === "resolved" ? "success" : escalation.status === "sla_breached" ? "warn" : "terra"}>
               {escalation.status}
-            </span>
+            </Pill>
           </div>
-          <p className="text-xs font-mono text-[#4a4a45] truncate" title={escalation.entity_id}>
+          <p className="text-xs font-mono truncate" style={{ color: NOC.muted }} title={escalation.entity_id}>
             {escalation.entity_id}
           </p>
         </div>
@@ -83,48 +66,49 @@ function EscalationCard({
             <div
               className={[
                 "text-sm font-semibold",
-                isOverdue ? "text-red-600" : "text-[#4a4a45]",
               ].join(" ")}
+              style={{ color: isOverdue ? NOC.warn : NOC.muted }}
             >
               {formatMs(escalation.slaRemainingMs)}
             </div>
           )}
-          <div className="text-xs text-[#73736b] mt-0.5">
+          <div className="text-xs mt-0.5" style={{ color: NOC.soft }}>
             {isResolved ? "Resolved" : "SLA remaining"}
           </div>
         </div>
       </div>
 
-      <div className="text-xs text-[#73736b]">
+      <div className="text-xs" style={{ color: NOC.soft }}>
         Assigned to: {escalation.assigned_to ?? "Unassigned"} · Created: {formatTimestamp(escalation.created_at)}
       </div>
 
       {isResolved && escalation.resolution_note && (
-        <div className="text-xs text-[#4a4a45] bg-[#f2f2ee] rounded px-2 py-1">
+        <div className="text-xs px-2 py-1" style={{ background: NOC.fog, color: NOC.muted }}>
           Note: {escalation.resolution_note}
         </div>
       )}
 
       {!isResolved && canResolve && (
         <div>
-          <button
+          <Btn
             onClick={() => setShowModal(true)}
-            className="rounded bg-[#7a2a1e] px-3 py-1 text-xs font-semibold text-white hover:bg-[#a8392c]"
+            variant="terra"
           >
             Resolve
-          </button>
+          </Btn>
         </div>
       )}
 
       {/* Resolve modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="w-full max-w-sm rounded-lg bg-white p-5 shadow-xl space-y-3">
-            <h3 className="font-semibold text-[#0f0f0e]">Resolve Escalation</h3>
+          <div className="w-full max-w-sm space-y-3 p-5 shadow-xl" style={{ background: NOC.paper, border: `1px solid ${NOC.rule}` }}>
+            <h3 className="font-semibold" style={{ color: NOC.ink }}>Resolve Escalation</h3>
             <div>
-              <label className="block text-xs text-[#4a4a45] mb-1">Resolution note (optional)</label>
+              <label className="block text-xs mb-1" style={{ color: NOC.muted }}>Resolution note (optional)</label>
               <textarea
-                className="w-full rounded border border-[#c9c9c2] px-2 py-1 text-sm resize-none"
+                className="w-full resize-none border px-2 py-1 text-sm"
+                style={{ borderColor: NOC.ruleStrong, color: NOC.ink }}
                 rows={3}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
@@ -134,7 +118,8 @@ function EscalationCard({
             <div className="flex gap-2 justify-end">
               <button
                 onClick={() => setShowModal(false)}
-                className="rounded border border-[#c9c9c2] px-3 py-1 text-sm text-[#4a4a45] hover:bg-[#e4e4dd]"
+                className="border px-3 py-1 text-sm"
+                style={{ borderColor: NOC.ruleStrong, color: NOC.muted }}
               >
                 Cancel
               </button>
@@ -144,7 +129,8 @@ function EscalationCard({
                   setShowModal(false);
                   setNote("");
                 }}
-                className="rounded bg-[#7a2a1e] px-3 py-1 text-sm font-semibold text-white hover:bg-[#a8392c]"
+                className="px-3 py-1 text-sm font-semibold"
+                style={{ background: NOC.terra, color: NOC.cream }}
               >
                 Confirm
               </button>
@@ -152,7 +138,7 @@ function EscalationCard({
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -176,14 +162,15 @@ export default function EscalationsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[#0f0f0e]">Escalations</h1>
-        <p className="mt-1 text-sm text-[#73736b]">HIL queue — open items with SLA countdown, auto-refreshes every 30s</p>
-      </div>
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        eyebrow="Governance"
+        title="Escalations"
+        hint="Human-in-the-loop queue with SLA countdowns and operator resolution flow."
+      />
 
       {/* Tab bar */}
-      <div className="flex gap-1 border-b border-[#c9c9c2]">
+      <div className="flex gap-1" style={{ borderBottom: `1px solid ${NOC.rule}` }}>
         {TABS.map((tab) => (
           <button
             key={tab.value}
@@ -191,9 +178,10 @@ export default function EscalationsPage() {
             className={[
               "px-4 py-2 text-sm font-medium border-b-2 -mb-px",
               activeTab === tab.value
-                ? "border-[#7a2a1e] text-[#7a2a1e]"
-                : "border-transparent text-[#73736b] hover:text-[#0f0f0e]",
+                ? "border-current"
+                : "border-transparent",
             ].join(" ")}
+            style={{ color: activeTab === tab.value ? NOC.terraDeep : NOC.soft }}
           >
             {tab.label}
           </button>
@@ -213,15 +201,15 @@ export default function EscalationsPage() {
       )}
 
       {isLoading && (
-        <div className="text-sm text-[#73736b]">Loading escalations…</div>
+        <div className="text-sm" style={{ color: NOC.soft }}>Loading escalations...</div>
       )}
 
       {!isLoading && (
         <div className="space-y-3">
           {(data?.escalations ?? []).length === 0 ? (
-            <div className="rounded-lg border border-[#c9c9c2] bg-white p-8 text-center text-sm text-[#73736b]">
+            <Card className="p-8 text-center text-sm" style={{ color: NOC.soft }}>
               No {activeTab === "all" ? "" : activeTab} escalations found.
-            </div>
+            </Card>
           ) : (
             (data?.escalations ?? []).map((escalation) => (
               <EscalationCard

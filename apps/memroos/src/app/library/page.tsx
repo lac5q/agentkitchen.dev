@@ -14,6 +14,8 @@ import { CollectionTrendsPanel } from "@/components/library/collection-trends-pa
 import { ContextSourcesPanel } from "@/components/library/context-sources-panel";
 import { InfoTip } from "@/components/ui/info-tip";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Card, PageHeader } from "@/components/shared/ui";
+import { NOC } from "@/lib/noc-theme";
 
 export default function LibraryPage() {
   const { data, isLoading } = useKnowledge();
@@ -37,16 +39,15 @@ export default function LibraryPage() {
   return (
     <TooltipProvider>
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-amber-500">Knowledge</h1>
-        <p className="text-slate-400 mt-1 text-sm">
-          Source corpus, collection health, code graph, and memory infrastructure
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Memory"
+        title="Knowledge"
+        hint="Source corpus, collection health, code graph, and memory infrastructure."
+      />
 
       {/* Top 10 collection cards — 5 columns on lg */}
       <section>
-        <h2 className="flex items-center text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+        <h2 className="mb-3 flex items-center text-sm font-semibold uppercase tracking-wider" style={{ color: NOC.soft }}>
           Top Collections
           <InfoTip text="Top 10 QMD collections ranked by live file count. Each card shows the collection name and file count; the bar fill is proportional to the largest collection. Collections are configured folders in ~/github/knowledge/ containing .md, .mdx, or .txt files." />
         </h2>
@@ -63,16 +64,16 @@ export default function LibraryPage() {
 
       {/* Two-column layout: Treemap left, HealthPanel right */}
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <h2 className="flex items-center mb-3 text-sm font-semibold text-slate-400 uppercase tracking-wider">
+        <Card>
+          <h2 className="mb-3 flex items-center text-sm font-semibold uppercase tracking-wider" style={{ color: NOC.soft }}>
             Collection Map
             <InfoTip text="Treemap of all QMD collections sized by live file count — larger tiles mean more files. Color groups related collections by category. Hover a tile to see the exact count. Data sourced live from the knowledge API." />
           </h2>
           <CollectionTreemap collections={collections} />
-        </div>
+        </Card>
 
         <div>
-          <h2 className="mb-3 text-sm font-semibold text-slate-400 uppercase tracking-wider">
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider" style={{ color: NOC.soft }}>
             Health &amp; Stats
           </h2>
           <HealthPanel collections={collections} totalFiles={totalFiles} />
@@ -81,8 +82,8 @@ export default function LibraryPage() {
 
       {/* GitNexus code graph index */}
       <section>
-        <h2 className="flex items-center mb-3 text-sm font-semibold text-slate-400 uppercase tracking-wider">
-          Code Graph Index <span className="text-xs text-slate-600 ml-2 normal-case">via GitNexus</span>
+        <h2 className="mb-3 flex items-center text-sm font-semibold uppercase tracking-wider" style={{ color: NOC.soft }}>
+          Code Graph Index <span className="ml-2 text-xs normal-case" style={{ color: NOC.cold }}>via GitNexus</span>
           <InfoTip text="GitNexus symbol graph for indexed repositories. Shows symbol count, relationship count, and execution flow count per repo. Use this to navigate code, assess blast radius before edits, and trace bugs through execution flows." />
         </h2>
         <GitNexusPanel repos={gnRepos} />
@@ -90,24 +91,24 @@ export default function LibraryPage() {
 
       {/* Conversation Memory */}
       <section id="governance" className="scroll-mt-20 flex flex-col gap-6">
-        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+        <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: NOC.soft }}>
           Memory Governance
         </h2>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
+        <Card>
           <SqliteHealthPanel />
-        </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
+        </Card>
+        <Card>
           <MemoryIntelligencePanel />
-        </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
+        </Card>
+        <Card>
           <ContextSourcesPanel />
-        </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
+        </Card>
+        <Card>
           <SecurityOperationsPanel />
-        </div>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-5">
+        </Card>
+        <Card>
           <CacheHealthPanel />
-        </div>
+        </Card>
       </section>
 
       {/* Usage Trends */}

@@ -9,6 +9,8 @@ import { ToolAttentionPanel } from "@/components/cookbooks/tool-attention-panel"
 import { SimilarTaskPanel } from "@/components/cookbooks/similar-task-panel";
 import { InfoTip } from "@/components/ui/info-tip";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Card, PageHeader } from "@/components/shared/ui";
+import { NOC } from "@/lib/noc-theme";
 
 export default function CookbooksPage() {
   const { data, isLoading } = useSkills();
@@ -23,6 +25,7 @@ export default function CookbooksPage() {
 
   const totalSkills = data?.totalSkills ?? 0;
   const allSkills = data?.allSkills ?? [];
+  const skillDetails = data?.skillDetails ?? [];
   const coverageGaps = data?.coverageGaps ?? [];
   const coverageTelemetryStatus = data?.coverageTelemetryStatus ?? "tracked";
   const failuresByAgent = data?.failuresByAgent ?? {};
@@ -35,19 +38,31 @@ export default function CookbooksPage() {
   return (
     <TooltipProvider>
     <div className="space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-amber-500">Skills</h1>
-        <p className="text-slate-400 mt-1 text-sm">
-          Procedural playbooks, tool attention, coverage gaps, and contribution history
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Skills"
+        title="Skills"
+        hint="Review, edit, approve, and promote operational skills from agent-local playbooks into enterprise-ready workflows."
+      />
 
-      {/* Health panel */}
+      {/* Primary workflow */}
       <section>
-        <h2 className="flex items-center text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
-          Health Overview
-          <InfoTip text="Aggregate health metrics for all agent skill files (.claude/skills/). Shows total skill count, coverage gaps (skills unused for 30+ days), stale candidates, and failure breakdowns. Sourced from the skills API on each page load." />
+        <h2 className="mb-3 flex items-center text-sm font-semibold uppercase tracking-wider" style={{ color: NOC.soft }}>
+          Skill Workflow
+          <InfoTip text="Review queue for discovered skill files. Inspect each skill, save a review draft, request changes, approve it for general use, or promote it toward enterprise governance." />
+        </h2>
+        <SkillsList
+          totalSkills={totalSkills}
+          allSkills={allSkills}
+          skillDetails={skillDetails}
+          coverageGaps={coverageGaps}
+          coverageTelemetryStatus={coverageTelemetryStatus}
+        />
+      </section>
+
+      <section>
+        <h2 className="mb-3 flex items-center text-sm font-semibold uppercase tracking-wider" style={{ color: NOC.soft }}>
+          Skill Health
+          <InfoTip text="Supporting health metrics for all agent skill files. Shows skill count, usage telemetry coverage, stale candidates, and failure breakdowns." />
         </h2>
         <HealthPanel
           totalSkills={totalSkills}
@@ -62,7 +77,7 @@ export default function CookbooksPage() {
       </section>
 
       <section>
-        <h2 className="flex items-center text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+        <h2 className="mb-3 flex items-center text-sm font-semibold uppercase tracking-wider" style={{ color: NOC.soft }}>
           Tool Attention
           <InfoTip text="Progressive MCP discovery catalog. Shows which tools, workspaces, and skills can be loaded on demand instead of putting every definition into startup context." />
         </h2>
@@ -70,7 +85,7 @@ export default function CookbooksPage() {
       </section>
 
       <section>
-        <h2 className="flex items-center text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+        <h2 className="mb-3 flex items-center text-sm font-semibold uppercase tracking-wider" style={{ color: NOC.soft }}>
           Similar Task Intelligence
           <InfoTip text="Shows tools used in historically similar tasks based on recorded outcome metadata (task_type, repo, agent_id, tags). Task text is never read — only public metadata signals are used." />
         </h2>
@@ -84,28 +99,15 @@ export default function CookbooksPage() {
 
       {/* Heatmap */}
       <section>
-        <h2 className="flex items-center text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
+        <h2 className="mb-3 flex items-center text-sm font-semibold uppercase tracking-wider" style={{ color: NOC.soft }}>
           Contribution Heatmap
           <InfoTip text="Daily skill-file activity over the last 30 days. Each cell represents one day; darker cells mean more skill files were created or modified that day. Helps identify periods of active skill development." />
         </h2>
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+        <Card>
           <SkillHeatmap contributionHistory={contributionHistory} days={30} />
-        </div>
+        </Card>
       </section>
 
-      {/* Skills list */}
-      <section>
-        <h2 className="flex items-center text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
-          Skills
-          <InfoTip text="Full list of agent skill files discovered across all .claude/skills/ directories. Each skill is a reusable instruction set an agent can load. Coverage gaps are skills with no recent usage recorded." />
-        </h2>
-        <SkillsList
-          totalSkills={totalSkills}
-          allSkills={allSkills}
-          coverageGaps={coverageGaps}
-          coverageTelemetryStatus={coverageTelemetryStatus}
-        />
-      </section>
     </div>
     </TooltipProvider>
   );

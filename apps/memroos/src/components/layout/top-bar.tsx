@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { KangarooMark } from "./brand-mark";
+import { NOC } from "@/lib/noc-theme";
 import type { HealthStatus } from "@/types";
 
 interface TopBarProps {
@@ -32,12 +33,20 @@ export function TopBar({ services, onMenuClick }: TopBarProps) {
   const healthy = degraded === 0;
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-30 flex h-14 items-center gap-3.5 border-b border-[#e4e4dd] bg-[#fafaf7]/92 px-4 text-[#0f0f0e] backdrop-blur-md lg:left-[232px] lg:px-6">
+    <header
+      className="fixed left-0 right-0 top-0 z-30 flex h-14 items-center gap-3.5 border-b px-4 backdrop-blur-md lg:left-[232px] lg:px-6"
+      style={{
+        borderColor: NOC.rule,
+        background: `color-mix(in srgb, ${NOC.cream} 92%, transparent)`,
+        color: NOC.ink,
+      }}
+    >
       {/* Hamburger — mobile only */}
       {onMenuClick && (
         <button
           onClick={onMenuClick}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-[#4a4a45] transition-colors hover:bg-[#f2e2dc] hover:text-[#7a2a1e] lg:hidden"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded transition-colors lg:hidden"
+          style={{ color: NOC.muted }}
           aria-label="Open menu"
         >
           <svg
@@ -56,7 +65,10 @@ export function TopBar({ services, onMenuClick }: TopBarProps) {
       <KangarooMark className="h-8 w-8 shrink-0 lg:hidden" />
 
       {/* Global search */}
-      <div className="flex min-w-0 flex-1 items-center gap-2 border border-[#e4e4dd] bg-white px-3 py-1.5 text-[#6e6e67] sm:max-w-[460px]">
+      <div
+        className="flex min-w-0 flex-1 items-center gap-2 border px-3 py-1.5 sm:max-w-[460px]"
+        style={{ borderColor: NOC.rule, background: NOC.paper, color: NOC.soft }}
+      >
         <svg
           width="14"
           height="14"
@@ -72,26 +84,25 @@ export function TopBar({ services, onMenuClick }: TopBarProps) {
         <span className="truncate text-[13px]">
           Search memory, knowledge, agents…
         </span>
-        <span className="ml-auto hidden border border-[#e4e4dd] px-1.5 font-mono text-[11px] sm:inline">
+        <span className="ml-auto hidden border px-1.5 font-mono text-[11px] sm:inline" style={{ borderColor: NOC.rule }}>
           ⌘ K
         </span>
       </div>
 
       {/* Right cluster: health · clock · avatar */}
-      <div className="flex shrink-0 items-center gap-2.5 text-[12px] text-[#4a4a45]">
+      <div className="flex shrink-0 items-center gap-2.5 text-[12px]" style={{ color: NOC.muted }}>
         <span className="hidden items-center gap-1.5 sm:flex">
           <span
-            className={`h-1.5 w-1.5 rounded-full ${
-              healthy ? "bg-[#2f7a4f]" : "bg-[#a86a1c]"
-            }`}
+            className="h-1.5 w-1.5 rounded-full"
+            style={{ background: healthy ? NOC.success : NOC.warn }}
           />
           {healthy
             ? "All services healthy"
             : `${degraded} service${degraded > 1 ? "s" : ""} degraded`}
         </span>
-        <span className="hidden h-4 w-px bg-[#e4e4dd] sm:block" />
+        <span className="hidden h-4 w-px sm:block" style={{ background: NOC.rule }} />
         <span className="hidden font-mono sm:inline">{clock}</span>
-        <span className="ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#f2e2dc] text-[11px] font-semibold text-[#7a2a1e]">
+        <span className="ml-1 flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold" style={{ background: NOC.peach, color: NOC.terraDeep }}>
           LC
         </span>
       </div>

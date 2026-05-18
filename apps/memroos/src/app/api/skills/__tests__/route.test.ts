@@ -766,4 +766,44 @@ describe("contributionHistory (SKILL-08)", () => {
     );
     expect(jsonlCalls.length).toBeLessThanOrEqual(1);
   });
+
+  it("returns per-skill workflow details with persisted review state", async () => {
+    mockReaddir.mockResolvedValue([makeDirEntry("enterprise-review", true)] as never);
+    mockReadFile.mockImplementation(async (file) => {
+      const target = String(file);
+      if (target.endsWith("skill-sync-state.json")) return FAKE_STATE as never;
+      if (target.endsWith("skill-contributions.jsonl")) return "" as never;
+      if (target.endsWith("failures.log")) throw enoent();
+      if (target.endsWith("skill-review-state.json")) {
+        return JSON.stringify({
+          "enterprise-review": {
+            stage: "enterprise",
+            status: "enterprise-ready",
+            notes: "Approved for governed rollout.",
+            draftBody: "Use this version for enterprise review.",
+            updatedAt: "2026-05-17T12:00:00.000Z",
+            updatedBy: "admin@example.com",
+            approvedAt: "2026-05-17T12:00:00.000Z",
+          },
+        }) as never;
+      }
+      if (target.endsWith("enterprise-review/SKILL.md")) {
+        return `---\nname: Enterprise Review\ndescription: Governance workflow for approving reusable enterprise skills.\ntags: governance,skills\n---\n\n# Enterprise Review\n\nUse when a skill needs approval before broad use.` as never;
+      }
+      throw enoent();
+    });
+
+    const res = await GET();
+    const body = await res.json();
+
+    expect(body.skillDetails).toHaveLength(1);
+    expect(body.skillDetails[0]).toMatchObject({
+      name: "enterprise-review",
+      title: "Enterprise Review",
+      stage: "enterprise",
+      reviewStatus: "enterprise-ready",
+      reviewNotes: "Approved for governed rollout.",
+      draftBody: "Use this version for enterprise review.",
+    });
+  });
 });

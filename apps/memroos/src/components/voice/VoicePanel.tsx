@@ -393,7 +393,7 @@ export function VoicePanel() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900/30 px-4 py-3">
+    <div className="rounded-xl border border-stone-200 bg-white/75 px-4 py-3">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
@@ -404,7 +404,7 @@ export function VoicePanel() {
           <select
             value={selectedAgentId}
             onChange={(e) => { setSelectedAgent(e.target.value); setHistory([]); }}
-            className="ml-1 rounded-md border border-slate-700/60 bg-slate-800/60 px-2 py-0.5 text-xs text-slate-300 focus:outline-none focus:border-amber-500/50"
+            className="ml-1 rounded-md border border-stone-300 bg-stone-100 px-2 py-0.5 text-xs text-stone-500 focus:outline-none focus:border-amber-500/50"
           >
             {(["CLIs", "Runtime subagents", "Paperclip project agents", "MemroOS system"] as VoiceAgentOption["group"][]).map((group) => {
               const groupOptions = agentOptions.filter((option) => option.group === group);
@@ -421,14 +421,14 @@ export function VoicePanel() {
             })}
           </select>
           {selectedOption && (
-            <span className="hidden max-w-[22rem] truncate text-[11px] text-slate-500 md:inline">
+            <span className="hidden max-w-[22rem] truncate text-[11px] text-stone-500 md:inline">
               {selectedOption.detail}
             </span>
           )}
         </div>
         <button
           onClick={() => setCollapsed((c) => !c)}
-          className="text-slate-500 hover:text-slate-300 transition-colors"
+          className="text-stone-500 hover:text-stone-500 transition-colors"
           aria-label={collapsed ? "Expand" : "Collapse"}
         >
           <svg xmlns="http://www.w3.org/2000/svg"
@@ -443,13 +443,13 @@ export function VoicePanel() {
       {!collapsed && (
         <>
           {/* Tab bar */}
-          <div className="flex gap-1 w-fit rounded-lg bg-slate-800/60 p-1 mb-3">
+          <div className="flex gap-1 w-fit rounded-lg bg-stone-100 p-1 mb-3">
             {(["chat", "voice"] as const).map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)}
                 className={["px-3 py-1 rounded-md text-xs font-medium capitalize transition-colors",
                   activeTab === tab
                     ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                    : "text-slate-400 hover:text-slate-200",
+                    : "text-stone-500 hover:text-stone-800",
                 ].join(" ")}>
                 {tab}
               </button>
@@ -468,13 +468,13 @@ export function VoicePanel() {
               history.map((msg, i) => (
                 <div key={i} className={`text-xs rounded-lg px-3 py-2 ${
                   msg.role === "user"
-                    ? "bg-slate-700/70 text-slate-200 ml-6"
-                    : "bg-slate-800/80 text-slate-100 mr-6 border border-slate-700/40"
+                    ? "bg-slate-700/70 text-stone-800 ml-6"
+                    : "bg-stone-100 text-stone-900 mr-6 border border-stone-300"
                 }`}>
-                  <span className="font-semibold text-slate-400 text-[10px] block mb-0.5">
+                  <span className="font-semibold text-stone-500 text-[10px] block mb-0.5">
                     {msg.role === "user" ? "You" : selectedAgentLabel}
                   </span>
-                  <span className={msg.pending ? "text-slate-500 animate-pulse" : ""}>
+                  <span className={msg.pending ? "text-stone-500 animate-pulse" : ""}>
                     {msg.content || (msg.pending ? "…" : "")}
                   </span>
                 </div>
@@ -493,7 +493,7 @@ export function VoicePanel() {
                 placeholder={`Message ${selectedAgentLabel}… (Enter to send)`}
                 rows={2}
                 disabled={loading}
-                className="flex-1 resize-none rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-2 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-500/50"
+                className="flex-1 resize-none rounded-lg border border-stone-300 bg-stone-100 px-3 py-2 text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:border-amber-500/50"
               />
               <button
                 onClick={onSendClick}
@@ -531,7 +531,7 @@ export function VoicePanel() {
               </button>
 
               {/* Status text */}
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-stone-500">
                 {loading ? (
                   <span className="text-amber-400 animate-pulse">{selectedAgentLabel} is thinking…</span>
                 ) : speaking ? (
@@ -551,7 +551,7 @@ export function VoicePanel() {
 
               {/* Interim transcript (what it's hearing) */}
               {interimText && (
-                <p className="text-xs text-slate-500 italic px-4 text-center">
+                <p className="text-xs text-stone-500 italic px-4 text-center">
                   &ldquo;{interimText}&rdquo;
                 </p>
               )}
@@ -560,7 +560,7 @@ export function VoicePanel() {
               {speaking && (
                 <button
                   onClick={() => { if (audioRef.current) { audioRef.current.pause(); audioRef.current = null; } setSpeaking(false); }}
-                  className="text-xs text-slate-500 hover:text-slate-300 underline"
+                  className="text-xs text-stone-500 hover:text-stone-500 underline"
                 >
                   Stop speaking
                 </button>

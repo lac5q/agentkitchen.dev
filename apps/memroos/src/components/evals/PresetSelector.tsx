@@ -5,8 +5,8 @@ import type { EvalWeights } from "@/lib/evals/types";
 
 function WeightBadge({ label, value }: { label: string; value: number }) {
   return (
-    <span className="flex items-center gap-1 rounded border border-slate-700 bg-slate-800 px-2 py-0.5 font-mono text-[11px] text-slate-300">
-      <span className="text-slate-500">{label}</span>
+    <span className="flex items-center gap-1 rounded border border-stone-300 bg-stone-100 px-2 py-0.5 font-mono text-[11px] text-stone-600">
+      <span className="text-stone-500">{label}</span>
       <span className="text-amber-300">{Math.round(value * 100)}%</span>
     </span>
   );
@@ -46,14 +46,14 @@ export function PresetSelector() {
   return (
     <div className="mb-4 flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
+        <span className="text-[11px] font-medium uppercase tracking-wide text-stone-500">
           Weight Preset
         </span>
         <select
           value={activePreset ?? "custom"}
           onChange={handleChange}
           disabled={mutation.isPending}
-          className="border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-100 focus:border-amber-500 focus:outline-none disabled:opacity-50"
+          className="border border-stone-300 bg-white px-3 py-1 text-xs text-stone-950 focus:border-amber-500 focus:outline-none disabled:opacity-50"
         >
           <option value="custom">Custom (manual weights)</option>
           {Object.keys(presets).map((name) => (
@@ -63,7 +63,7 @@ export function PresetSelector() {
           ))}
         </select>
         {mutation.isPending && (
-          <span className="text-xs text-slate-500">Saving...</span>
+          <span className="text-xs text-stone-500">Saving...</span>
         )}
         {mutation.isError && (
           <span className="text-xs text-rose-400">
@@ -74,7 +74,7 @@ export function PresetSelector() {
 
       {activePreset && presets[activePreset] && (
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-slate-500">Active preset weights:</span>
+          <span className="text-[11px] text-stone-500">Active preset weights:</span>
           <PresetWeightBadges weights={presets[activePreset]} />
         </div>
       )}

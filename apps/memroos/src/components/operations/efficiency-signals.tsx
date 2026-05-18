@@ -40,7 +40,7 @@ export function EfficiencySignals() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(5, 1fr)",
+            gridTemplateColumns: "repeat(auto-fit, minmax(185px, 1fr))",
           }}
         >
           {MOCK_EFFICIENCY.map((m, i) => {
@@ -56,6 +56,7 @@ export function EfficiencySignals() {
                   display: "flex",
                   flexDirection: "column",
                   gap: 6,
+                  minWidth: 0,
                 }}
               >
                 <div

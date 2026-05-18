@@ -100,7 +100,7 @@ export function DemoMode({ onHighlight }: DemoModeProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.3 }}
-              className="text-sm text-slate-300 text-center max-w-lg"
+              className="text-sm text-stone-500 text-center max-w-lg"
             >
               {currentStep.caption}
             </motion.p>

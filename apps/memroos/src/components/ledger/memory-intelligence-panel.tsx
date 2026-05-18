@@ -22,8 +22,8 @@ function formatRelativeTime(iso: string): string {
 function InfoTooltip({ text }: { text: string }) {
   return (
     <div className="group relative inline-flex">
-      <span className="cursor-help text-xs text-slate-500 hover:text-slate-300">ⓘ</span>
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-60 -translate-x-1/2 rounded-md border border-slate-700 bg-slate-800 px-2.5 py-2 text-xs leading-snug text-slate-300 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+      <span className="cursor-help text-xs text-stone-500 hover:text-stone-600">ⓘ</span>
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-60 -translate-x-1/2 rounded-md border border-stone-300 bg-stone-100 px-2.5 py-2 text-xs leading-snug text-stone-600 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
         {text}
         <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-700" />
       </div>
@@ -92,7 +92,7 @@ export function MemoryIntelligencePanel() {
       ? "text-rose-400"
       : lastRun?.status === "running"
       ? "text-sky-400"
-      : "text-slate-400";
+      : "text-stone-500";
 
   const evalPassRate = latestEval ? `${(latestEval.summary.passRate * 100).toFixed(1)}%` : dash;
   const evalStatusColor =
@@ -100,15 +100,15 @@ export function MemoryIntelligencePanel() {
       ? "text-emerald-400"
       : latestEval?.status === "failed"
         ? "text-rose-400"
-        : "text-slate-400";
+        : "text-stone-500";
 
   // ── button classes ──────────────────────────────────────────────────────────
 
   const buttonBase =
     "px-3 py-2 rounded-lg text-xs font-medium border transition-colors";
   const buttonClasses: Record<ButtonState, string> = {
-    idle: `${buttonBase} bg-slate-800/60 text-slate-400 border-slate-700/50 hover:text-slate-200`,
-    loading: `${buttonBase} bg-slate-800/60 text-slate-400 border-slate-700/50 opacity-60 cursor-not-allowed`,
+    idle: `${buttonBase} bg-stone-100 text-stone-500 border-stone-300 hover:text-stone-700`,
+    loading: `${buttonBase} bg-stone-100 text-stone-500 border-stone-300 opacity-60 cursor-not-allowed`,
     success: `${buttonBase} border-emerald-500/30 text-emerald-400 bg-emerald-500/15`,
     error: `${buttonBase} border-red-500/30 text-red-400 bg-red-500/15`,
   };
@@ -179,15 +179,15 @@ export function MemoryIntelligencePanel() {
 
           {/* Ingested sources */}
           {healthTiers.length > 0 && (
-            <div className="rounded-lg border border-slate-800 bg-slate-900/30 p-3">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+            <div className="rounded-lg border border-stone-200 bg-white/90 p-3">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">
                 Tier Health
               </p>
               <div className="grid gap-2 sm:grid-cols-3">
                 {healthTiers.map((tier) => (
-                  <div key={tier.tier} className="rounded-md border border-slate-700/50 bg-slate-800/40 px-3 py-2">
+                  <div key={tier.tier} className="rounded-md border border-stone-300 bg-stone-100 px-3 py-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-medium capitalize text-slate-300">{tier.tier}</span>
+                      <span className="text-xs font-medium capitalize text-stone-600">{tier.tier}</span>
                       <span
                         className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
                           tier.status === "up"
@@ -202,12 +202,12 @@ export function MemoryIntelligencePanel() {
                         {tier.status}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-slate-500">{tier.backend}</p>
+                    <p className="mt-1 text-xs text-stone-500">{tier.backend}</p>
                     {tier.detail && (
                       <p className="mt-1 text-xs text-amber-300">{tier.detail}</p>
                     )}
                     {typeof tier.count === "number" && (
-                      <p className="mt-1 text-xs text-slate-400">{tier.count.toLocaleString()} writes</p>
+                      <p className="mt-1 text-xs text-stone-500">{tier.count.toLocaleString()} writes</p>
                     )}
                   </div>
                 ))}
@@ -215,57 +215,57 @@ export function MemoryIntelligencePanel() {
             </div>
           )}
 
-          <div className="rounded-lg border border-slate-800 bg-slate-900/30 p-3">
+          <div className="rounded-lg border border-stone-200 bg-white/90 p-3">
             <div className="mb-2 flex items-center gap-2">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+              <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
                 Recall Quality
               </p>
               <InfoTooltip text="Latest memory eval result. This checks recall quality and timing separately from whether the memory services are merely reachable." />
             </div>
             {memoryEval.isLoading ? (
-              <div className="h-10 rounded-md bg-slate-800/30" />
+              <div className="h-10 rounded-md bg-stone-100" />
             ) : latestEval ? (
               <div className="grid gap-2 sm:grid-cols-4">
-                <div className="rounded-md border border-slate-700/50 bg-slate-800/40 px-3 py-2">
-                  <p className="text-xs text-slate-500">Pass Rate</p>
+                <div className="rounded-md border border-stone-300 bg-stone-100 px-3 py-2">
+                  <p className="text-xs text-stone-500">Pass Rate</p>
                   <p className={`mt-1 text-lg font-semibold ${evalStatusColor}`}>{evalPassRate}</p>
                 </div>
-                <div className="rounded-md border border-slate-700/50 bg-slate-800/40 px-3 py-2">
-                  <p className="text-xs text-slate-500">Cases</p>
-                  <p className="mt-1 text-sm font-medium text-slate-300">
+                <div className="rounded-md border border-stone-300 bg-stone-100 px-3 py-2">
+                  <p className="text-xs text-stone-500">Cases</p>
+                  <p className="mt-1 text-sm font-medium text-stone-600">
                     {latestEval.summary.passedCases}/{latestEval.summary.totalCases} passing
                   </p>
                 </div>
-                <div className="rounded-md border border-slate-700/50 bg-slate-800/40 px-3 py-2">
-                  <p className="text-xs text-slate-500">p95 Latency</p>
-                  <p className="mt-1 text-sm font-medium text-slate-300">{latestEval.summary.p95LatencyMs} ms</p>
+                <div className="rounded-md border border-stone-300 bg-stone-100 px-3 py-2">
+                  <p className="text-xs text-stone-500">p95 Latency</p>
+                  <p className="mt-1 text-sm font-medium text-stone-600">{latestEval.summary.p95LatencyMs} ms</p>
                 </div>
-                <div className="rounded-md border border-slate-700/50 bg-slate-800/40 px-3 py-2">
-                  <p className="text-xs text-slate-500">Tier Failures</p>
-                  <p className="mt-1 text-sm font-medium text-slate-300">
+                <div className="rounded-md border border-stone-300 bg-stone-100 px-3 py-2">
+                  <p className="text-xs text-stone-500">Tier Failures</p>
+                  <p className="mt-1 text-sm font-medium text-stone-600">
                     {latestEval.summary.tierFailures.length ? latestEval.summary.tierFailures.join(", ") : "none"}
                   </p>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-slate-500">No eval run recorded yet.</p>
+              <p className="text-xs text-stone-500">No eval run recorded yet.</p>
             )}
           </div>
 
           {/* Ingested sources */}
           {sources.length > 0 && (
-            <div className="rounded-lg border border-slate-800 bg-slate-900/30 p-3">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+            <div className="rounded-lg border border-stone-200 bg-white/90 p-3">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">
                 Indexed Sources
               </p>
               <div className="flex flex-wrap gap-2">
                 {sources.map((s) => (
                   <span
                     key={s.agent_id}
-                    className="flex items-center gap-1.5 rounded border border-slate-700/50 bg-slate-800/40 px-2 py-1 text-xs"
+                    className="flex items-center gap-1.5 rounded border border-stone-300 bg-stone-100 px-2 py-1 text-xs"
                   >
-                    <span className="font-medium text-slate-300">{s.agent_id}</span>
-                    <span className="text-slate-500">{s.cnt.toLocaleString()}</span>
+                    <span className="font-medium text-stone-600">{s.agent_id}</span>
+                    <span className="text-stone-500">{s.cnt.toLocaleString()}</span>
                   </span>
                 ))}
               </div>
@@ -274,22 +274,22 @@ export function MemoryIntelligencePanel() {
 
           {/* Tier stats */}
           {tierStats.length > 0 && (
-            <div className="rounded-lg border border-slate-800 bg-slate-900/30 p-3">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+            <div className="rounded-lg border border-stone-200 bg-white/90 p-3">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-500">
                 Memory Tiers
               </p>
               <div className="flex flex-wrap gap-3">
                 {tierStats.map((tier) => (
                   <div
                     key={tier.tier}
-                    className="flex items-center gap-2 rounded-md border border-slate-700/50 bg-slate-800/40 px-3 py-1.5"
+                    className="flex items-center gap-2 rounded-md border border-stone-300 bg-stone-100 px-3 py-1.5"
                   >
-                    <span className="text-xs font-medium text-slate-300">
+                    <span className="text-xs font-medium text-stone-600">
                       {tier.tier}
                     </span>
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-stone-500">
                       {tier.count} ·{" "}
-                      <span className="text-slate-400">
+                      <span className="text-stone-500">
                         {Math.round(tier.avg_score * 100)}%
                       </span>
                     </span>

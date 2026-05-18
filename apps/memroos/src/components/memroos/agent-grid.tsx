@@ -63,7 +63,7 @@ export function AgentGrid({ agents, sections }: AgentGridProps) {
   if (agents !== undefined) {
     if (agents.length === 0) {
       return (
-        <div className="flex items-center justify-center py-20 text-slate-500 text-sm">
+        <div className="flex items-center justify-center py-20 text-stone-500 text-sm">
           No agents found.
         </div>
       );
@@ -93,7 +93,7 @@ export function AgentGrid({ agents, sections }: AgentGridProps) {
   // Sections mode
   if (!sections || sections.length === 0) {
     return (
-      <div className="flex items-center justify-center py-20 text-slate-500 text-sm">
+      <div className="flex items-center justify-center py-20 text-stone-500 text-sm">
         No agents found.
       </div>
     );
@@ -103,7 +103,7 @@ export function AgentGrid({ agents, sections }: AgentGridProps) {
     <>
       {sections.map((section) => (
         <div key={section.title} className="mb-8">
-          <h2 className="text-lg font-semibold text-slate-300 mb-4">{section.title}</h2>
+          <h2 className="text-lg font-semibold text-stone-500 mb-4">{section.title}</h2>
           {section.agents.length === 0 ? (
             <p className="text-slate-600 text-sm">No agents in this group</p>
           ) : (

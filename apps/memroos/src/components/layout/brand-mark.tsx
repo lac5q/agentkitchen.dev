@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { NOC } from "@/lib/noc-theme";
 
 interface KangarooMarkProps {
   className?: string;
@@ -8,9 +9,14 @@ export function KangarooMark({ className }: KangarooMarkProps) {
   return (
     <span
       className={cn(
-        "inline-flex h-10 w-10 items-center justify-center rounded-[10px] border border-[#c9c9c2] bg-[#fafaf7] text-[1.55rem] leading-none shadow-[0_8px_22px_rgba(15,15,14,0.08)]",
+        "inline-flex h-10 w-10 items-center justify-center rounded-[10px] border text-[1.55rem] leading-none",
         className
       )}
+      style={{
+        borderColor: NOC.ruleStrong,
+        background: NOC.cream,
+        boxShadow: `0 8px 22px color-mix(in srgb, ${NOC.ink} 8%, transparent)`,
+      }}
       role="img"
       aria-label="MemroOS kangaroo logo"
     >

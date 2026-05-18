@@ -46,52 +46,52 @@ export function AgentCard({ agent, onClick, harnessName, childCount = 0 }: Agent
 
   return (
     <Card
-      className={`cursor-pointer border bg-slate-900/50 p-4 transition-colors hover:border-slate-700 hover:bg-slate-800/60 ${
+      className={`cursor-pointer border bg-white/85 p-4 transition-colors hover:border-stone-300 hover:bg-stone-100 ${
         isSubagent
           ? "border-amber-700/50"
           : isHarness
             ? "border-sky-700/60 shadow-[0_0_18px_rgba(14,165,233,0.08)]"
-            : "border-slate-800"
+            : "border-stone-200"
       }`}
       onClick={() => onClick(agent)}
     >
       <div className="flex items-start gap-3">
         {/* Status ring avatar */}
         <div
-          className={`h-10 w-10 shrink-0 rounded-full ring-2 ${ringClass} flex items-center justify-center bg-slate-800 text-sm font-bold text-slate-200 uppercase`}
+          className={`h-10 w-10 shrink-0 rounded-full ring-2 ${ringClass} flex items-center justify-center bg-stone-100 text-sm font-bold text-stone-800 uppercase`}
         >
           {agent.isRemote ? "🌐" : agent.name.slice(0, 2)}
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="truncate font-semibold text-slate-100 text-sm">
+            <span className="truncate font-semibold text-stone-900 text-sm">
               {agent.name}
             </span>
             <span className={`h-2 w-2 shrink-0 rounded-full ${dotClass}`} />
           </div>
-          <p className="text-xs text-slate-400 truncate">{agent.role}</p>
+          <p className="text-xs text-stone-500 truncate">{agent.role}</p>
 
           {(harnessName || isHarness) && (
-            <div className="mt-2 rounded-lg border border-slate-800 bg-slate-950/50 px-2 py-1.5 text-xs">
+            <div className="mt-2 rounded-lg border border-stone-200 bg-white/90 px-2 py-1.5 text-xs">
               {isSubagent ? (
                 <p className="truncate text-amber-300">
-                  <span className="text-slate-500">Subagent of</span> {harnessName ?? agent.masterId}
+                  <span className="text-stone-500">Subagent of</span> {harnessName ?? agent.masterId}
                 </p>
               ) : isHarness ? (
                 <p className="truncate text-sky-300">
-                  <span className="text-slate-500">Harness for</span> {childCount} subagent{childCount === 1 ? "" : "s"}
+                  <span className="text-stone-500">Harness for</span> {childCount} subagent{childCount === 1 ? "" : "s"}
                 </p>
               ) : (
-                <p className="truncate text-slate-300">
-                  <span className="text-slate-500">Harness</span> {harnessName}
+                <p className="truncate text-stone-500">
+                  <span className="text-stone-500">Harness</span> {harnessName}
                 </p>
               )}
             </div>
           )}
 
           <div className="mt-2 flex items-center gap-2 flex-wrap">
-            <Badge variant="outline" className="text-xs border-slate-700 text-slate-300">
+            <Badge variant="outline" className="text-xs border-stone-300 text-stone-500">
               {platformLabel}
             </Badge>
             {isHarness && (
@@ -122,12 +122,12 @@ export function AgentCard({ agent, onClick, harnessName, childCount = 0 }: Agent
           </div>
 
           {agent.currentTask && (
-            <p className="mt-2 text-xs text-slate-400 truncate">
+            <p className="mt-2 text-xs text-stone-500 truncate">
               <span className="text-amber-500">Task:</span> {agent.currentTask}
             </p>
           )}
 
-          <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+          <div className="mt-2 flex items-center justify-between text-xs text-stone-500">
             <span>Heartbeat: {timeAgo}</span>
             <div className="flex items-center gap-2">
               {agent.isRemote && agent.latencyMs ? (

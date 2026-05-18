@@ -203,32 +203,6 @@
     color: #4a4a45;
   }
 
-  .ak-workspace [class*="bg-slate-950"],
-  .ak-workspace [class*="bg-slate-900"],
-  .ak-workspace [class*="bg-slate-800"] {
-    background-color: rgba(255, 255, 255, 0.78) !important;
-  }
-
-  .ak-workspace [class*="bg-slate-950"] {
-    background-color: rgba(255, 255, 255, 0.9) !important;
-  }
-
-  .ak-workspace [class*="border-slate-900"],
-  .ak-workspace [class*="border-slate-800"],
-  .ak-workspace [class*="border-slate-700"] {
-    border-color: #e4e4dd !important;
-  }
-
-  .ak-workspace [class*="text-slate-50"],
-  .ak-workspace [class*="text-slate-100"],
-  .ak-workspace [class*="text-slate-200"] {
-    color: #1f1f1c !important;
-  }
-
-  .ak-workspace [class*="text-slate-300"] {
-    color: #4a4a45 !important;
-  }
-
   .ak-workspace [class*="text-slate-400"],
   .ak-workspace [class*="text-slate-500"] {
     color: #4a4a45 !important;

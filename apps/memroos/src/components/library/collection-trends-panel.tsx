@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import { useKnowledgeTrends, type CollectionTrend, type TimeSeriesWindow } from "@/lib/api-client";
+import { NOC } from "@/lib/noc-theme";
 import type { KnowledgeCollection } from "@/types";
 
 const WINDOWS: { label: string; value: TimeSeriesWindow }[] = [
@@ -20,11 +21,11 @@ const WINDOWS: { label: string; value: TimeSeriesWindow }[] = [
 ];
 
 const CATEGORY_COLORS: Record<KnowledgeCollection["category"], string> = {
-  business: "#0ea5e9",
-  agents: "#10b981",
-  marketing: "#f59e0b",
-  product: "#a855f7",
-  other: "#64748b",
+  business: NOC.info,
+  agents: NOC.success,
+  marketing: NOC.warn,
+  product: NOC.terra,
+  other: NOC.cold,
 };
 
 function formatFreshness(lastUpdated: string | null) {
@@ -46,10 +47,10 @@ function TrendTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs shadow-xl">
-      <p className="mb-1 font-medium text-slate-200">{label}</p>
-      <p className="text-amber-300">{payload[0].value.toLocaleString()} new/updated</p>
-      <p className="text-slate-500">{payload[0].payload.cumulative.toLocaleString()} in window</p>
+    <div className="rounded-lg border px-3 py-2 text-xs shadow-xl" style={{ borderColor: NOC.ruleStrong, background: NOC.paper }}>
+      <p className="mb-1 font-medium" style={{ color: NOC.muted }}>{label}</p>
+      <p style={{ color: NOC.warn }}>{payload[0].value.toLocaleString()} new/updated</p>
+      <p style={{ color: NOC.soft }}>{payload[0].payload.cumulative.toLocaleString()} in window</p>
     </div>
   );
 }
@@ -59,20 +60,22 @@ function CollectionTrendCard({ trend }: { trend: CollectionTrend }) {
   const stagnant = trend.recentFiles === 0;
 
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+    <div className="rounded-xl border p-4" style={{ borderColor: NOC.rule, background: NOC.paper }}>
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-slate-100" title={trend.name}>
+          <p className="truncate text-sm font-semibold" style={{ color: NOC.ink }} title={trend.name}>
             {trend.name}
           </p>
-          <p className="mt-0.5 text-xs text-slate-500">
+          <p className="mt-0.5 text-xs" style={{ color: NOC.soft }}>
             {trend.totalFiles.toLocaleString()} files · {formatFreshness(trend.lastUpdated)}
           </p>
         </div>
         <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${
-            stagnant ? "bg-rose-500/10 text-rose-300" : "bg-emerald-500/10 text-emerald-300"
-          }`}
+          className="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold"
+          style={{
+            background: stagnant ? NOC.peach : NOC.successBg,
+            color: stagnant ? NOC.terra : NOC.success,
+          }}
         >
           {trend.recentFiles.toLocaleString()} recent
         </span>
@@ -80,7 +83,7 @@ function CollectionTrendCard({ trend }: { trend: CollectionTrend }) {
 
       <ResponsiveContainer width="100%" height={120}>
         <LineChart data={trend.points} margin={{ top: 5, right: 8, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
+          <CartesianGrid strokeDasharray="3 3" stroke={NOC.rule} />
           <XAxis dataKey="bucket" hide />
           <YAxis hide allowDecimals={false} />
           <Tooltip content={<TrendTooltip />} />
@@ -107,12 +110,12 @@ export function CollectionTrendsPanel() {
     <section className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-slate-200">Collection Activity</h3>
-          <p className="mt-1 text-sm text-slate-500">
+          <h3 className="text-lg font-semibold text-stone-700">Collection Activity</h3>
+          <p className="mt-1 text-sm text-stone-500">
             Per-collection new/updated knowledge files over time. Flat lines reveal stalled collection intake.
           </p>
         </div>
-        <div className="flex gap-1 rounded-lg border border-slate-800 bg-slate-950 p-1">
+        <div className="flex gap-1 rounded-lg border border-stone-200 bg-white p-1">
           {WINDOWS.map((option) => (
             <button
               key={option.value}
@@ -120,7 +123,7 @@ export function CollectionTrendsPanel() {
               className={`rounded-md px-3 py-1 text-xs font-medium transition-colors ${
                 option.value === window
                   ? "bg-amber-500/15 text-amber-300"
-                  : "text-slate-500 hover:text-slate-300"
+                  : "text-stone-500 hover:text-stone-600"
               }`}
             >
               {option.label}
@@ -130,13 +133,13 @@ export function CollectionTrendsPanel() {
       </div>
 
       {trends.isLoading && (
-        <div className="flex h-40 items-center justify-center rounded-xl border border-slate-800 bg-slate-900/50">
+        <div className="flex h-40 items-center justify-center rounded-xl border border-stone-200 bg-white/90">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
         </div>
       )}
 
       {!trends.isLoading && collections.length === 0 && (
-        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6 text-sm text-slate-500">
+        <div className="rounded-xl border border-stone-200 bg-white/90 p-6 text-sm text-stone-500">
           No collection activity data for this period.
         </div>
       )}

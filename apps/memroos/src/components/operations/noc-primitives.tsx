@@ -128,7 +128,7 @@ export function SampleChip() {
         padding: "2px 6px",
         background: NOC.warnBg,
         color: NOC.warn,
-        border: `1px solid #ecd9b1`,
+        border: `1px solid ${NOC.warnBg}`,
         textTransform: "uppercase",
         fontFamily: NOC_FONT_MONO,
       }}

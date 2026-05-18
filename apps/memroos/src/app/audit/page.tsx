@@ -5,6 +5,8 @@ import { useAuditEntries, useAuditExportUrl } from "@/lib/api-client";
 import type { AuditEntriesFilter } from "@/lib/api-client";
 import { AUDIT_EVENT_TYPES } from "@/lib/audit/event-types";
 import type { AuditEntry } from "@/lib/audit/schema";
+import { Btn, Card, PageHeader, Pill } from "@/components/shared/ui";
+import { NOC } from "@/lib/noc-theme";
 
 const ALL_EVENT_TYPES = Object.values(AUDIT_EVENT_TYPES);
 
@@ -23,23 +25,21 @@ function truncate(s: string | null | undefined, n: number): string {
 
 function AuditRow({ entry }: { entry: AuditEntry }) {
   return (
-    <tr className="border-b border-[#e4e4dd] hover:bg-[#f9f9f6]">
-      <td className="py-2 px-3 text-xs text-[#4a4a45] whitespace-nowrap">
+    <tr style={{ borderBottom: `1px solid ${NOC.rule}` }}>
+      <td className="py-2 px-3 text-xs whitespace-nowrap" style={{ color: NOC.muted }}>
         {formatTimestamp(entry.created_at)}
       </td>
-      <td className="py-2 px-3 text-xs font-mono text-[#0f0f0e] max-w-[120px] truncate" title={entry.actor_id}>
+      <td className="py-2 px-3 text-xs font-mono max-w-[120px] truncate" style={{ color: NOC.ink }} title={entry.actor_id}>
         {entry.actor_id}
       </td>
       <td className="py-2 px-3">
-        <span className="inline-block rounded px-1.5 py-0.5 text-[11px] font-semibold bg-[#e4e4dd] text-[#4a4a45]">
-          {entry.event_type}
-        </span>
+        <Pill>{entry.event_type}</Pill>
       </td>
-      <td className="py-2 px-3 text-xs text-[#4a4a45]">{entry.entity_type}</td>
-      <td className="py-2 px-3 text-xs font-mono text-[#4a4a45] max-w-[150px] truncate" title={entry.entity_id}>
+      <td className="py-2 px-3 text-xs" style={{ color: NOC.muted }}>{entry.entity_type}</td>
+      <td className="py-2 px-3 text-xs font-mono max-w-[150px] truncate" style={{ color: NOC.muted }} title={entry.entity_id}>
         {entry.entity_id}
       </td>
-      <td className="py-2 px-3 text-xs text-[#4a4a45] max-w-[200px]" title={entry.reason ?? ""}>
+      <td className="py-2 px-3 text-xs max-w-[200px]" style={{ color: NOC.muted }} title={entry.reason ?? ""}>
         {truncate(entry.reason, 80)}
       </td>
     </tr>
@@ -93,21 +93,22 @@ export default function AuditPage() {
     : [...allEntries, ...(data?.entries ?? [])];
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-4 p-6">
-      <div>
-        <h1 className="text-2xl font-bold text-[#0f0f0e]">Audit Log</h1>
-        <p className="mt-1 text-sm text-[#73736b]">Immutable decision history — every agent action, SEAL proposal, and eval run</p>
-      </div>
-
+    <div className="flex h-full min-h-0 flex-col gap-4">
+      <PageHeader
+        eyebrow="Governance"
+        title="Audit Log"
+        hint="Immutable decision history: every agent action, SEAL proposal, and eval run."
+      />
       <div className="flex gap-4 flex-wrap">
         {/* Filter sidebar */}
-        <aside className="w-64 shrink-0 space-y-4 rounded-lg border border-[#c9c9c2] bg-[#f9f9f6] p-4">
-          <h2 className="text-sm font-semibold text-[#0f0f0e]">Filters</h2>
+        <Card className="w-64 shrink-0 space-y-4" style={{ background: NOC.fog }}>
+          <h2 className="text-sm font-semibold" style={{ color: NOC.ink }}>Filters</h2>
 
           <div>
-            <label className="block text-xs text-[#4a4a45] mb-1">Agent ID</label>
+            <label className="block text-xs mb-1" style={{ color: NOC.muted }}>Agent ID</label>
             <input
-              className="w-full rounded border border-[#c9c9c2] px-2 py-1 text-sm"
+              className="w-full border px-2 py-1 text-sm"
+              style={{ borderColor: NOC.ruleStrong, color: NOC.ink }}
               value={agentInput}
               onChange={(e) => setAgentInput(e.target.value)}
               placeholder="agent-id"
@@ -115,9 +116,10 @@ export default function AuditPage() {
           </div>
 
           <div>
-            <label className="block text-xs text-[#4a4a45] mb-1">Actor ID</label>
+            <label className="block text-xs mb-1" style={{ color: NOC.muted }}>Actor ID</label>
             <input
-              className="w-full rounded border border-[#c9c9c2] px-2 py-1 text-sm"
+              className="w-full border px-2 py-1 text-sm"
+              style={{ borderColor: NOC.ruleStrong, color: NOC.ink }}
               value={actorInput}
               onChange={(e) => setActorInput(e.target.value)}
               placeholder="user or system"
@@ -125,9 +127,10 @@ export default function AuditPage() {
           </div>
 
           <div>
-            <label className="block text-xs text-[#4a4a45] mb-1">Event Type</label>
+            <label className="block text-xs mb-1" style={{ color: NOC.muted }}>Event Type</label>
               <select
-                className="w-full rounded border border-[#c9c9c2] px-2 py-1 text-sm"
+                className="w-full border px-2 py-1 text-sm"
+                style={{ borderColor: NOC.ruleStrong, color: NOC.ink }}
                 value={selectedEventType}
                 onChange={(e) => setSelectedEventType(e.target.value)}
               >
@@ -139,51 +142,56 @@ export default function AuditPage() {
           </div>
 
           <div>
-            <label className="block text-xs text-[#4a4a45] mb-1">From</label>
+            <label className="block text-xs mb-1" style={{ color: NOC.muted }}>From</label>
             <input
               type="datetime-local"
-              className="w-full rounded border border-[#c9c9c2] px-2 py-1 text-sm"
+              className="w-full border px-2 py-1 text-sm"
+              style={{ borderColor: NOC.ruleStrong, color: NOC.ink }}
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
             />
           </div>
 
           <div>
-            <label className="block text-xs text-[#4a4a45] mb-1">To</label>
+            <label className="block text-xs mb-1" style={{ color: NOC.muted }}>To</label>
             <input
               type="datetime-local"
-              className="w-full rounded border border-[#c9c9c2] px-2 py-1 text-sm"
+              className="w-full border px-2 py-1 text-sm"
+              style={{ borderColor: NOC.ruleStrong, color: NOC.ink }}
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
             />
           </div>
 
-          <button
+          <Btn
             onClick={applyFilter}
-            className="w-full rounded bg-[#7a2a1e] px-3 py-1.5 text-sm font-semibold text-white hover:bg-[#a8392c]"
+            className="w-full rounded px-3 py-1.5 text-sm font-semibold transition"
+            variant="terra"
           >
             Apply Filters
-          </button>
-        </aside>
+          </Btn>
+        </Card>
 
         {/* Main table area */}
         <div className="flex-1 min-w-0 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-[#4a4a45]">
+            <span className="text-sm" style={{ color: NOC.muted }}>
               {isLoading ? "Loading…" : `${displayed.length} entries`}
             </span>
             <div className="flex gap-2">
               <a
                 href={ndjsonUrl}
                 download
-                className="rounded border border-[#c9c9c2] px-3 py-1 text-xs font-medium text-[#4a4a45] hover:bg-[#e4e4dd]"
+                className="border px-3 py-1 text-xs font-medium"
+                style={{ borderColor: NOC.ruleStrong, color: NOC.muted }}
               >
                 Export NDJSON
               </a>
               <a
                 href={csvUrl}
                 download
-                className="rounded border border-[#c9c9c2] px-3 py-1 text-xs font-medium text-[#4a4a45] hover:bg-[#e4e4dd]"
+                className="border px-3 py-1 text-xs font-medium"
+                style={{ borderColor: NOC.ruleStrong, color: NOC.muted }}
               >
                 Export CSV
               </a>
@@ -196,16 +204,13 @@ export default function AuditPage() {
             </div>
           )}
 
-          <div className="overflow-x-auto rounded-lg border border-[#c9c9c2] bg-white">
+          <div className="overflow-x-auto border" style={{ background: NOC.paper, borderColor: NOC.rule }}>
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-[#c9c9c2] bg-[#f9f9f6]">
-                  <th className="py-2 px-3 text-left text-xs font-semibold text-[#4a4a45]">Timestamp</th>
-                  <th className="py-2 px-3 text-left text-xs font-semibold text-[#4a4a45]">Actor</th>
-                  <th className="py-2 px-3 text-left text-xs font-semibold text-[#4a4a45]">Event Type</th>
-                  <th className="py-2 px-3 text-left text-xs font-semibold text-[#4a4a45]">Entity Type</th>
-                  <th className="py-2 px-3 text-left text-xs font-semibold text-[#4a4a45]">Entity ID</th>
-                  <th className="py-2 px-3 text-left text-xs font-semibold text-[#4a4a45]">Reason</th>
+                <tr style={{ background: NOC.fog, borderBottom: `1px solid ${NOC.ruleStrong}` }}>
+                  {["Timestamp", "Actor", "Event Type", "Entity Type", "Entity ID", "Reason"].map((heading) => (
+                    <th key={heading} className="py-2 px-3 text-left text-xs font-semibold" style={{ color: NOC.muted }}>{heading}</th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -214,7 +219,7 @@ export default function AuditPage() {
                 ))}
                 {displayed.length === 0 && !isLoading && (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-sm text-[#73736b]">
+                    <td colSpan={6} className="py-8 text-center text-sm" style={{ color: NOC.soft }}>
                       No audit entries found for the current filters.
                     </td>
                   </tr>
@@ -227,7 +232,8 @@ export default function AuditPage() {
             <div className="flex justify-center">
               <button
                 onClick={loadMore}
-                className="rounded border border-[#c9c9c2] px-4 py-1.5 text-sm font-medium text-[#4a4a45] hover:bg-[#e4e4dd]"
+                className="border px-4 py-1.5 text-sm font-medium"
+                style={{ borderColor: NOC.ruleStrong, color: NOC.muted }}
               >
                 Load more
               </button>

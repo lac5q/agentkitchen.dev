@@ -36,8 +36,8 @@ function formatNum(n: number): string {
 function InfoTooltip({ text }: { text: string }) {
   return (
     <div className="group relative inline-flex">
-      <span className="cursor-help text-xs text-slate-500 hover:text-slate-300">ⓘ</span>
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-60 -translate-x-1/2 rounded-md border border-slate-700 bg-slate-800 px-2.5 py-2 text-xs leading-snug text-slate-300 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+      <span className="cursor-help text-xs text-stone-500 hover:text-stone-600">ⓘ</span>
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-60 -translate-x-1/2 rounded-md border border-stone-300 bg-stone-100 px-2.5 py-2 text-xs leading-snug text-stone-600 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
         {text}
         <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-700" />
       </div>
@@ -105,8 +105,8 @@ export function SqliteHealthPanel() {
   const buttonBase =
     "px-3 py-2 rounded-lg text-xs font-medium border transition-colors";
   const buttonClasses: Record<ButtonState, string> = {
-    idle: `${buttonBase} bg-slate-800/60 text-slate-400 border-slate-700/50 hover:text-slate-200`,
-    loading: `${buttonBase} bg-slate-800/60 text-slate-400 border-slate-700/50 opacity-60 cursor-not-allowed`,
+    idle: `${buttonBase} bg-stone-100 text-stone-500 border-stone-300 hover:text-stone-700`,
+    loading: `${buttonBase} bg-stone-100 text-stone-500 border-stone-300 opacity-60 cursor-not-allowed`,
     success: `${buttonBase} border-emerald-500/30 text-emerald-400 bg-emerald-500/15`,
     error: `${buttonBase} border-red-500/30 text-red-400 bg-red-500/15`,
   };
@@ -160,7 +160,7 @@ export function SqliteHealthPanel() {
         <KpiCard
           label="Last Recall"
           value={lastRecallValue}
-          valueColor="text-slate-100"
+          valueColor="text-stone-950"
         />
       </div>
     </div>

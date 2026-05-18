@@ -13,6 +13,7 @@ import {
 } from "recharts";
 import { useEvalHistory } from "@/lib/api-client";
 import type { EvalRunResult } from "@/lib/evals/types";
+import { NOC } from "@/lib/noc-theme";
 
 interface KpiTimelinePanelProps {
   agentId?: string;
@@ -73,7 +74,7 @@ export function KpiTimelinePanel({ agentId, dateRange }: KpiTimelinePanelProps) 
 
   if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center text-sm text-[#73736b]">
+      <div className="flex h-64 items-center justify-center text-sm" style={{ color: NOC.soft }}>
         Loading timeline...
       </div>
     );
@@ -81,7 +82,7 @@ export function KpiTimelinePanel({ agentId, dateRange }: KpiTimelinePanelProps) 
 
   if (error) {
     return (
-      <div className="flex h-64 items-center justify-center text-sm text-red-500">
+      <div className="flex h-64 items-center justify-center text-sm" style={{ color: NOC.terra }}>
         Failed to load timeline data.
       </div>
     );
@@ -89,7 +90,7 @@ export function KpiTimelinePanel({ agentId, dateRange }: KpiTimelinePanelProps) 
 
   if (points.length === 0) {
     return (
-      <div className="flex h-64 items-center justify-center text-sm text-[#73736b]">
+      <div className="flex h-64 items-center justify-center text-sm" style={{ color: NOC.soft }}>
         No eval runs found
         {agentId ? ` for agent ${agentId}` : ""}.
       </div>
@@ -97,9 +98,9 @@ export function KpiTimelinePanel({ agentId, dateRange }: KpiTimelinePanelProps) 
   }
 
   return (
-    <div className="rounded-sm border border-[#c9c9c2] bg-white p-4">
+    <div className="rounded-sm border p-4" style={{ borderColor: NOC.ruleStrong, background: NOC.paper }}>
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#0f0f0e]">W Score Timeline</h3>
+        <h3 className="text-sm font-semibold" style={{ color: NOC.ink }}>W Score Timeline</h3>
         <div className="flex items-center gap-3 text-xs">
           <label className="flex items-center gap-1 cursor-pointer">
             <input
@@ -108,7 +109,7 @@ export function KpiTimelinePanel({ agentId, dateRange }: KpiTimelinePanelProps) 
               onChange={(e) => setShowL1(e.target.checked)}
               className="h-3 w-3"
             />
-            <span className="text-[#7c7c75]">L1</span>
+            <span style={{ color: NOC.soft }}>L1</span>
           </label>
           <label className="flex items-center gap-1 cursor-pointer">
             <input
@@ -117,7 +118,7 @@ export function KpiTimelinePanel({ agentId, dateRange }: KpiTimelinePanelProps) 
               onChange={(e) => setShowL2(e.target.checked)}
               className="h-3 w-3"
             />
-            <span className="text-[#7c7c75]">L2</span>
+            <span style={{ color: NOC.soft }}>L2</span>
           </label>
           <label className="flex items-center gap-1 cursor-pointer">
             <input
@@ -126,30 +127,30 @@ export function KpiTimelinePanel({ agentId, dateRange }: KpiTimelinePanelProps) 
               onChange={(e) => setShowL3(e.target.checked)}
               className="h-3 w-3"
             />
-            <span className="text-[#7c7c75]">L3</span>
+            <span style={{ color: NOC.soft }}>L3</span>
           </label>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={240}>
         <LineChart data={points} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#e4e4dd" />
-          <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="#c9c9c2" />
-          <YAxis domain={[0, 1]} tick={{ fontSize: 10 }} stroke="#c9c9c2" />
+          <CartesianGrid strokeDasharray="3 3" stroke={NOC.rule} />
+          <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke={NOC.ruleStrong} />
+          <YAxis domain={[0, 1]} tick={{ fontSize: 10 }} stroke={NOC.ruleStrong} />
           <Tooltip
             formatter={(value, name) => {
               const num = typeof value === "number" ? value.toFixed(4) : "—";
               return [num, String(name)];
             }}
-            contentStyle={{ fontSize: 11, border: "1px solid #c9c9c2" }}
+            contentStyle={{ fontSize: 11, border: `1px solid ${NOC.ruleStrong}` }}
           />
           <Legend wrapperStyle={{ fontSize: 11 }} />
-          <Line type="monotone" dataKey="compositeW" stroke="#a8392c" strokeWidth={2} dot={false} name="W" />
-          {showL1 && <Line type="monotone" dataKey="l1" stroke="#4a90e2" strokeWidth={1.5} dot={false} name="L1" />}
-          {showL2 && <Line type="monotone" dataKey="l2" stroke="#7c7c75" strokeWidth={1.5} dot={false} name="L2" />}
-          {showL3 && <Line type="monotone" dataKey="l3" stroke="#22c55e" strokeWidth={1.5} dot={false} name="L3" connectNulls={false} />}
+          <Line type="monotone" dataKey="compositeW" stroke={NOC.terra} strokeWidth={2} dot={false} name="W" />
+          {showL1 && <Line type="monotone" dataKey="l1" stroke={NOC.info} strokeWidth={1.5} dot={false} name="L1" />}
+          {showL2 && <Line type="monotone" dataKey="l2" stroke={NOC.soft} strokeWidth={1.5} dot={false} name="L2" />}
+          {showL3 && <Line type="monotone" dataKey="l3" stroke={NOC.success} strokeWidth={1.5} dot={false} name="L3" connectNulls={false} />}
         </LineChart>
       </ResponsiveContainer>
-      <p className="mt-2 text-[10px] text-[#73736b]">
+      <p className="mt-2 text-[10px]" style={{ color: NOC.soft }}>
         {points.length} run{points.length !== 1 ? "s" : ""} shown.
         L3 gaps indicate no business-outcome events yet for those traces.
         Click a data point to view the eval run.

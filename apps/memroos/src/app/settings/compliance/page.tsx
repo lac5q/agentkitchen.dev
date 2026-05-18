@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Save, ShieldCheck } from "lucide-react";
+import { Save } from "lucide-react";
+import { Btn, Card, PageHeader, Stat } from "@/components/shared/ui";
+import { NOC } from "@/lib/noc-theme";
 
 interface ComplianceSummary {
   dataResidencyEnabled: boolean;
@@ -56,42 +58,24 @@ export default function ComplianceSettingsPage() {
   const loaded = data?.compliance;
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center gap-3">
-        <ShieldCheck className="h-6 w-6 text-[#a8392c]" />
-        <div>
-          <h1 className="text-xl font-semibold text-[#0f0f0e]">Compliance</h1>
-          <p className="text-sm text-[#73736b]">Data residency, local judge posture, audit retention, and adapter controls.</p>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Governance"
+        title="Compliance"
+        hint="Data residency, local judge posture, audit retention, and adapter controls."
+      />
 
       {isLoading ? (
-        <p className="text-sm text-[#73736b]">Loading compliance posture...</p>
+        <p className="text-sm" style={{ color: NOC.soft }}>Loading compliance posture...</p>
       ) : error ? (
         <p className="text-sm text-red-600">{error.message}</p>
       ) : (
         <>
-          <section className="grid gap-3 border-y border-[#c9c9c2] py-4 md:grid-cols-4">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#73736b]">Residency</p>
-              <p className="mt-1 text-sm font-semibold text-[#0f0f0e]">
-                {loaded?.dataResidencyEnabled ? "Local only" : "Standard"}
-              </p>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#73736b]">Judge</p>
-              <p className="mt-1 text-sm font-semibold text-[#0f0f0e]">{loaded?.judgeProvider}</p>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#73736b]">Endpoint</p>
-              <p className="mt-1 text-sm font-semibold text-[#0f0f0e]">
-                {loaded?.judgeEndpointLocal ? "Local" : "Not local"}
-              </p>
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-[#73736b]">Retention</p>
-              <p className="mt-1 text-sm font-semibold text-[#0f0f0e]">{loaded?.auditRetentionDays} days</p>
-            </div>
+          <section className="grid gap-3 md:grid-cols-4">
+            <Card><Stat label="Residency" value={loaded?.dataResidencyEnabled ? "Local only" : "Standard"} tone={loaded?.dataResidencyEnabled ? "success" : "neutral"} /></Card>
+            <Card><Stat label="Judge" value={loaded?.judgeProvider} tone="info" /></Card>
+            <Card><Stat label="Endpoint" value={loaded?.judgeEndpointLocal ? "Local" : "Not local"} tone={loaded?.judgeEndpointLocal ? "success" : "warn"} /></Card>
+            <Card><Stat label="Retention" value={`${loaded?.auditRetentionDays} days`} /></Card>
           </section>
 
           {loaded && <ComplianceControlsForm key={data?.timestamp} loaded={loaded} />}
@@ -138,7 +122,7 @@ function ComplianceControlsForm({ loaded }: { loaded: ComplianceSummary }) {
         });
       }}
     >
-      <label className="flex items-center gap-3 text-sm font-medium text-[#0f0f0e]">
+      <label className="flex items-center gap-3 text-sm font-medium" style={{ color: NOC.ink }}>
         <input
           type="checkbox"
           checked={dataResidencyEnabled}
@@ -149,7 +133,7 @@ function ComplianceControlsForm({ loaded }: { loaded: ComplianceSummary }) {
       </label>
 
       <div className="grid gap-2">
-        <label className="text-sm font-medium text-[#0f0f0e]" htmlFor="retention">
+        <label className="text-sm font-medium" style={{ color: NOC.ink }} htmlFor="retention">
           Audit retention days
         </label>
         <input
@@ -158,20 +142,22 @@ function ComplianceControlsForm({ loaded }: { loaded: ComplianceSummary }) {
           min={1}
           value={auditRetentionDays}
           onChange={(event) => setAuditRetentionDays(Number(event.target.value))}
-          className="w-40 rounded-sm border border-[#c9c9c2] bg-white px-2 py-1.5 text-sm text-[#0f0f0e]"
+          className="w-40 border px-2 py-1.5 text-sm"
+          style={{ background: NOC.paper, borderColor: NOC.ruleStrong, color: NOC.ink }}
         />
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="grid gap-2">
-          <label className="text-sm font-medium text-[#0f0f0e]" htmlFor="judge-provider">
+          <label className="text-sm font-medium" style={{ color: NOC.ink }} htmlFor="judge-provider">
             Judge provider
           </label>
           <select
             id="judge-provider"
             value={judgeProvider}
             onChange={(event) => setJudgeProvider(event.target.value)}
-            className="rounded-sm border border-[#c9c9c2] bg-white px-2 py-1.5 text-sm text-[#0f0f0e]"
+            className="border px-2 py-1.5 text-sm"
+            style={{ background: NOC.paper, borderColor: NOC.ruleStrong, color: NOC.ink }}
           >
             <option value="ollama">Ollama</option>
             <option value="vllm">vLLM</option>
@@ -181,7 +167,7 @@ function ComplianceControlsForm({ loaded }: { loaded: ComplianceSummary }) {
         </div>
 
         <div className="grid gap-2 md:col-span-2">
-          <label className="text-sm font-medium text-[#0f0f0e]" htmlFor="judge-endpoint">
+          <label className="text-sm font-medium" style={{ color: NOC.ink }} htmlFor="judge-endpoint">
             Local judge endpoint
           </label>
           <input
@@ -189,46 +175,49 @@ function ComplianceControlsForm({ loaded }: { loaded: ComplianceSummary }) {
             value={judgeLocalEndpoint}
             onChange={(event) => setJudgeLocalEndpoint(event.target.value)}
             placeholder="http://localhost:11434/v1"
-            className="w-full rounded-sm border border-[#c9c9c2] bg-white px-2 py-1.5 text-sm text-[#0f0f0e]"
+            className="w-full border px-2 py-1.5 text-sm"
+            style={{ background: NOC.paper, borderColor: NOC.ruleStrong, color: NOC.ink }}
           />
         </div>
       </div>
 
       <div className="grid gap-2">
-        <label className="text-sm font-medium text-[#0f0f0e]" htmlFor="judge-model-family">
+        <label className="text-sm font-medium" style={{ color: NOC.ink }} htmlFor="judge-model-family">
           Judge model family
         </label>
         <input
           id="judge-model-family"
           value={judgeModelFamily}
           onChange={(event) => setJudgeModelFamily(event.target.value)}
-          className="w-full rounded-sm border border-[#c9c9c2] bg-white px-2 py-1.5 text-sm text-[#0f0f0e]"
+          className="w-full border px-2 py-1.5 text-sm"
+          style={{ background: NOC.paper, borderColor: NOC.ruleStrong, color: NOC.ink }}
         />
       </div>
 
       <div className="grid gap-2">
-        <label className="text-sm font-medium text-[#0f0f0e]" htmlFor="adapters">
+        <label className="text-sm font-medium" style={{ color: NOC.ink }} htmlFor="adapters">
           Enabled adapters
         </label>
         <input
           id="adapters"
           value={enabledAdapters}
           onChange={(event) => setEnabledAdapters(event.target.value)}
-          className="w-full rounded-sm border border-[#c9c9c2] bg-white px-2 py-1.5 text-sm text-[#0f0f0e]"
+          className="w-full border px-2 py-1.5 text-sm"
+          style={{ background: NOC.paper, borderColor: NOC.ruleStrong, color: NOC.ink }}
         />
       </div>
 
       {mutation.error && <p className="text-sm text-red-600">{mutation.error.message}</p>}
       {mutation.isSuccess && <p className="text-sm text-green-700">Compliance controls saved.</p>}
 
-      <button
+      <Btn
         type="submit"
         disabled={mutation.isPending}
-        className="inline-flex items-center gap-2 rounded-sm bg-[#a8392c] px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        variant="terra"
       >
-        <Save className="h-4 w-4" />
+        <Save data-icon="inline-start" />
         {mutation.isPending ? "Saving" : "Save"}
-      </button>
+      </Btn>
     </form>
   );
 }

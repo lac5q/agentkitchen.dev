@@ -18,9 +18,9 @@ function formatDateTime(dateStr: string): string {
 }
 
 function trackingTone(status: ApoProposal["status"]) {
-  if (status === "pending") return "border-amber-500/30 bg-amber-500/5";
-  if (status === "approved") return "border-cyan-500/30 bg-cyan-500/5";
-  return "border-emerald-500/30 bg-emerald-500/5";
+  if (status === "pending") return "border-amber-200 bg-amber-50";
+  if (status === "approved") return "border-cyan-200 bg-cyan-50";
+  return "border-emerald-200 bg-emerald-50";
 }
 
 function fallbackTracking(proposal: ApoProposal): ApoProposalTracking {
@@ -69,74 +69,74 @@ export function ProposalDetail({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="border-slate-800 bg-slate-950 text-slate-100 w-[480px] sm:max-w-[480px] flex flex-col"
+        className="flex w-[480px] flex-col border-slate-200 bg-white text-slate-950 sm:max-w-[480px]"
       >
-        <SheetHeader className="pb-4 border-b border-slate-800 shrink-0">
+        <SheetHeader className="shrink-0 border-b border-slate-200 pb-4">
           <div className="flex items-start gap-2 flex-wrap">
             <Badge
               variant="outline"
               className={
                 isPending
-                  ? "border-amber-500/50 text-amber-400 text-xs"
+                  ? "border-amber-300 text-amber-700 text-xs"
                   : isApproved
-                    ? "border-cyan-500/50 text-cyan-400 text-xs"
-                  : "border-slate-600 text-slate-400 text-xs"
+                    ? "border-cyan-300 text-cyan-700 text-xs"
+                  : "border-slate-300 text-stone-600 text-xs"
               }
             >
               {isApproved ? "queued" : proposal.status}
             </Badge>
             <Badge
               variant="outline"
-              className="border-slate-700 text-slate-400 text-xs"
+              className="border-slate-300 text-stone-600 text-xs"
             >
               {proposal.subsystem}
             </Badge>
           </div>
-          <SheetTitle className="text-slate-100 text-base leading-snug mt-1">
+          <SheetTitle className="mt-1 text-base leading-snug text-slate-950">
             {proposal.skill}
           </SheetTitle>
-          <SheetDescription className="text-slate-500 text-xs">
+          <SheetDescription className="text-xs text-stone-500">
             {formatDateTime(proposal.timestamp)} &middot; {proposal.filename}
           </SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className={`rounded-md border p-3 ${trackingTone(proposal.status)}`}>
-            <p className="text-xs font-semibold text-slate-100">{tracking.label}</p>
-            <p className="mt-1 text-xs leading-relaxed text-slate-400">
+            <p className="text-xs font-semibold text-slate-950">{tracking.label}</p>
+            <p className="mt-1 text-xs leading-relaxed text-stone-600">
               {tracking.description}
             </p>
             <dl className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
               <div>
-                <dt className="text-slate-500">Status time</dt>
-                <dd className="text-slate-300">{formatDateTime(tracking.timestamp)}</dd>
+                <dt className="text-stone-500">Status time</dt>
+                <dd className="text-slate-700">{formatDateTime(tracking.timestamp)}</dd>
               </div>
               {tracking.executorCli && (
                 <div>
-                  <dt className="text-slate-500">Executor</dt>
-                  <dd className="text-slate-300">{tracking.executorCli}</dd>
+                  <dt className="text-stone-500">Executor</dt>
+                  <dd className="text-slate-700">{tracking.executorCli}</dd>
                 </div>
               )}
               {tracking.targetKind && (
                 <div>
-                  <dt className="text-slate-500">Target</dt>
-                  <dd className="text-slate-300">{tracking.targetKind}</dd>
+                  <dt className="text-stone-500">Target</dt>
+                  <dd className="text-slate-700">{tracking.targetKind}</dd>
                 </div>
               )}
               {tracking.applied !== undefined && (
                 <div>
-                  <dt className="text-slate-500">Worker result</dt>
-                  <dd className="text-slate-300">
+                  <dt className="text-stone-500">Worker result</dt>
+                  <dd className="text-slate-700">
                     {tracking.applied ? "Applied" : "Already present"}
                   </dd>
                 </div>
               )}
             </dl>
             {tracking.targetPath && (
-              <p className="mt-3 break-all text-xs text-slate-500">{tracking.targetPath}</p>
+              <p className="mt-3 break-all text-xs text-stone-500">{tracking.targetPath}</p>
             )}
           </div>
-          <pre className="text-xs font-mono text-slate-300 whitespace-pre-wrap break-words leading-relaxed">
+          <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-relaxed text-slate-700">
             {proposal.content}
           </pre>
         </div>

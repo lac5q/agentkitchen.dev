@@ -30,7 +30,7 @@ const ACTION_COLORS: Record<
     border: "border-amber-500/30",
   },
   stop: {
-    text: "text-slate-300",
+    text: "text-stone-500",
     bg: "bg-slate-500/15",
     border: "border-slate-500/30",
   },
@@ -42,7 +42,7 @@ const ACTION_COLORS: Record<
 };
 
 const DEFAULT_COLOR = {
-  text: "text-slate-300",
+  text: "text-stone-500",
   bg: "bg-slate-500/15",
   border: "border-slate-500/30",
 };
@@ -71,8 +71,8 @@ function formatRelativeTime(iso: string): string {
 function InfoTooltip({ text }: { text: string }) {
   return (
     <div className="group relative inline-flex">
-      <span className="cursor-help text-xs text-slate-500 hover:text-slate-300">ⓘ</span>
-      <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-60 -translate-x-1/2 rounded-md border border-slate-700 bg-slate-800 px-2.5 py-2 text-xs leading-snug text-slate-300 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
+      <span className="cursor-help text-xs text-stone-500 hover:text-stone-500">ⓘ</span>
+      <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 w-60 -translate-x-1/2 rounded-md border border-stone-300 bg-stone-100 px-2.5 py-2 text-xs leading-snug text-stone-500 opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100">
         {text}
         <div className="absolute left-1/2 top-full -translate-x-1/2 border-4 border-transparent border-t-slate-700" />
       </div>
@@ -88,7 +88,7 @@ export function AgentPeersPanel({ windowMinutes = 60 }: { windowMinutes?: number
   const peers = data?.peers ?? [];
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+    <div className="rounded-lg border border-stone-200 bg-white/85 p-4">
       {/* Section header */}
       <div className="mb-4 flex items-center gap-2">
         <span className="text-xs font-medium uppercase tracking-wide text-amber-500">
@@ -107,7 +107,7 @@ export function AgentPeersPanel({ windowMinutes = 60 }: { windowMinutes?: number
 
       {/* Empty state */}
       {!isLoading && peers.length === 0 && (
-        <p className="py-10 text-center text-sm text-slate-500">
+        <p className="py-10 text-center text-sm text-stone-500">
           No active peers in the last {windowMinutes} minutes.
         </p>
       )}
@@ -120,10 +120,10 @@ export function AgentPeersPanel({ windowMinutes = 60 }: { windowMinutes?: number
             return (
               <li
                 key={peer.agent_id}
-                className="flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-slate-800/40"
+                className="flex items-start gap-3 rounded-md px-2 py-1.5 hover:bg-stone-100/80"
               >
                 {/* Agent ID */}
-                <span className="w-24 shrink-0 truncate text-xs font-medium text-slate-300">
+                <span className="w-24 shrink-0 truncate text-xs font-medium text-stone-500">
                   {peer.agent_id}
                 </span>
 
@@ -135,12 +135,12 @@ export function AgentPeersPanel({ windowMinutes = 60 }: { windowMinutes?: number
                 </span>
 
                 {/* Current task */}
-                <span className="min-w-0 flex-1 truncate text-xs text-slate-200">
+                <span className="min-w-0 flex-1 truncate text-xs text-stone-800">
                   {peer.current_task}
                 </span>
 
                 {/* Last seen */}
-                <span className="shrink-0 tabular-nums text-xs text-slate-500">
+                <span className="shrink-0 tabular-nums text-xs text-stone-500">
                   {formatRelativeTime(peer.last_seen)}
                 </span>
               </li>

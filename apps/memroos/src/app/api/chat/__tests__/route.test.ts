@@ -3,6 +3,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs"
 import { tmpdir } from "os";
 import path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { NextRequest } from "next/server";
 
 let root: string;
 let agentConfigsPath: string;
@@ -18,6 +19,36 @@ async function loadRoute() {
   vi.stubEnv("SQLITE_DB_PATH", testDbPath);
   vi.stubEnv("CONSOLIDATION_MODEL", "MiniMax-M2.7");
   return import("../chat-runtime");
+}
+
+async function loadPostRouteWithAnthropicFailure(errorMessage: string) {
+  vi.resetModules();
+  vi.stubEnv("AGENT_CONFIGS_PATH", agentConfigsPath);
+  vi.stubEnv("PMO_AGENT_CONFIGS_PATH", pmoAgentsPath);
+  vi.stubEnv("PMO_MODEL_ROUTING_PATH", pmoModelRoutingPath);
+  vi.stubEnv("SQLITE_DB_PATH", testDbPath);
+  vi.doMock("@anthropic-ai/sdk", () => ({
+    default: class MockAnthropic {
+      messages = {
+        stream: vi.fn(async () => {
+          throw new Error(errorMessage);
+        }),
+      };
+    },
+  }));
+  return import("../route");
+}
+
+async function readStream(response: Response): Promise<string> {
+  const raw = await response.text();
+  return raw
+    .split("\n")
+    .filter((line) => line.startsWith("data: "))
+    .map((line) => line.slice(6).trim())
+    .filter((payload) => payload && payload !== "[DONE]")
+    .map((payload) => JSON.parse(payload) as { text?: string; error?: string })
+    .map((payload) => payload.text ?? payload.error ?? "")
+    .join("");
 }
 
 async function registerTestAgent(input: {
@@ -190,5 +221,33 @@ describe("chat route model resolution", () => {
     const runtime = await resolveChatRuntime("ceo", context);
 
     expect(runtime).toEqual({ runner: "opencode", model: "alibaba-coding-plan/qwen3.6-plus" });
+  });
+
+  it("returns a local room check-in instead of failing when Anthropic quota is exhausted", async () => {
+    await registerTestAgent({
+      id: "claude-sonnet-engineer",
+      name: "Claude Sonnet Engineer",
+      role: "CLI engineer",
+      platform: "claude",
+    });
+    const { POST } = await loadPostRouteWithAnthropicFailure("usage limit exceeded (2056)");
+
+    const res = await POST(new NextRequest("http://localhost/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        agentId: "claude-sonnet-engineer",
+        message: "15-minute standup: yesterday, today, blockers",
+        history: [],
+      }),
+      headers: { "content-type": "application/json" },
+    }));
+    const text = await readStream(res);
+
+    expect(res.status).toBe(200);
+    expect(text).toContain("Claude Sonnet Engineer local check-in");
+    expect(text).toContain("Yesterday:");
+    expect(text).toContain("Today:");
+    expect(text).toContain("Blocked: usage limit exceeded (2056)");
+    expect(text).not.toContain("Chat unavailable");
   });
 });

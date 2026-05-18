@@ -23,7 +23,7 @@ const CATEGORY_TEXT_COLORS: Record<KnowledgeCollection["category"], string> = {
   agents: "text-emerald-400",
   marketing: "text-amber-400",
   product: "text-purple-400",
-  other: "text-slate-400",
+  other: "text-stone-500",
 };
 
 interface CollectionCardProps {
@@ -40,12 +40,12 @@ export function CollectionCard({ collection, maxCount }: CollectionCardProps) {
 
   return (
     <Card
-      className={`border-l-4 border-slate-800 bg-slate-900/60 ${borderColor.split(" ")[0]} p-0`}
+      className={`border-l-4 border-stone-200 bg-white/90 ${borderColor.split(" ")[0]} p-0`}
     >
       <CardContent className="p-4">
         <div className="flex items-start justify-between gap-2 mb-3">
           <p
-            className="text-sm font-medium text-slate-100 truncate leading-tight"
+            className="text-sm font-medium text-stone-950 truncate leading-tight"
             title={name}
           >
             {name}
@@ -57,7 +57,7 @@ export function CollectionCard({ collection, maxCount }: CollectionCardProps) {
             {docCount}
           </Badge>
         </div>
-        <div className="h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
+        <div className="h-1.5 w-full rounded-full bg-stone-100 overflow-hidden">
           <div
             className={`h-full rounded-full transition-all ${barColor}`}
             style={{ width: `${fillPercent}%` }}

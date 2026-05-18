@@ -7,7 +7,7 @@ const TYPE_BADGE_STYLES: Record<MemoryEntry["type"], string> = {
   feedback: "bg-amber-500/15 text-amber-400 border-amber-500/30",
   project: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
   reference: "bg-purple-500/15 text-purple-400 border-purple-500/30",
-  daily: "bg-slate-500/15 text-slate-400 border-slate-500/30",
+  daily: "bg-slate-100 text-stone-600 border-slate-200",
 };
 
 interface MemoryListProps {
@@ -19,7 +19,7 @@ interface MemoryListProps {
 export function MemoryList({ entries, onSelect, selected }: MemoryListProps) {
   if (entries.length === 0) {
     return (
-      <div className="flex items-center justify-center h-40 text-slate-500 text-sm">
+      <div className="flex h-40 items-center justify-center text-sm text-stone-500">
         No memories found.
       </div>
     );
@@ -42,8 +42,8 @@ export function MemoryList({ entries, onSelect, selected }: MemoryListProps) {
             className={[
               "w-full text-left rounded-lg border p-3 transition-colors",
               isSelected
-                ? "border-amber-500/60 bg-amber-500/5"
-                : "border-slate-800 bg-slate-900/50 hover:border-slate-700 hover:bg-slate-800/50",
+                ? "border-amber-300 bg-amber-50"
+                : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50",
             ].join(" ")}
           >
             <div className="flex items-center gap-2 mb-1.5">
@@ -55,10 +55,10 @@ export function MemoryList({ entries, onSelect, selected }: MemoryListProps) {
               >
                 {entry.type}
               </span>
-              <span className="text-xs text-slate-500 ml-auto">{entry.date}</span>
+              <span className="ml-auto text-xs text-stone-500">{entry.date}</span>
             </div>
-            <p className="text-sm text-slate-300 leading-snug">{truncated}</p>
-            <p className="text-xs text-slate-600 mt-1">{entry.agent}</p>
+            <p className="text-sm leading-snug text-slate-700">{truncated}</p>
+            <p className="mt-1 text-xs text-stone-500">{entry.agent}</p>
           </button>
         );
       })}

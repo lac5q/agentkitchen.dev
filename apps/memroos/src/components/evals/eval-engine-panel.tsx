@@ -14,14 +14,14 @@ function WeightBar({ value, label }: { value: number; label: string }) {
   const pct = Math.round(value * 100);
   return (
     <div className="flex items-center gap-2 text-xs">
-      <span className="w-6 shrink-0 font-mono text-slate-400">{label}</span>
-      <div className="h-2 flex-1 rounded-full bg-slate-800">
+      <span className="w-6 shrink-0 font-mono text-stone-500">{label}</span>
+      <div className="h-2 flex-1 rounded-full bg-stone-100">
         <div
           className="h-2 rounded-full bg-amber-500"
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="w-8 shrink-0 text-right text-slate-300">{pct}%</span>
+      <span className="w-8 shrink-0 text-right text-stone-600">{pct}%</span>
     </div>
   );
 }
@@ -45,14 +45,14 @@ function RunRow({ run }: { run: EvalRunResult & { examples: EvalRunResult["drift
   const w = run.compositeW.toFixed(3);
   const ts = new Date(run.completedAt).toLocaleString();
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-slate-800 py-2 text-xs last:border-0">
-      <span className="w-24 shrink-0 truncate font-mono text-slate-400">{run.agentId}</span>
+    <div className="flex flex-wrap items-center gap-3 border-b border-stone-200 py-2 text-xs last:border-0">
+      <span className="w-24 shrink-0 truncate font-mono text-stone-500">{run.agentId}</span>
       <span className="w-12 shrink-0 text-right font-semibold text-amber-300">W={w}</span>
-      <span className="shrink-0 text-slate-500">
+      <span className="shrink-0 text-stone-500">
         L1={run.layers.l1.score.toFixed(2)} L2={run.layers.l2.score.toFixed(2)} L3={run.layers.l3.score.toFixed(2)}
       </span>
       <DriftBadge status={run.driftGuard.status} agreement={run.driftGuard.agreement} />
-      <span className="ml-auto shrink-0 text-slate-600">{ts}</span>
+      <span className="ml-auto shrink-0 text-stone-600">{ts}</span>
     </div>
   );
 }
@@ -114,7 +114,7 @@ export function EvalEnginePanel() {
   return (
     <div className="flex flex-col gap-6">
       {/* Config panel */}
-      <section className="border border-slate-800 bg-slate-900/40 p-4">
+      <section className="border border-stone-200 bg-white/90 p-4">
         <div className="mb-3 flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-amber-500">
             Eval Config
@@ -124,7 +124,7 @@ export function EvalEnginePanel() {
             <button
               type="button"
               onClick={startEditWeights}
-              className="border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-amber-500 hover:text-amber-300"
+              className="border border-stone-300 px-3 py-1 text-xs text-stone-600 hover:border-amber-500 hover:text-amber-300"
             >
               Edit weights
             </button>
@@ -141,19 +141,19 @@ export function EvalEnginePanel() {
         ) : config ? (
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">Judge model</p>
-              <p className="font-mono text-sm text-slate-100">{config.judgeModel.model}</p>
-              <p className="mt-0.5 text-xs text-slate-500">
+              <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-stone-500">Judge model</p>
+              <p className="font-mono text-sm text-stone-950">{config.judgeModel.model}</p>
+              <p className="mt-0.5 text-xs text-stone-500">
                 {config.judgeModel.provider} / {config.judgeModel.modelFamily} / {config.judgeModel.promptTemplateVersion}
               </p>
             </div>
             <div>
-              <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-slate-500">Weights (l1/l2/l3)</p>
+              <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-stone-500">Weights (l1/l2/l3)</p>
               {editWeights ? (
                 <div className="flex flex-col gap-2">
                   {(["l1", "l2", "l3"] as const).map((k) => (
                     <label key={k} className="flex items-center gap-2 text-xs">
-                      <span className="w-6 font-mono text-slate-400">{k}</span>
+                      <span className="w-6 font-mono text-stone-500">{k}</span>
                       <input
                         type="number"
                         min="0"
@@ -161,7 +161,7 @@ export function EvalEnginePanel() {
                         step="0.05"
                         value={editWeights[k]}
                         onChange={(e) => setEditWeights((prev) => prev ? { ...prev, [k]: e.target.value } : prev)}
-                        className="w-20 border border-slate-700 bg-slate-900 px-2 py-1 font-mono text-xs text-slate-100 focus:border-amber-500 focus:outline-none"
+                        className="w-20 border border-stone-300 bg-white px-2 py-1 font-mono text-xs text-stone-950 focus:border-amber-500 focus:outline-none"
                       />
                     </label>
                   ))}
@@ -177,7 +177,7 @@ export function EvalEnginePanel() {
                     <button
                       type="button"
                       onClick={() => setEditWeights(null)}
-                      className="border border-slate-700 px-3 py-1 text-xs text-slate-400 hover:border-slate-500"
+                      className="border border-stone-300 px-3 py-1 text-xs text-stone-500 hover:border-slate-500"
                     >
                       Cancel
                     </button>
@@ -198,12 +198,12 @@ export function EvalEnginePanel() {
             </div>
           </div>
         ) : (
-          <p className="text-xs text-slate-500">Config unavailable</p>
+          <p className="text-xs text-stone-500">Config unavailable</p>
         )}
       </section>
 
       {/* Drift guard status */}
-      <section className="border border-slate-800 bg-slate-900/40 p-4">
+      <section className="border border-stone-200 bg-white/90 p-4">
         <div className="mb-2 flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-amber-500">Drift Guard</span>
           <div className="h-px flex-1 bg-amber-900/40" />
@@ -211,20 +211,20 @@ export function EvalEnginePanel() {
         {latestDrift ? (
           <div className="flex flex-wrap items-center gap-3">
             <DriftBadge status={latestDrift.status} agreement={latestDrift.agreement} />
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-stone-500">
               Floor: {Math.round(latestDrift.floor * 100)}%
             </span>
-            <span className="text-xs font-mono text-slate-500">
+            <span className="text-xs font-mono text-stone-500">
               golden@{latestDrift.goldenSetVersion.slice(0, 8)}
             </span>
           </div>
         ) : (
-          <p className="text-xs text-slate-500">No drift guard data yet — run an eval first.</p>
+          <p className="text-xs text-stone-500">No drift guard data yet — run an eval first.</p>
         )}
       </section>
 
       {/* Test run */}
-      <section className="border border-slate-800 bg-slate-900/40 p-4">
+      <section className="border border-stone-200 bg-white/90 p-4">
         <div className="mb-3 flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-amber-500">Test Eval Run</span>
           <div className="h-px flex-1 bg-amber-900/40" />
@@ -255,12 +255,12 @@ export function EvalEnginePanel() {
                 agreement={lastRunResult.driftGuard.agreement}
               />
             </div>
-            <div className="flex gap-4 text-slate-400">
+            <div className="flex gap-4 text-stone-500">
               <span>L1={lastRunResult.layers.l1.score.toFixed(3)}</span>
               <span>L2={lastRunResult.layers.l2.score.toFixed(3)}</span>
               <span>L3={lastRunResult.layers.l3.score.toFixed(3)}</span>
             </div>
-            <div className="mt-1 text-slate-500">
+            <div className="mt-1 text-stone-500">
               Judge: {lastRunResult.judge.score.toFixed(3)} (faithful={lastRunResult.judge.rubricScores.faithful.toFixed(2)} useful={lastRunResult.judge.rubricScores.useful.toFixed(2)} policy={lastRunResult.judge.rubricScores.policy.toFixed(2)})
             </div>
           </div>
@@ -268,13 +268,13 @@ export function EvalEnginePanel() {
       </section>
 
       {/* Run history */}
-      <section className="border border-slate-800 bg-slate-900/40 p-4">
+      <section className="border border-stone-200 bg-white/90 p-4">
         <div className="mb-3 flex items-center gap-2">
           <span className="text-xs font-semibold uppercase tracking-wide text-amber-500">
             Recent Runs
           </span>
           <div className="h-px flex-1 bg-amber-900/40" />
-          <span className="text-xs text-slate-500">{runs.length} shown</span>
+          <span className="text-xs text-stone-500">{runs.length} shown</span>
         </div>
 
         {historyLoading ? (
@@ -282,7 +282,7 @@ export function EvalEnginePanel() {
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
           </div>
         ) : runs.length === 0 ? (
-          <p className="text-xs text-slate-500">No eval runs yet.</p>
+          <p className="text-xs text-stone-500">No eval runs yet.</p>
         ) : (
           <div>
             {runs.map((run) => (

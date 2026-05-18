@@ -39,7 +39,7 @@ export function OperationsNoc() {
         style={{
           padding: "6px 28px 14px",
           display: "grid",
-          gridTemplateColumns: "1.7fr 1fr",
+          gridTemplateColumns: "minmax(0, 1.7fr) minmax(280px, 1fr)",
           gap: 14,
         }}
       >
@@ -52,7 +52,7 @@ export function OperationsNoc() {
         style={{
           padding: "0 28px 14px",
           display: "grid",
-          gridTemplateColumns: "1fr 1.2fr 1fr",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
           gap: 14,
         }}
       >
@@ -69,14 +69,14 @@ export function OperationsNoc() {
         style={{
           padding: "0 28px 14px",
           display: "grid",
-          gridTemplateColumns: "1.2fr 1fr",
+          gridTemplateColumns: "minmax(0, 1.2fr) minmax(280px, 1fr)",
           gap: 14,
         }}
       >
         <BehaviorSignals />
         <div
           style={{
-            background: "#ffffff",
+            background: NOC.paper,
             border: `1px solid ${NOC.rule}`,
           }}
         >
@@ -89,7 +89,7 @@ export function OperationsNoc() {
         style={{
           padding: "0 28px 28px",
           display: "grid",
-          gridTemplateColumns: "1.4fr 1fr 1fr",
+          gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
           gap: 14,
         }}
       >

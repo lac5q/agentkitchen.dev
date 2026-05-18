@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { NOC, NOC_FONT_BODY, NOC_FONT_MONO } from "@/lib/noc-theme";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -33,51 +34,107 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
-      <div className="w-full max-w-sm space-y-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-8">
-        <div>
-          <h1 className="text-xl font-semibold text-zinc-100">Memroos</h1>
-          <p className="mt-1 text-sm text-zinc-400">Sign in to your workspace</p>
-        </div>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-zinc-300" htmlFor="email">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-amber-500 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-zinc-300" htmlFor="password">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-amber-500 focus:outline-none"
-            />
-          </div>
-          {error && <p className="text-sm text-red-400">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition hover:bg-amber-400 disabled:opacity-50"
+    <main
+      className="min-h-screen px-5 py-6"
+      style={{ background: NOC.cream, color: NOC.ink, fontFamily: NOC_FONT_BODY }}
+    >
+      <div className="mx-auto flex min-h-[calc(100vh-48px)] max-w-6xl flex-col">
+        <header className="flex items-center gap-3 border-b pb-4" style={{ borderColor: NOC.rule }}>
+          <div
+            className="flex h-8 w-8 items-center justify-center text-sm font-bold"
+            style={{ background: NOC.ink, color: NOC.paper }}
           >
-            {loading ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
+            m
+          </div>
+          <p
+            className="text-[11px] font-bold uppercase tracking-[0.16em]"
+            style={{ color: NOC.terra, fontFamily: NOC_FONT_MONO }}
+          >
+            Memroos / Operator Access
+          </p>
+        </header>
+
+        <section className="grid flex-1 items-center gap-10 py-12 lg:grid-cols-[1.05fr_420px]">
+          <div className="max-w-2xl">
+            <p
+              className="mb-4 text-[11px] font-bold uppercase tracking-[0.16em]"
+              style={{ color: NOC.terra, fontFamily: NOC_FONT_MONO }}
+            >
+              Memory OS for agent workflows
+            </p>
+            <h1 className="max-w-xl text-5xl font-semibold leading-[0.95] tracking-normal md:text-6xl">
+              Return to the room with the full memory intact.
+            </h1>
+            <p className="mt-5 max-w-lg text-sm leading-6" style={{ color: NOC.muted }}>
+              Sign in to inspect operations, retained context, dispatch, skills, and governance from the same NOC surface.
+            </p>
+          </div>
+
+          <form
+            onSubmit={handleSubmit}
+            className="w-full border p-6"
+            style={{ background: NOC.paper, borderColor: NOC.rule, boxShadow: `0 18px 55px color-mix(in srgb, ${NOC.ink} 8%, transparent)` }}
+          >
+            <div className="mb-6">
+              <p
+                className="text-[11px] font-bold uppercase tracking-[0.14em]"
+                style={{ color: NOC.terra, fontFamily: NOC_FONT_MONO }}
+              >
+                Secure workspace
+              </p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-normal">Sign in</h2>
+              <p className="mt-2 text-sm" style={{ color: NOC.muted }}>
+                Use your Memroos operator account.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block text-sm font-semibold" htmlFor="email">
+              Email
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-2 w-full border px-3 py-2.5 text-sm outline-none transition"
+                  style={{ background: NOC.fog, borderColor: NOC.ruleStrong, color: NOC.ink }}
+                />
+              </label>
+
+              <label className="block text-sm font-semibold" htmlFor="password">
+              Password
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-2 w-full border px-3 py-2.5 text-sm outline-none transition"
+                  style={{ background: NOC.fog, borderColor: NOC.ruleStrong, color: NOC.ink }}
+                />
+              </label>
+            </div>
+
+            {error && (
+              <p className="mt-4 border px-3 py-2 text-sm" style={{ background: NOC.warnBg, borderColor: NOC.peachWarm, color: NOC.terraDeep }}>
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-5 inline-flex w-full items-center justify-center px-4 py-3 text-sm font-bold uppercase tracking-[0.08em] transition disabled:opacity-60"
+              style={{ background: NOC.ink, color: NOC.paper }}
+            >
+              {loading ? "Signing in..." : "Sign in"}
+            </button>
+          </form>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

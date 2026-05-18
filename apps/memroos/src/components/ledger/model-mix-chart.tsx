@@ -8,6 +8,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
+import { NOC } from "@/lib/noc-theme";
 
 interface ModelMixDataPoint {
   name: string;
@@ -18,7 +19,7 @@ interface ModelMixChartProps {
   data: ModelMixDataPoint[];
 }
 
-const DONUT_COLORS = ["#f59e0b", "#0ea5e9", "#10b981", "#a855f7"];
+const DONUT_COLORS = [NOC.warn, NOC.info, NOC.success, NOC.terra];
 
 function DarkTooltip({ active, payload }: {
   active?: boolean;
@@ -27,9 +28,9 @@ function DarkTooltip({ active, payload }: {
   if (!active || !payload?.length) return null;
   const entry = payload[0];
   return (
-    <div className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs shadow-xl">
-      <p className="font-medium text-slate-200">{entry.name}</p>
-      <p className="text-slate-400">
+    <div className="rounded-lg border px-3 py-2 text-xs shadow-xl" style={{ borderColor: NOC.ruleStrong, background: NOC.paper }}>
+      <p className="font-medium" style={{ color: NOC.muted }}>{entry.name}</p>
+      <p style={{ color: NOC.soft }}>
         {entry.value.toLocaleString()} calls ({(entry.payload.percent * 100).toFixed(1)}%)
       </p>
     </div>
@@ -58,7 +59,7 @@ export function ModelMixChart({ data }: ModelMixChartProps) {
         </Pie>
         <Tooltip content={<DarkTooltip />} />
         <Legend
-          wrapperStyle={{ fontSize: 12, color: "#94a3b8" }}
+          wrapperStyle={{ fontSize: 12, color: NOC.soft }}
           iconType="circle"
         />
       </PieChart>
