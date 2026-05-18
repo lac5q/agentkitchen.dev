@@ -558,7 +558,7 @@ function LandingPage() {
               See the memory loop in motion.
             </h2>
             <p className="mt-4 text-[17px] leading-8 text-[#4a4a45]">
-              A 64-second animated product demo with voiceover, logo intro, QR links, and a custom electronic score, starting with memory as the core value prop and moving through context packs, teams, skills, trust, and runtime.
+              Watch how MemroOS captures work from product, sales, and engineering, turns it into shared context packs, and gives every agent a governed memory layer before the next task begins.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <a
