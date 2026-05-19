@@ -5,8 +5,8 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT="$SCRIPT_DIR/mcp-mem0.py"
 
-if [ -x "$SCRIPT_DIR/.venv/bin/python" ]; then
-  PYTHON="$SCRIPT_DIR/.venv/bin/python"
+if [ -x "$SCRIPT_DIR/../../.venv/bin/python" ]; then
+  PYTHON="$SCRIPT_DIR/../../.venv/bin/python"
 elif [ -x "${KNOWLEDGE_VENV:-$HOME/github/knowledge/.venv}/bin/python" ]; then
   PYTHON="${KNOWLEDGE_VENV:-$HOME/github/knowledge/.venv}/bin/python"
 else

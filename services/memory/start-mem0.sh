@@ -3,8 +3,8 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 
-if [ -f .venv/bin/activate ]; then
-  source .venv/bin/activate
+if [ -f "$SCRIPT_DIR/../../.venv/bin/activate" ]; then
+  source "$SCRIPT_DIR/../../.venv/bin/activate"
 elif [ -f "${KNOWLEDGE_VENV:-$HOME/github/knowledge/.venv}/bin/activate" ]; then
   source "${KNOWLEDGE_VENV:-$HOME/github/knowledge/.venv}/bin/activate"
 fi

@@ -21,10 +21,8 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
     set +a
 fi
 
-# Activate virtual environment
-if [ -f "$SCRIPT_DIR/.venv/bin/activate" ]; then
-    source "$SCRIPT_DIR/.venv/bin/activate"
-elif [ -f "$SCRIPT_DIR/../../.venv/bin/activate" ]; then
+# Activate virtual environment — prefer memroos venv, fall back to knowledge venv for backward compat
+if [ -f "$SCRIPT_DIR/../../.venv/bin/activate" ]; then
     source "$SCRIPT_DIR/../../.venv/bin/activate"
 elif [ -f "${KNOWLEDGE_VENV:-$HOME/github/knowledge/.venv}/bin/activate" ]; then
     source "${KNOWLEDGE_VENV:-$HOME/github/knowledge/.venv}/bin/activate"

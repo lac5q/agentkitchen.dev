@@ -77,9 +77,9 @@ check_dependencies() {
     fi
     log_success "Qdrant is running"
 
-    # Check virtual environment
-    if [ -d "$SCRIPT_DIR/.venv" ]; then
-        VENV_DIR="$SCRIPT_DIR/.venv"
+    # Check virtual environment — prefer memroos venv, fall back to knowledge venv
+    if [ -d "$SCRIPT_DIR/../../.venv" ]; then
+        VENV_DIR="$SCRIPT_DIR/../../.venv"
     elif [ -d "${KNOWLEDGE_VENV:-$HOME/github/knowledge/.venv}" ]; then
         VENV_DIR="${KNOWLEDGE_VENV:-$HOME/github/knowledge/.venv}"
     else
@@ -146,9 +146,9 @@ start_server() {
         set +a
     fi
 
-    # Activate virtual environment
-    if [ -d "$SCRIPT_DIR/.venv" ]; then
-        source "$SCRIPT_DIR/.venv/bin/activate"
+    # Activate virtual environment — prefer memroos venv, fall back to knowledge venv
+    if [ -d "$SCRIPT_DIR/../../.venv" ]; then
+        source "$SCRIPT_DIR/../../.venv/bin/activate"
     elif [ -d "${KNOWLEDGE_VENV:-$HOME/github/knowledge/.venv}" ]; then
         source "${KNOWLEDGE_VENV:-$HOME/github/knowledge/.venv}/bin/activate"
     fi
