@@ -36,17 +36,25 @@
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
         <key>QMD_EMBED_FORCE</key>
         <string>0</string>
+        <key>QMD_EMBED_COLLECTIONS</key>
+        <string>spark-recordings meet-recordings emails cordant knowledge</string>
+        <key>QMD_MAX_DOCS_PER_BATCH</key>
+        <string>80</string>
+        <key>QMD_MAX_BATCH_MB</key>
+        <string>8</string>
         <key>QMD_UPDATE_FIRST</key>
-        <string>0</string>
+        <string>1</string>
         <key>QMD_DAYTIME_CHECK</key>
         <string>1</string>
         <key>QMD_MIN_FREE_GB</key>
         <string>4</string>
         <key>QMD_MAX_LOAD_PER_CPU</key>
         <string>0.75</string>
+        <key>QMD_FORCE_CPU</key>
+        <string>1</string>
     </dict>
 </dict>
 </plist>

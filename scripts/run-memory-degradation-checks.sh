@@ -14,6 +14,7 @@ fi
 echo "[memory-degradation] checking shell and launchd configs"
 bash -n services/memory/healthcheck.sh
 node scripts/install-memory-resilience.mjs check
+node --test scripts/check-knowledge-indexing.test.mjs
 
 echo "[memory-degradation] checking mem0 queue and health degradation"
 "$PYTHON_BIN" -m pytest services/memory/tests/test_mem0_queue.py

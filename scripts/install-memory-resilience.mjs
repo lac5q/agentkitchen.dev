@@ -19,10 +19,12 @@ const jobs = [
     interval: 300,
     runAtLoad: true,
     env: {
-      PATH: "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+      PATH: "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
       MEM0_ENV_FILE: path.join(root, "services", "memory", ".env"),
       MEM0_LOG_DIR: path.join(root, "services", "memory", "logs"),
       MEMORY_HEALTHCHECK_ONLY: "1",
+      MEMORY_INDEX_DAYS: "2",
+      QMD_MAX_PENDING_EMBEDDINGS: "10000",
     },
   },
   {
@@ -32,7 +34,7 @@ const jobs = [
     stderr: path.join(root, "services", "memory", "logs", "memory-degradation-evals-error.log"),
     calendar: { Hour: 9, Minute: 15 },
     env: {
-      PATH: "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin",
+      PATH: "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
     },
   },
 ];
@@ -95,7 +97,12 @@ function plistPath(job, dir = launchAgentsDir) {
 }
 
 function run(command, args, options = {}) {
-  return execFileSync(command, args, { encoding: "utf8", stdio: options.stdio ?? "pipe" });
+  try {
+    return execFileSync(command, args, { encoding: "utf8", stdio: options.stdio ?? "pipe" });
+  } catch (error) {
+    if (options.allowFailure) return error.stdout ?? "";
+    throw error;
+  }
 }
 
 function requireMacOs() {
@@ -133,7 +140,7 @@ function install() {
     const target = plistPath(job);
     fs.writeFileSync(target, renderJob(job));
     run("plutil", ["-lint", target], { stdio: "inherit" });
-    run("launchctl", ["bootout", domain, target], { stdio: "ignore" });
+    run("launchctl", ["bootout", domain, target], { stdio: "ignore", allowFailure: true });
     run("launchctl", ["bootstrap", domain, target], { stdio: "inherit" });
     if (job.runAtLoad) {
       run("launchctl", ["kickstart", "-k", `${domain}/${job.label}`], { stdio: "inherit" });
@@ -146,7 +153,7 @@ function uninstall() {
   if (!requireMacOs()) return;
   for (const job of jobs) {
     const target = plistPath(job);
-    run("launchctl", ["bootout", domain, target], { stdio: "ignore" });
+    run("launchctl", ["bootout", domain, target], { stdio: "ignore", allowFailure: true });
     fs.rmSync(target, { force: true });
   }
   console.log("Uninstalled Memroos memory resilience jobs.");

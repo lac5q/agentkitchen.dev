@@ -80,7 +80,7 @@ npm run first-run:check
 
 On macOS, setup installs two launchd-backed Memory Resilience jobs unless `INSTALL_MEMORY_RESILIENCE=0` is set:
 
-- `com.memroos.memory-healthcheck` runs every 5 minutes and alerts when memory infrastructure degrades.
+- `com.memroos.memory-healthcheck` runs every 5 minutes and alerts when memory infrastructure degrades, including when recent knowledge artifacts exist on disk but are missing from QMD.
 - `com.memroos.memory-degradation-evals` runs daily at 9:15 AM and verifies the degradation scenarios stay covered by tests.
 
 Manage them directly with:
@@ -92,6 +92,14 @@ node scripts/install-memory-resilience.mjs uninstall
 ```
 
 The healthcheck reads `services/memory/.env` when present. Configure `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` or `DISCORD_KNOWLEDGE_WEBHOOK` for remote notifications; otherwise macOS local notifications are used.
+
+Run the source-to-QMD contract check manually with:
+
+```bash
+npm run check:knowledge-indexing -- --days=2
+```
+
+The check covers recent Google Drive exports, meeting recordings, Spark notes, emails, Slack source files, project meetings, journals, and analysis content.
 
 ## Optional Progressive Capabilities
 
