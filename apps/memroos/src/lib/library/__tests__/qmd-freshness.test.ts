@@ -39,8 +39,10 @@ describe("computeFreshnessState", () => {
   });
 
   it("returns 'live' when index is fresh relative to source within threshold", () => {
-    const sourceMtime = new Date("2026-05-21T10:00:00Z");
-    const indexTimestamp = new Date("2026-05-21T10:05:00Z"); // 5 min after source
+    // sourceMtime = 50 min ago, indexTimestamp = 45 min ago → index newer than source,
+    // both within the 1h staleness threshold from NOW
+    const sourceMtime = new Date(NOW.getTime() - 50 * 60_000);
+    const indexTimestamp = new Date(NOW.getTime() - 45 * 60_000);
     const result = computeFreshnessState(
       makeRaw({ sourceMtime, indexTimestamp })
     );
@@ -95,12 +97,12 @@ describe("computeFreshnessState", () => {
   });
 
   it("returns ageMs when timestamps are present", () => {
-    const sourceMtime = new Date("2026-05-21T11:00:00Z");
-    const indexTimestamp = new Date("2026-05-21T11:05:00Z");
+    // Both within 1h staleness threshold; index newer than source → live
+    const sourceMtime = new Date(NOW.getTime() - 30 * 60_000);
+    const indexTimestamp = new Date(NOW.getTime() - 25 * 60_000);
     const result = computeFreshnessState(
       makeRaw({ sourceMtime, indexTimestamp })
     );
-    // indexTimestamp is 55 minutes from NOW; well within 1h threshold -> live
     expect(result.ageMs).toBe(NOW.getTime() - indexTimestamp.getTime());
     expect(result.state).toBe("live");
   });
