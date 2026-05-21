@@ -339,15 +339,16 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
    - Goal: close deferred LangGraph multi-hop topology and rollback-compensation gaps before claiming full multi-hop orchestration depth.
 5. Plan recent-deferred hardening sweep.
    - Source notes: Phase 57-64 context/summary deferred sections plus `.planning/PROJECT.md` v5 candidates.
-   - Requirements: `CTX-FOLLOWUP-01..02`, `INT-FOLLOWUP-01..03`, `EVAL-FOLLOWUP-01`, `EVAL-API-FOLLOWUP-01..02`, `MEMGEN-FOLLOWUP-01`, `SEAL-FOLLOWUP-01..02`, `AGENTGEN-FOLLOWUP-01`, `L3-FOLLOWUP-01..03`, `AUTH-FOLLOWUP-01..03`, `AUDIT-FOLLOWUP-01..03`, `UX-FOLLOWUP-01..06`, and `GSD-FOLLOWUP-01`.
+   - Requirements: `CTX-FOLLOWUP-01..02`, `INT-FOLLOWUP-01..07`, `EVAL-FOLLOWUP-01`, `EVAL-API-FOLLOWUP-01..02`, `MEMGEN-FOLLOWUP-01`, `SEAL-FOLLOWUP-01..02`, `AGENTGEN-FOLLOWUP-01`, `L3-FOLLOWUP-01..03`, `AUTH-FOLLOWUP-01..03`, `AUDIT-FOLLOWUP-01..03`, `UX-FOLLOWUP-01..06`, and `GSD-FOLLOWUP-01`.
    - Goal: prevent recent deferred notes from living only in phase-local context by turning them into plan-ready backlog requirements.
 
 6. Plan integration modernization: unified MCP + FastMCP v3.x + dependency drift.
    - Source finding: current configs already register unified `memroos` MCP, but legacy `services/memory/mcp-mem0.py` and `mcp-mem0-wrapper.sh` still exist as a standalone mem0-only adapter and one capability manifest still advertises standalone-only memory tools.
    - Source finding: `services/knowledge-mcp` runs FastMCP 2.14.7 while PyPI latest is 3.3.1; v3 migration must move HTTP/path/stateless/auth options to the v3-compatible runtime API rather than doing a blind pin bump.
    - Source finding: `services/memory` uses `mem0ai` 0.1.118 while PyPI latest is 2.0.2; this is a separate memory-backend migration from the FastMCP upgrade.
-   - Requirements: `INT-FOLLOWUP-01..03` in `.planning/REQUIREMENTS.md`.
-   - Goal: keep one canonical MemroOS MCP connection, remove stale memory adapters, upgrade FastMCP deliberately, and audit other older integration/runtime surfaces before they become operational debt.
+   - Spike note: `.planning/notes/integration-modernization-spike.md`.
+   - Requirements: `INT-FOLLOWUP-01..07` in `.planning/REQUIREMENTS.md`.
+   - Goal: keep one canonical MemroOS MCP connection, remove stale memory adapters, upgrade FastMCP and mem0ai deliberately, validate A2A/ADK and Next proxy boundaries against current specs, and stage SDK/toolchain majors before they become operational debt.
 
 ### Later Ideas
 
@@ -381,7 +382,7 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 - Eval Engine product packaging: decide bundled vs separate eval/self-improvement product surface, pricing axis, trace-ingestion contract, judge-model cost ownership, golden-set marketplace strategy, compliance floor, and competitive framing
 - Second vertical: after finance reconciliation has live customer proof, choose healthcare, legal, or ops/logistics as the next adapter + golden-set + UI terminology vertical
 - Context-source follow-up coverage: extend source contracts to all operator source families, including Drive and Slack, and expose memory queue/retry/degradation plus source-to-QMD indexing proof in health/evals
-- Integration modernization: retire the standalone mem0-only MCP adapter, route agents through unified `memroos` MCP, migrate FastMCP 2.x to v3.x, and audit mem0ai 2.x, A2A/ADK, Pipecat/Daily, LangGraph/checkpointer, Next proxy/middleware, SDK, and UI/toolchain drift
+- Integration modernization: retire the standalone mem0-only MCP adapter, route agents through unified `memroos` MCP, migrate FastMCP 2.x to v3.x, migrate mem0ai 0.1.x to 2.x, validate A2A/ADK and Next proxy conventions, patch-sweep Pipecat/Daily and LangGraph/checkpointer, and stage jose/shadcn/ESLint/TypeScript majors
 - Eval engine operationalization: provider-backed judge invocation, judge re-baselining, version/cost capture, OpenInference/OpenTelemetry ingestion, bulk traces, webhooks, streaming results, metering, tenant key UI, and verified quickstart docs
 - Memory autogen live validation: convert retro-documented memory-autogen behavior into an explicit contract with non-fixture mem0/graph/vector evals and replay evidence
 - SEAL proposal lifecycle hardening: governed auto-apply, bulk review, expiry/GC, tenant isolation, proposal-type plugin model, and file-system snapshot/restore for skill mutations
@@ -607,4 +608,4 @@ Plans:
 |-------|----------|---------------|--------|-----------|
 | 70 | v4.0 | 5/5 | Complete   | 2026-05-21 |
 | 71 | v4.0 | 6/6 | Complete | 2026-05-21 |
-| 72 | v4.0 | 3/6 | In Progress|  |
+| 72 | v4.0 | 5/6 | In Progress|  |

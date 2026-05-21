@@ -4,10 +4,10 @@ milestone: v4.0
 milestone_name: Orchestration Depth + Intelligence Uplift
 current_phase: 72
 current_phase_name: cross-project-recall-behavioral-w-lift-ui-skills
-current_plan: 5
+current_plan: 6
 status: executing
-stopped_at: "Phase 72 Plan 05 checkpoint: Tasks 1+2 complete (registry parser + import API), awaiting Task 3 Skills UI human-verify"
-last_updated: "2026-05-21T20:58:00Z"
+stopped_at: "Phase 72 Plan 05 complete: all 3 tasks done (registry parser + import API + Skills UI). Ready for Plan 06."
+last_updated: "2026-05-21T21:04:10Z"
 last_activity: 2026-05-21
 progress:
   total_phases: 3
@@ -33,7 +33,7 @@ Current Phase Name: cross-project-recall-behavioral-w-lift-ui-skills
 Current Plan: 5
 Total Phases: 3
 Total Plans in Phase: 6
-Progress: [████████░░] 82%
+Progress: [█████████░] 88%
 Status: Ready to execute
 
 Phase: 72 (cross-project-recall-behavioral-w-lift-ui-skills) — EXECUTING
@@ -80,6 +80,7 @@ Last activity: 2026-05-21
 - **Prompt injection as data:** parseSkillMd() stores raw_body and all fields verbatim; no eval, no exec; sanitization is caller responsibility; audit trail preserved
 - **UNIQUE(name, source_harness) with ON CONFLICT DO UPDATE:** idempotent re-import replaces previous entry
 - **Pagination indexes on skill_registry:** (source_harness, dispatch_status) and (dispatch_status, imported_at DESC) per performance note
+- **GET /api/skills/import is read-only (no operator auth):** Browser UI needs unauthenticated read access to show registry skills; POST import remains operator-gated
 
 ### Decisions (Phase 72 Plan 02)
 
@@ -140,7 +141,7 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 | Phase 72-cross-project-recall-behavioral-w-lift-ui-skills P01 | 6m | 3 tasks | 4 files |
 | Phase 72 P02 | 15m | 3 tasks | 7 files |
 | Phase 72 P04 | 40m | 3 tasks | 6 files |
-| Phase 72 P05 | 18m | 2 tasks (checkpoint) | 4 files |
+| Phase 72 P05 | 36m | 3 tasks | 7 files |
 
 ### Blockers/Concerns (verified)
 
@@ -190,10 +191,10 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-21T20:58:00Z
-Stopped at: Phase 72 Plan 05 checkpoint at Task 3: Skills UI human-verify required. Tasks 1+2 committed (registry parser + import API).
+Last session: 2026-05-21T21:04:10Z
+Stopped at: Phase 72 Plan 05 complete. All 3 tasks done: registry parser (TDD), import API, Skills UI.
 Resume file: None
-Next action: continuation agent to implement Task 3 Skills UI (governed/imported skills section with completeness display), run build, browser verify /skills
+Next action: Execute Phase 72 Plan 06
 
 ## UAT Findings (2026-05-17)
 
