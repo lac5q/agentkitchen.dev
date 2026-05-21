@@ -45,6 +45,9 @@ class OrchestrationStore:
             os.makedirs(parent, exist_ok=True)
         self.conn = sqlite3.connect(db_path)
         self.conn.row_factory = sqlite3.Row
+        # WAL mode required: concurrent edit+resume would stall under rollback journal (T-70-01)
+        self.conn.execute("PRAGMA journal_mode=WAL")
+        self.conn.execute("PRAGMA busy_timeout=5000")
         self._init_schema()
 
     def close(self) -> None:
