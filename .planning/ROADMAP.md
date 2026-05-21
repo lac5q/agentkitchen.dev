@@ -504,8 +504,8 @@ downstream features.
 **Research flag**: yes — `--research-phase` when planning (ORCH-08..10 saga compensation requires auditing all existing A2A chains for which need compensating actions retrofitted)
 **Plans**: 5 plans
 Plans:
-- [ ] 70-01-PLAN.md — Foundation prerequisites: WAL pragma + langgraph pin + Wave 0 RED test scaffolds
-- [ ] 70-02-PLAN.md — HIL edit-and-continue: Python orchestration service (edit endpoint + audit)
+- [x] 70-01-PLAN.md — Foundation prerequisites: WAL pragma + langgraph pin + Wave 0 RED test scaffolds
+- [x] 70-02-PLAN.md — HIL edit-and-continue: Python orchestration service (edit endpoint + audit)
 - [ ] 70-03-PLAN.md — Multi-hop retry + declarative rollback: Python orchestration service
 - [ ] 70-04-PLAN.md — MemoryAdapter interface + registry + concrete shim adapters (TypeScript)
 - [ ] 70-05-PLAN.md — HIL edit-and-continue: TypeScript route, client, and edit UI
@@ -551,6 +551,6 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|----------|---------------|--------|-----------|
-| 70 | v4.0 | 0/5 | Planned | - |
+| 70 | v4.0 | 2/5 | In Progress|  |
 | 71 | v4.0 | 0/0 | Not started | - |
 | 72 | v4.0 | 0/0 | Not started | - |
