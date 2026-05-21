@@ -1,4 +1,4 @@
-pipecat-ai[google,groq,cartesia,elevenlabs,websocket,kokoro]==1.0.0
+pipecat-ai[daily,google,groq,cartesia,elevenlabs,websocket,kokoro]>=1.2,<2.0
 fastapi>=0.115,<1.0
 uvicorn>=0.32,<1.0
 python-dotenv>=1.0,<2.0
