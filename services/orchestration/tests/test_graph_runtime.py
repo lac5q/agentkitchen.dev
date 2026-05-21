@@ -114,14 +114,17 @@ class LangGraphRuntimeTest(unittest.TestCase):
                 }
             )
 
-            # RetryPolicy on dispatch node requires langgraph >= 1.2 (not in graph yet — Wave 0 RED)
-            # Confirm compiled graph exposes retry policy on dispatch node
-            compiled = runtime._compiled()
-            dispatch_node = compiled.nodes.get("dispatch")
-            self.assertIsNotNone(dispatch_node, "dispatch node must exist in compiled graph")
-            retry_policy = getattr(dispatch_node, "retry_policy", None)
-            self.assertIsNotNone(retry_policy, "dispatch node must have a RetryPolicy (ORCH-08)")
-            self.assertGreater(retry_policy.max_attempts, 1, "max_attempts must be > 1")
+            # RetryPolicy on dispatch node requires langgraph >= 1.2.
+            # _compiled() is a context manager — use it as one to access the compiled graph.
+            with runtime._compiled() as compiled:
+                dispatch_node = compiled.nodes.get("dispatch")
+                self.assertIsNotNone(dispatch_node, "dispatch node must exist in compiled graph")
+                # In LangGraph 1.2, retry_policy on a PregelNode is a tuple of RetryPolicy objects.
+                retry_policy_tuple = getattr(dispatch_node, "retry_policy", None)
+                self.assertIsNotNone(retry_policy_tuple, "dispatch node must have a RetryPolicy (ORCH-08)")
+                # Unwrap tuple — retry_policy is (RetryPolicy(...),)
+                retry_policy = retry_policy_tuple[0] if isinstance(retry_policy_tuple, tuple) else retry_policy_tuple
+                self.assertGreater(retry_policy.max_attempts, 1, "max_attempts must be > 1")
 
 
 if __name__ == "__main__":
