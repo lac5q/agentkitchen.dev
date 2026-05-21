@@ -7,7 +7,7 @@ current_phase_name: cross-project-recall-behavioral-w-lift-ui-skills
 current_plan: 3
 status: executing
 stopped_at: "Phase 72 Plan 02 complete: behavioral eval job substrate shipped"
-last_updated: "2026-05-21T20:13:24.689Z"
+last_updated: "2026-05-21T20:18:34.412Z"
 last_activity: 2026-05-21
 progress:
   total_phases: 3
@@ -73,6 +73,12 @@ Last activity: 2026-05-21
 - Treat voice as an ingestion surface for memory, not a standalone product pillar.
 - Frame `qmd update` UI work as context freshness and source evidence, not as a search-admin feature.
 - Phase 72 should make evidence bundles and governed skill contracts explicit in acceptance criteria because they explain what memory was consumed, what tools ran, which checks passed, and what can be replayed or rolled back.
+
+### Decisions (Phase 72 Plan 02)
+
+- **ApplyResult discriminated union:** `kind='sync'` for legacy proposal types; `kind='job'` for behavioral types — callers must switch on `result.kind` before accessing type-specific fields
+- **Behavioral proposal predicate:** `agent_instruction_patch` and `skill_addition` are the two types requiring async eval (D-06); all other types keep the synchronous apply path
+- **seal_eval_jobs + seal_evidence_bundles:** additive tables with FK to `seal_proposals (ON DELETE CASCADE)`; sandbox profile fails closed — all tool calls denied by default, all calls recorded in evidence bundle
 
 ### Decisions (Phase 70 Plan 04)
 
