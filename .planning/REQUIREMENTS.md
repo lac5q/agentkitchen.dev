@@ -40,8 +40,8 @@
 
 ### Cross-Project Recall
 
-- [ ] **RECALL-03**: Caller can request cross-project recall by passing `crossProject: true` with explicit `allowed_project_ids`
-- [ ] **RECALL-04**: Cross-project results ranked by semantic similarity and annotated with source repo; single-project remains default
+- [x] **RECALL-03**: Caller can request cross-project recall by passing `crossProject: true` with explicit `allowed_project_ids`
+- [x] **RECALL-04**: Cross-project results ranked by semantic similarity and annotated with source repo; single-project remains default
 
 ### True Behavioral W-Lift
 
