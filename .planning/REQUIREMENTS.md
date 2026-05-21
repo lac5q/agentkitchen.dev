@@ -8,24 +8,24 @@
 
 ### HIL Enhancements
 
-- [ ] **HIL-01**: Operator can modify declared task state fields via a dedicated edit UI before resuming a paused LangGraph thread
-- [ ] **HIL-02**: System validates edited field values against `OrchestrationState` schema before accepting the update
-- [ ] **HIL-03**: Audit log records who edited a HIL task, which fields changed, and before/after values
+- [x] **HIL-01**: Operator can modify declared task state fields via a dedicated edit UI before resuming a paused LangGraph thread
+- [x] **HIL-02**: System validates edited field values against `OrchestrationState` schema before accepting the update
+- [x] **HIL-03**: Audit log records who edited a HIL task, which fields changed, and before/after values
 - [ ] **HIL-04**: Each HIL interrupt type has a configurable SLA deadline stored as an ISO timestamp
 - [ ] **HIL-05**: Background scheduler proactively checks for expired HIL tasks every 60s and triggers escalation actions (notify, auto-resolve, or abandon)
 - [ ] **HIL-06**: Operator can view pending HIL items with countdown timers and SLA traffic-light status in the dashboard
 
 ### Orchestration: Multi-Hop Retry + Rollback
 
-- [ ] **ORCH-08**: Each hop in a multi-agent chain has a configurable retry budget via LangGraph `RetryPolicy`
-- [ ] **ORCH-09**: Each forward action declares a paired compensating action stored as a declarative row in `orchestration_lineage`
-- [ ] **ORCH-10**: A2A task status reflects granular failure state: "failed at hop N, compensated hops 1..N-1"
+- [x] **ORCH-08**: Each hop in a multi-agent chain has a configurable retry budget via LangGraph `RetryPolicy`
+- [x] **ORCH-09**: Each forward action declares a paired compensating action stored as a declarative row in `orchestration_lineage`
+- [x] **ORCH-10**: A2A task status reflects granular failure state: "failed at hop N, compensated hops 1..N-1"
 
 ### Memory Backend Pluggability
 
-- [ ] **MEM-06**: `MemoryAdapter` interface exposes only `search()`, `write()`, and `health()` — no client handle leakage
-- [ ] **MEM-07**: Adapter registry maps `MemoryTier` to `MemoryAdapter[]`; new backends register without touching existing code
-- [ ] **MEM-08**: Existing mem0/Qdrant/Neo4j backends wrapped as concrete adapters implementing the interface
+- [x] **MEM-06**: `MemoryAdapter` interface exposes only `search()`, `write()`, and `health()` — no client handle leakage
+- [x] **MEM-07**: Adapter registry maps `MemoryTier` to `MemoryAdapter[]`; new backends register without touching existing code
+- [x] **MEM-08**: Existing mem0/Qdrant/Neo4j backends wrapped as concrete adapters implementing the interface
 
 ### Voice Meeting Bot
 
@@ -70,6 +70,19 @@
 - [ ] Voyage AI `voyage-4-large` embedding upgrade (Ollama local in v4.0, env-flag swap)
 - [ ] Multi-participant meeting bot (listener-only in v4.0)
 - [ ] Cross-harness skill auto-sync from agent directories (manual import in v4.0)
+- [ ] Harness Control Plane: every dispatched task exposes a Plan-Execute-Verify timeline with plan contract, permission tier, tool actions, verification checks, and memory updates
+- [ ] Evidence bundles: every agent output can show sources used, memories consumed, tools/commands run, checks passed, unverified assumptions, residual risks, and replay/rollback artifacts
+- [ ] Shared harness state: tasks declare read/write sets, assumptions, version dependencies, verifier obligations, and conflict policy; stale belief/context drift is surfaced before action
+- [ ] Governed skill contracts: promoted skills store preconditions, allowed tools, risk tier, verification checks, evidence examples, owner, rollback behavior, and dispatch status
+- [ ] Evolution Agent: telemetry-driven harness improvements are proposed, evaluated against held-out regression tasks, and require approval before changing permissions, validators, routing, or workflow topology
+- [ ] Knowledge graph intelligence: repo/docs/PDF/image/transcript graphs expose confidence-tagged edges, god nodes, surprising connections, query/path/explain flows, wiki/report exports, and freshness hooks
+- [ ] PR/workflow graph risk: graph communities and dependency paths identify merge-order conflicts, impacted concepts, stale graph regions, and coordination risk before dispatch or review
+- [ ] Stacked agent work units: large agent tasks can be split into ordered, dependent, independently reviewable slices with stack-aware verification, promotion gates, and rollback invalidation when an earlier slice fails
+- [ ] Model gateway observability: LiteLLM can be configured as the first optional `ModelGatewayAdapter` while direct-provider fallback remains available; every LLM call records provider/model route, prompt/template version, cache hit/miss, fallback path, token/cost budget, latency, and denial reason in the task evidence bundle
+- [ ] Secret-scope health: runtime health checks flag agent secrets that are not project scoped, not loaded from an approved secret manager path, or risk persistence in plain `.env`/audit artifacts
+- [ ] Eval-pinned promotion commits: passing eval runs capture model version, prompt/harness version, pass rate, dataset seed, and commit/release pointer for incident rollback
+- [ ] Agent lessons ledger: repo-level lessons are captured from weird behavior, edge cases, config changes, incidents, and promoted skills, then surfaced in context packs and graph freshness checks
+- [ ] Third-party eval adapter: Inspect-style safety eval packs can plug into the existing eval engine for deception, tool misuse, manipulation, and policy-boundary checks
 
 ---
 
