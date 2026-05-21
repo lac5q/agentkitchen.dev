@@ -9,6 +9,7 @@ import { checkDispatchPolicy } from "@/lib/security-policy";
 import { writeAuditLog } from "@/lib/audit";
 import { authenticateAgentHeaders, getRemoteAgents, listRegisteredAgents } from "@/lib/agent-registry";
 import { selectAdapter } from "@/lib/dispatch/adapter-factory";
+import { lookupSkillContract, buildSkillEvidence } from "@/lib/dispatch/skill-lookup";
 import type { DispatchTask } from "@/lib/dispatch/types";
 import type { RegisteredAgent, RemoteAgentConfig } from "@/types";
 
@@ -162,6 +163,38 @@ export async function POST(req: NextRequest | Request) {
     );
   }
 
+  // Skill governance check (SKILL-03): look up registry before per-agent instruction fallback.
+  // Fail closed: incomplete, disabled, or risk-unknown contracts deny dispatch.
+  // No skill_name in request → fallback (normal dispatch proceeds unchanged).
+  const skillName: string | undefined =
+    typeof body.skill_name === "string" ? body.skill_name : undefined;
+  const skillContract = lookupSkillContract(db, skillName);
+  const skillEvidence = buildSkillEvidence(skillContract);
+
+  if (skillContract?.kind === "denied") {
+    writeAuditLog(db, {
+      actor: from_agent,
+      action: "policy_denied",
+      target: "dispatch",
+      detail: JSON.stringify({
+        code: "SKILL_GOVERNANCE_DENIED",
+        skill_name: skillContract.skill_name,
+        reason: skillContract.reason,
+        dispatch_status: skillContract.dispatch_status,
+      }),
+      severity: "high",
+    });
+    return Response.json(
+      {
+        ok: false,
+        error: `Skill governance denied: ${skillContract.reason}`,
+        code: "SKILL_GOVERNANCE_DENIED",
+        detail: skillEvidence,
+      },
+      { status: 403 }
+    );
+  }
+
   const task_id: string = body.task_id ?? crypto.randomUUID();
   const context_id: string = body.context_id ?? crypto.randomUUID();
   const dispatched_at = new Date().toISOString();
@@ -192,8 +225,12 @@ export async function POST(req: NextRequest | Request) {
     input: body.input,
     priority,
     dispatched_at,
+    skill_name: skillName,
   };
   const result = await adapter.dispatch(task, agent);
+
+  // Merge skill governance evidence into dispatch result evidence
+  const mergedEvidence = { ...(result.evidence ?? {}), ...skillEvidence };
 
   if (!result.accepted) {
     db.prepare(
@@ -209,10 +246,10 @@ export async function POST(req: NextRequest | Request) {
        WHERE task_id=@task_id`
     ).run({ result: result.detail, task_id });
     return Response.json(
-      { ok: false, error: result.detail, code: "ADAPTER_REJECTED", detail: result.evidence ?? {} },
+      { ok: false, error: result.detail, code: "ADAPTER_REJECTED", detail: mergedEvidence },
       { status: 502 }
     );
   }
 
-  return Response.json({ ok: true, task_id, context_id, to_agent: body.to_agent, adapter: adapter.name, mode: result.mode, dispatched_at });
+  return Response.json({ ok: true, task_id, context_id, to_agent: body.to_agent, adapter: adapter.name, mode: result.mode, dispatched_at, evidence: mergedEvidence });
 }
