@@ -1,4 +1,4 @@
-import { execFileSync } from "child_process";
+import { execFile } from "child_process";
 import { stat as fsStat } from "fs/promises";
 import path from "path";
 import { MEM0_URL, AGENT_CONFIGS_PATH } from "@/lib/constants";
@@ -7,6 +7,37 @@ import { getRepoRoot } from "@/lib/paths";
 import type { HealthStatus } from "@/types";
 
 export const dynamic = "force-dynamic";
+
+function execFileStdout(
+  file: string,
+  args: string[],
+  options: Parameters<typeof execFile>[2]
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    execFile(file, args, options, (error, stdout) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(typeof stdout === "string" ? stdout : stdout.toString("utf8"));
+    });
+  });
+}
+
+function execFileOutput(
+  file: string,
+  args: string[],
+  options: Parameters<typeof execFile>[2]
+): Promise<{ stdout: string; error: Error | null }> {
+  return new Promise((resolve) => {
+    execFile(file, args, options, (error, stdout) => {
+      resolve({
+        stdout: typeof stdout === "string" ? stdout : stdout.toString("utf8"),
+        error: error instanceof Error ? error : null,
+      });
+    });
+  });
+}
 
 type ServiceCheckResult = {
   status?: HealthStatus["status"];
@@ -98,7 +129,7 @@ async function checkKnowledgeIndexing(): Promise<ServiceCheckResult> {
   const maxPending = process.env.QMD_MAX_PENDING_EMBEDDINGS ?? "10000";
 
   try {
-    const output = execFileSync(
+    const { stdout, error } = await execFileOutput(
       process.execPath,
       [
         scriptPath,
@@ -108,7 +139,6 @@ async function checkKnowledgeIndexing(): Promise<ServiceCheckResult> {
       ],
       {
         cwd: repoRoot,
-        encoding: "utf8",
         timeout: Number(process.env.KNOWLEDGE_INDEX_HEALTH_TIMEOUT_MS ?? 45_000),
         env: {
           ...process.env,
@@ -116,7 +146,10 @@ async function checkKnowledgeIndexing(): Promise<ServiceCheckResult> {
         },
       }
     );
-    const report = JSON.parse(output) as KnowledgeIndexReport;
+    if (!stdout.trim() && error) {
+      throw error;
+    }
+    const report = JSON.parse(stdout) as KnowledgeIndexReport;
     const detailParts: string[] = [];
     if (typeof report.pendingEmbeddings === "number") {
       detailParts.push(`${report.pendingEmbeddings} pending embeddings`);
@@ -163,13 +196,13 @@ async function checkGraphMemory(): Promise<ServiceCheckResult> {
 export async function GET() {
   const services = await Promise.all([
     checkService("RTK", async () => {
-      execFileSync("rtk", ["--version"], { timeout: 2000 });
+      await execFileStdout("rtk", ["--version"], { timeout: 2000 });
     }),
     checkService("mem0", async () => {
       return checkMem0();
     }),
     checkService("QMD", async () => {
-      execFileSync("which", ["qmd"], { timeout: 2000 });
+      await execFileStdout("which", ["qmd"], { timeout: 2000 });
     }),
     checkService("Knowledge Index", async () => {
       return checkKnowledgeIndexing();

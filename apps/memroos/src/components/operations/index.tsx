@@ -33,51 +33,51 @@ function NocPanelSkeleton({ height = 220 }: { height?: number }) {
 
 const EfficiencySignals = dynamic(
   () => import("./efficiency-signals").then((mod) => mod.EfficiencySignals),
-  { loading: () => <div style={{ padding: "0 28px 14px" }}><NocPanelSkeleton height={190} /></div> }
+  { ssr: false, loading: () => <div style={{ padding: "0 28px 14px" }}><NocPanelSkeleton height={190} /></div> }
 );
 const MemoryConsumption = dynamic(
   () => import("./memory-consumption").then((mod) => mod.MemoryConsumption),
-  { loading: () => <NocPanelSkeleton height={320} /> }
+  { ssr: false, loading: () => <NocPanelSkeleton height={320} /> }
 );
 const MemoryNotDigested = dynamic(
   () => import("./memory-not-digested").then((mod) => mod.MemoryNotDigested),
-  { loading: () => <NocPanelSkeleton height={320} /> }
+  { ssr: false, loading: () => <NocPanelSkeleton height={320} /> }
 );
 const AgentWorkload = dynamic(
   () => import("./agent-workload").then((mod) => mod.AgentWorkload),
-  { loading: () => <NocPanelSkeleton /> }
+  { ssr: false, loading: () => <NocPanelSkeleton /> }
 );
 const ModelUtility = dynamic(
   () => import("./model-utility").then((mod) => mod.ModelUtility),
-  { loading: () => <NocPanelSkeleton /> }
+  { ssr: false, loading: () => <NocPanelSkeleton /> }
 );
 const ActivityHeatmap = dynamic(
   () => import("./activity-heatmap").then((mod) => mod.ActivityHeatmap),
-  { loading: () => <NocPanelSkeleton /> }
+  { ssr: false, loading: () => <NocPanelSkeleton /> }
 );
 const SkillsLifecycle = dynamic(
   () => import("./skills-lifecycle").then((mod) => mod.SkillsLifecycle),
-  { loading: () => <div style={{ padding: "0 28px 14px" }}><NocPanelSkeleton height={260} /></div> }
+  { ssr: false, loading: () => <div style={{ padding: "0 28px 14px" }}><NocPanelSkeleton height={260} /></div> }
 );
 const BehaviorSignals = dynamic(
   () => import("./behavior-signals").then((mod) => mod.BehaviorSignals),
-  { loading: () => <NocPanelSkeleton height={260} /> }
+  { ssr: false, loading: () => <NocPanelSkeleton height={260} /> }
 );
 const EngagementConsole = dynamic(
   () => import("./engagement-console").then((mod) => mod.EngagementConsole),
-  { loading: () => <NocPanelSkeleton height={260} /> }
+  { ssr: false, loading: () => <NocPanelSkeleton height={260} /> }
 );
 const GovernanceStrip = dynamic(
   () => import("./governance-strip").then((mod) => mod.GovernanceStrip),
-  { loading: () => <NocPanelSkeleton /> }
+  { ssr: false, loading: () => <NocPanelSkeleton /> }
 );
 const Savings = dynamic(
   () => import("./savings-waste").then((mod) => mod.Savings),
-  { loading: () => <NocPanelSkeleton /> }
+  { ssr: false, loading: () => <NocPanelSkeleton /> }
 );
 const Waste = dynamic(
   () => import("./savings-waste").then((mod) => mod.Waste),
-  { loading: () => <NocPanelSkeleton /> }
+  { ssr: false, loading: () => <NocPanelSkeleton /> }
 );
 
 export function OperationsNoc() {

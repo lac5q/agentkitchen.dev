@@ -1,9 +1,9 @@
 // @vitest-environment node
-import { execFileSync } from "child_process";
+import { execFile } from "child_process";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("child_process", () => ({
-  execFileSync: vi.fn(),
+  execFile: vi.fn(),
 }));
 
 vi.mock("fs/promises", () => ({
@@ -19,11 +19,15 @@ describe("runtime health route", () => {
   beforeEach(() => {
     process.env.MEM0_URL = "http://mem0.test";
     process.env.KNOWLEDGE_INDEX_HEALTH_TTL_MS = "0";
-    vi.mocked(execFileSync).mockImplementation((_command, args) => {
+    vi.mocked(execFile).mockImplementation((_command, args, options, callback) => {
+      const done = typeof options === "function" ? options : callback;
+      if (!done) throw new Error("missing callback");
       if (Array.isArray(args) && args.includes("--json")) {
-        return JSON.stringify({ ok: true, pendingEmbeddings: 0, failures: [], warnings: [] });
+        done(null, JSON.stringify({ ok: true, pendingEmbeddings: 0, failures: [], warnings: [] }), "");
+        return {} as ReturnType<typeof execFile>;
       }
-      return "";
+      done(null, "", "");
+      return {} as ReturnType<typeof execFile>;
     });
   });
 
@@ -136,6 +140,48 @@ describe("runtime health route", () => {
 
     expect(knowledge.status).toBe("up");
     expect(knowledge.detail).toBe("0 pending embeddings");
+  });
+
+  it("marks knowledge indexing degraded when the contract report has failures", async () => {
+    vi.mocked(execFile).mockImplementation((_command, args, options, callback) => {
+      const done = typeof options === "function" ? options : callback;
+      if (!done) throw new Error("missing callback");
+      if (Array.isArray(args) && args.includes("--json")) {
+        done(
+          new Error("knowledge index contract failed"),
+          JSON.stringify({
+            ok: false,
+            pendingEmbeddings: 63,
+            failures: ["emails: missing qmd://emails/example.md"],
+            warnings: [],
+          }),
+          ""
+        );
+        return {} as ReturnType<typeof execFile>;
+      }
+      done(null, "", "");
+      return {} as ReturnType<typeof execFile>;
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          status: "ok",
+          vector_store: "connected",
+          memory_runtime: { status: "available" },
+          queue: { queued: 0 },
+        })
+      )
+    );
+    const { GET } = await loadRoute();
+
+    const response = await GET();
+    const body = await response.json();
+    const knowledge = body.services.find((service: { service: string }) => service.service === "Knowledge Index");
+
+    expect(knowledge.status).toBe("degraded");
+    expect(knowledge.detail).toContain("63 pending embeddings");
+    expect(knowledge.detail).toContain("missing qmd");
   });
 
   it("includes graph memory status in app health", async () => {
