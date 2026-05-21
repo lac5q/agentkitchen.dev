@@ -821,6 +821,65 @@ export function useResolveOrchestrationHilMutation() {
   });
 }
 
+export interface EditOrchestrationHilInput {
+  id: string;
+  patch: {
+    taskSummary?: string | null;
+    requiredCapability?: string | null;
+    selectedAgentId?: string | null;
+    requiresApproval?: boolean | null;
+  };
+}
+
+export interface EditOrchestrationHilSuccess {
+  ok: true;
+  editedFields: string[];
+}
+
+export interface EditOrchestrationHilValidationError {
+  ok: false;
+  validationError: true;
+  status: 422;
+  detail: unknown;
+}
+
+export type EditOrchestrationHilResult =
+  | EditOrchestrationHilSuccess
+  | EditOrchestrationHilValidationError;
+
+async function editOrchestrationHilFn(
+  input: EditOrchestrationHilInput
+): Promise<EditOrchestrationHilResult> {
+  const res = await fetch(
+    `/api/orchestration/hil/${encodeURIComponent(input.id)}/edit`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input.patch),
+    }
+  );
+  if (res.status === 422) {
+    const detail = await res.json().catch(() => null);
+    return { ok: false, validationError: true, status: 422, detail };
+  }
+  if (!res.ok) {
+    const body = (await res.json().catch(() => null)) as { error?: unknown } | null;
+    const detail = typeof body?.error === "string" ? body.error : `${res.status}`;
+    throw new Error(`/api/orchestration/hil edit: ${detail}`);
+  }
+  return res.json();
+}
+
+export function useEditOrchestrationHilMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: editOrchestrationHilFn,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orchestration-hil"] });
+    },
+  });
+}
+
 export function useSkills() {
   return useQuery({
     queryKey: ["skills"],
