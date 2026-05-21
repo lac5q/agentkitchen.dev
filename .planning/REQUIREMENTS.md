@@ -45,9 +45,9 @@
 
 ### True Behavioral W-Lift
 
-- [ ] **SEAL-04**: `BehavioralEvalService` implements `EvalServiceLike.rescoreForProposal()` dispatching real agent re-execution via A2A hub
-- [ ] **SEAL-05**: Behavioral eval uses a sandboxed profile with no-op tool stubs on a held-out 10-20 task sample
-- [ ] **SEAL-06**: `applyProposal()` returns `job_id` immediately; UI polls for completion; request handler never blocked; completed eval jobs expose evidence bundles with task sample, tools/commands, checks passed, assumptions, residual risks, and replay/rollback handle
+- [x] **SEAL-04**: `BehavioralEvalService` implements `EvalServiceLike.rescoreForProposal()` dispatching real agent re-execution via A2A hub
+- [x] **SEAL-05**: Behavioral eval uses a sandboxed profile with no-op tool stubs on a held-out 10-20 task sample
+- [x] **SEAL-06**: `applyProposal()` returns `job_id` immediately; UI polls for completion; request handler never blocked; completed eval jobs expose evidence bundles with task sample, tools/commands, checks passed, assumptions, residual risks, and replay/rollback handle
 
 ### UI: Flow Trigger + Library Freshness
 
