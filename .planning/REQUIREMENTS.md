@@ -8,18 +8,18 @@
 
 ### HIL Enhancements
 
-- [x] **HIL-01**: Operator can modify declared task state fields via a dedicated edit UI before resuming a paused LangGraph thread
-- [x] **HIL-02**: System validates edited field values against `OrchestrationState` schema before accepting the update
-- [x] **HIL-03**: Audit log records who edited a HIL task, which fields changed, and before/after values
+- [x] **HIL-01**: Operator can modify declared task state fields via a dedicated edit UI before resuming a paused LangGraph thread (Python endpoint complete in 70-02; TS route/client/UI pending 70-05)
+- [x] **HIL-02**: System validates edited field values against `OrchestrationState` schema before accepting the update (Python validation complete in 70-02; TS proxy validation pending 70-05)
+- [x] **HIL-03**: Audit log records who edited a HIL task, which fields changed, and before/after values (Python lineage row complete in 70-02; authenticated operator identity through TS proxy pending 70-05)
 - [ ] **HIL-04**: Each HIL interrupt type has a configurable SLA deadline stored as an ISO timestamp
 - [ ] **HIL-05**: Background scheduler proactively checks for expired HIL tasks every 60s and triggers escalation actions (notify, auto-resolve, or abandon)
 - [ ] **HIL-06**: Operator can view pending HIL items with countdown timers and SLA traffic-light status in the dashboard
 
 ### Orchestration: Multi-Hop Retry + Rollback
 
-- [x] **ORCH-08**: Each hop in a multi-agent chain has a configurable retry budget via LangGraph `RetryPolicy`
-- [x] **ORCH-09**: Each forward action declares a paired compensating action stored as a declarative row in `orchestration_lineage`
-- [x] **ORCH-10**: A2A task status reflects granular failure state: "failed at hop N, compensated hops 1..N-1"
+- [ ] **ORCH-08**: Each hop in a multi-agent chain has a configurable retry budget via LangGraph `RetryPolicy` (pending 70-03)
+- [ ] **ORCH-09**: Each forward action declares a paired compensating action stored as a declarative row in `orchestration_lineage` (pending 70-03)
+- [ ] **ORCH-10**: A2A task status reflects granular failure state: "failed at hop N, compensated hops 1..N-1" (pending 70-03)
 
 ### Memory Backend Pluggability
 
@@ -35,7 +35,7 @@
 
 ### LLM-Powered Recall Scoring
 
-- [ ] **RECALL-01**: Recall endpoint supports `mode=semantic|bm25|hybrid`; hybrid merges Ollama `nomic-embed-text` + BM25 via RRF; BM25 remains default
+- [ ] **RECALL-01**: Recall endpoint supports `mode=semantic|bm25|hybrid`; hybrid merges Ollama `nomic-embed-text` + BM25 via RRF; BM25 remains default; this applies to message recall in `conversations.db` and does not replace qmd BM25 or mem0/Qdrant vector memory
 - [ ] **RECALL-02**: Embeddings precomputed at ingest via background job (50 messages/cycle, 5-min interval); degrades gracefully with `degraded: true` on embedding outage
 
 ### Cross-Project Recall
@@ -47,19 +47,19 @@
 
 - [ ] **SEAL-04**: `BehavioralEvalService` implements `EvalServiceLike.rescoreForProposal()` dispatching real agent re-execution via A2A hub
 - [ ] **SEAL-05**: Behavioral eval uses a sandboxed profile with no-op tool stubs on a held-out 10-20 task sample
-- [ ] **SEAL-06**: `applyProposal()` returns `job_id` immediately; UI polls for completion; request handler never blocked
+- [ ] **SEAL-06**: `applyProposal()` returns `job_id` immediately; UI polls for completion; request handler never blocked; completed eval jobs expose evidence bundles with task sample, tools/commands, checks passed, assumptions, residual risks, and replay/rollback handle
 
 ### UI: Flow Trigger + Library Freshness
 
 - [ ] **UI-05**: Operator can trigger `qmd update` pipeline from the UI with SSE progress streaming
-- [ ] **UI-06**: Library page shows QMD index recency timestamp vs latest file mtime per collection
+- [ ] **UI-06**: Library page shows QMD index recency timestamp vs latest file mtime per collection as context freshness evidence
 
 ### Cross-Harness Skills
 
-- [ ] **SKILL-01**: `skill_registry` table stores normalized skill definitions imported from Claude/OpenAI/Gemini harnesses (SKILL.md format)
+- [ ] **SKILL-01**: `skill_registry` table stores normalized skill definitions imported from Claude/OpenAI/Gemini harnesses (SKILL.md format) with governed contract fields: preconditions, allowed tools, risk tier, verification checks, owner, rollback behavior, and dispatch status
 - [ ] **SKILL-02**: Operator can import a SKILL.md file and have it normalized and stored in the registry
 - [ ] **SKILL-03**: A2A dispatcher looks up the skill registry before falling back to per-agent instructions
-- [ ] **SKILL-04**: Skills UI shows all registered skills, their source harness, and dispatch status
+- [ ] **SKILL-04**: Skills UI shows all registered skills, their source harness, dispatch status, and contract completeness
 
 ---
 
@@ -70,10 +70,10 @@
 - [ ] Voyage AI `voyage-4-large` embedding upgrade (Ollama local in v4.0, env-flag swap)
 - [ ] Multi-participant meeting bot (listener-only in v4.0)
 - [ ] Cross-harness skill auto-sync from agent directories (manual import in v4.0)
-- [ ] Harness Control Plane: every dispatched task exposes a Plan-Execute-Verify timeline with plan contract, permission tier, tool actions, verification checks, and memory updates
-- [ ] Evidence bundles: every agent output can show sources used, memories consumed, tools/commands run, checks passed, unverified assumptions, residual risks, and replay/rollback artifacts
+- [ ] Full Harness Control Plane: every dispatched task exposes a Plan-Execute-Verify timeline with plan contract, permission tier, tool actions, verification checks, and memory updates (Phase 72 covers the first evidence-bundle slice for eval/skill work)
+- [ ] Universal evidence bundles: every agent output can show sources used, memories consumed, tools/commands run, checks passed, unverified assumptions, residual risks, and replay/rollback artifacts (Phase 72 covers SEAL/UI/skill evidence first)
 - [ ] Shared harness state: tasks declare read/write sets, assumptions, version dependencies, verifier obligations, and conflict policy; stale belief/context drift is surfaced before action
-- [ ] Governed skill contracts: promoted skills store preconditions, allowed tools, risk tier, verification checks, evidence examples, owner, rollback behavior, and dispatch status
+- [ ] Skill-contract evidence examples: promoted skills attach worked examples and regression cases to the governed contract fields introduced in Phase 72
 - [ ] Evolution Agent: telemetry-driven harness improvements are proposed, evaluated against held-out regression tasks, and require approval before changing permissions, validators, routing, or workflow topology
 - [ ] Knowledge graph intelligence: repo/docs/PDF/image/transcript graphs expose confidence-tagged edges, god nodes, surprising connections, query/path/explain flows, wiki/report exports, and freshness hooks
 - [ ] PR/workflow graph risk: graph communities and dependency paths identify merge-order conflicts, impacted concepts, stale graph regions, and coordination risk before dispatch or review

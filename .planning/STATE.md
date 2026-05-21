@@ -2,16 +2,19 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Orchestration Depth + Intelligence Uplift
-status: completed
-stopped_at: all phases complete; 8 critical security findings fixed; 680 tests passing; deployed to Vercel
-last_updated: "2026-05-21T04:29:07.850Z"
-last_activity: 2026-05-20 -- Phase 70 Plan 01 executed (WAL pragma, langgraph pin, RED scaffolds)
+current_phase: 70
+current_phase_name: Foundation + Engine Core
+current_plan: 70-03 next
+status: verifying
+stopped_at: Phase 70 executing; Plans 03 and 05 still pending
+last_updated: "2026-05-21T14:34:03.384Z"
+last_activity: 2026-05-21
 progress:
-  total_phases: 8
-  completed_phases: 4
-  total_plans: 10
-  completed_plans: 15
-  percent: 50
+  total_phases: 3
+  completed_phases: 0
+  total_plans: 5
+  completed_plans: 4
+  percent: 0
 ---
 
 # State: Memroos
@@ -25,10 +28,19 @@ See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 ## Current Position
 
+Current Phase: 70
+Current Phase Name: Foundation + Engine Core
+Current Plan: 70-03 next
+Total Phases: 3
+Total Plans in Phase: 5
+Progress: [████████░░] 80%
+Status: Phase complete — ready for verification
+
 Phase: 70 — Foundation + Engine Core (executing)
-Plan: 01 complete (WAL pragma + langgraph pin + Wave 0 RED test scaffolds)
-Status: Wave 1 complete — Wave 2 ready to start
-Last activity: 2026-05-20 -- Phase 70 Plan 01 executed (WAL pragma, langgraph pin, RED scaffolds)
+Plan: 04 complete (MemoryAdapter interface + registry + concrete shim adapters)
+Status: Wave 2/3 in progress — Plans 01, 02, 04 complete; Plans 03 and 05 pending
+Next action: execute 70-03 (multi-hop retry + declarative rollback), then 70-05 (auth-guarded TS HIL edit route/client/UI)
+Last activity: 2026-05-21
 
 ## Roadmap Summary (v4.0)
 
@@ -39,6 +51,7 @@ Last activity: 2026-05-20 -- Phase 70 Plan 01 executed (WAL pragma, langgraph pi
 | 72 | Cross-Project Recall + Behavioral W-lift + UI + Skills | RECALL-03..04, SEAL-04..06, UI-05..06, SKILL-01..04 (11) |
 
 **Coverage:** 28/28 v4.0 requirements mapped, no orphans.
+**Current v4.0 completion:** 3/28 requirements fully complete (MEM-06..08); HIL-01..03 are backend-partial until 70-05 lands; ORCH-08..10 are pending 70-03.
 **Completed so far:** Phase 34 through Phase 69 (v2.0–v3.1 shipped).
 
 ## Performance Metrics
@@ -51,6 +64,20 @@ Last activity: 2026-05-20 -- Phase 70 Plan 01 executed (WAL pragma, langgraph pi
 - Latest Phase 40 gate: docs link/content review, markdown grep checks, Memroos lint, and build passed
 
 ## Accumulated Context
+
+### Positioning Guardrails (2026-05-21)
+
+- Lead public positioning with shared organizational memory, governed orchestration, evidence/provenance, and interop across agent frameworks.
+- Treat voice as an ingestion surface for memory, not a standalone product pillar.
+- Frame `qmd update` UI work as context freshness and source evidence, not as a search-admin feature.
+- Phase 72 should make evidence bundles and governed skill contracts explicit in acceptance criteria because they explain what memory was consumed, what tools ran, which checks passed, and what can be replayed or rolled back.
+
+### Decisions (Phase 70 Plan 04)
+
+- **MemoryAdapter interface:** `capabilities` field is required (not optional) — MemoryCapability union = semantic|graphTraversal|reasoningTrace|bufferedWrite|tenantScoped|auditEdges
+- **Registry pattern:** `Map<MemoryTier, MemoryAdapter[]>` with registerAdapter/getAdapters/clearRegistry; module-init idempotency via `_registered` guard
+- **Shim delegation:** existing exported functions check `getAdapters(tier)[0]` first, fallback to direct impl — exactly one path per tier, no double-writer (T-70-12)
+- **EpisodicMemoryAdapter.write() is a no-op stub** — episodic writes must go through the full db-ingest pipeline for FTS5 index integrity
 
 ### Decisions (carried into v2.0)
 
@@ -92,6 +119,7 @@ Verdict: coherent partial work (real logic, not scaffolding), NOT shippable.
 
 Scope creep outside v2.5: phases 63 (Rename+Team Auth) & 64 (Immutable Audit+HIL)
 have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
+| Phase 70-foundation-engine-core P05 | 11 minutes | 3 tasks | 6 files |
 
 ### Blockers/Concerns (verified)
 
@@ -141,10 +169,10 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-21T04:29:07.843Z
-Stopped at: all phases complete; 8 critical security findings fixed; 680 tests passing; deployed to Vercel
+Last session: 2026-05-21T14:34:03.376Z
+Stopped at: Phase 70 executing; Plans 03 and 05 still pending
 Resume file: None
-Next action: v4.0 milestone planning
+Next action: execute Phase 70 Plan 03, then Phase 70 Plan 05; do not route to Phase 71 until Phase 70 summaries and validation are current
 
 ## UAT Findings (2026-05-17)
 

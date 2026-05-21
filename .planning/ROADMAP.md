@@ -21,7 +21,7 @@
 
 ## Phases
 
-### v4.0 Orchestration Depth + Intelligence Uplift (Phases 70-72) — IN PLANNING
+### Current Orchestration Depth + Intelligence Uplift Summary — IN PLANNING
 
 - [ ] **Phase 70: Foundation + Engine Core** — WAL fix + HIL edit-and-continue + multi-hop retry/rollback + memory adapter interface
 - [ ] **Phase 71: Recall + HIL SLA + Voice** — LLM semantic recall + SLA escalation timers + Daily.co meeting bot
@@ -479,13 +479,15 @@ recurring degradation evals.
 Depth-over-breadth milestone. Extends existing LangGraph/Pipecat/mem0 substrate
 with smarter HIL semantics, multi-hop resilience, LLM-powered recall, voice
 meeting participation, memory/recall pluggability, and the true behavioral
-W-lift gap closed in SEAL. Build order is fixed by two Phase 70 pre-conditions
-(WAL pragma on `orchestration.db`, `MemoryAdapter` interface) that unblock all
-downstream features.
+W-lift gap closed in SEAL. The market-facing shape is intentionally narrower:
+shared organizational memory, governed orchestration, evidence/provenance, and
+interop across agent frameworks. Build order is fixed by two Phase 70
+pre-conditions (WAL pragma on `orchestration.db`, `MemoryAdapter` interface)
+that unblock all downstream features.
 
 - [ ] **Phase 70: Foundation + Engine Core** — WAL fix + HIL edit-and-continue + multi-hop retry/rollback + memory adapter interface
-- [ ] **Phase 71: Recall + HIL SLA + Voice** — LLM semantic recall + SLA escalation timers + Daily.co meeting bot
-- [ ] **Phase 72: Cross-Project Recall + Behavioral W-lift + UI + Skills** — cross-project recall, true behavioral W-lift, flow trigger/freshness UI, cross-harness skills registry
+- [ ] **Phase 71: Recall + HIL SLA + Voice** — LLM semantic recall + SLA escalation timers + Daily.co meeting bot as a governed memory-ingestion channel
+- [ ] **Phase 72: Cross-Project Recall + Behavioral W-lift + UI + Skills** — cross-project recall, true behavioral W-lift, flow trigger/freshness UI, cross-harness skills registry, evidence bundles, governed skill contracts
 
 ### Phase 70: Foundation + Engine Core
 **Goal**: Operators can edit a paused orchestration task's state before resuming, multi-agent chains recover from mid-chain failure via per-hop retry and declarative rollback, and memory backends are swappable behind a stable adapter interface.
@@ -507,12 +509,12 @@ Plans:
 - [x] 70-01-PLAN.md — Foundation prerequisites: WAL pragma + langgraph pin + Wave 0 RED test scaffolds
 - [x] 70-02-PLAN.md — HIL edit-and-continue: Python orchestration service (edit endpoint + audit)
 - [ ] 70-03-PLAN.md — Multi-hop retry + declarative rollback: Python orchestration service
-- [ ] 70-04-PLAN.md — MemoryAdapter interface + registry + concrete shim adapters (TypeScript)
-- [ ] 70-05-PLAN.md — HIL edit-and-continue: TypeScript route, client, and edit UI
+- [x] 70-04-PLAN.md — MemoryAdapter interface + registry + concrete shim adapters (TypeScript)
+- [x] 70-05-PLAN.md — HIL edit-and-continue: TypeScript route, client, and edit UI
 **UI hint**: yes
 
 ### Phase 71: Recall + HIL SLA + Voice
-**Goal**: Recall results can be ranked semantically via local embeddings, expired HIL tasks auto-escalate on SLA deadlines with a live countdown dashboard, and a voice bot joins Daily.co meetings as a listener writing per-speaker transcripts.
+**Goal**: Recall results can be ranked semantically via local embeddings, expired HIL tasks auto-escalate on SLA deadlines with a live countdown dashboard, and a voice bot joins Daily.co meetings as a listener writing per-speaker transcripts. Voice is an ingestion channel for organizational memory, not a standalone product pillar.
 **Depends on**: Phase 70 (stable orchestration engine + `MemoryAdapter` interface; all three feature groups parallelizable once Phase 70 lands)
 **Requirements**: RECALL-01, RECALL-02, HIL-04, HIL-05, HIL-06, VOICE-06, VOICE-07, VOICE-08
 **Prerequisite tasks**:
@@ -530,7 +532,7 @@ Plans:
 **UI hint**: yes
 
 ### Phase 72: Cross-Project Recall + Behavioral W-lift + UI + Skills
-**Goal**: Recall can span explicitly-allowed repos, SEAL instruction/skill proposals are scored by real sandboxed agent re-execution, operators trigger `qmd update` and see index freshness from the UI, and skills imported from any harness are dispatchable cross-harness.
+**Goal**: Recall can span explicitly-allowed repos, SEAL instruction/skill proposals are scored by real sandboxed agent re-execution, operators trigger `qmd update` and see index freshness from the UI, skills imported from any harness are dispatchable cross-harness, and agent work exposes evidence bundles that show sources, memories, tool actions, verification checks, assumptions, and replay/rollback artifacts.
 **Depends on**: Phase 71 (cross-project recall strictly needs `message_embeddings` + `semanticRecall()`) and Phase 70 (SEAL behavioral W-lift needs the stable A2A hub)
 **Requirements**: RECALL-03, RECALL-04, SEAL-04, SEAL-05, SEAL-06, UI-05, UI-06, SKILL-01, SKILL-02, SKILL-03, SKILL-04
 **Prerequisite tasks**:
@@ -540,9 +542,9 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. A caller passing `crossProject: true` with explicit `allowed_project_ids` gets results ranked by semantic similarity and annotated with source repo; omitting the flag returns single-project results only
   2. `BehavioralEvalService.rescoreForProposal()` dispatches real agent re-execution via the A2A hub against a held-out 10-20 task sample using a sandboxed profile with no-op tool stubs
-  3. `applyProposal()` returns a `job_id` immediately and the UI polls for completion; the request handler is never blocked on eval
-  4. An operator triggers the `qmd update` pipeline from the UI with SSE progress streaming, and the Library page shows QMD index recency vs latest file mtime per collection
-  5. An operator imports a SKILL.md file, it is normalized into the `skill_registry` table with its source harness, the A2A dispatcher looks up the registry before per-agent instruction fallback, and the Skills UI shows all registered skills with source harness and dispatch status
+  3. `applyProposal()` returns a `job_id` immediately and the UI polls for completion; the request handler is never blocked on eval, and the resulting evidence bundle captures the task sample, tools/commands, checks passed, assumptions, residual risks, and replay/rollback handle
+  4. An operator triggers the `qmd update` pipeline from the UI with SSE progress streaming, and the Library page shows QMD index recency vs latest file mtime per collection as context freshness evidence
+  5. An operator imports a SKILL.md file, it is normalized into the `skill_registry` table with its source harness plus governed contract fields (preconditions, allowed tools, risk tier, verification checks, owner, rollback behavior), the A2A dispatcher looks up the registry before per-agent instruction fallback, and the Skills UI shows all registered skills with source harness, dispatch status, and contract completeness
 **Research flag**: yes — `--research-phase` when planning (SEAL-04..06 sandbox mechanism, async eval runner, and token budget all need detailed design)
 **Plans**: TBD
 **UI hint**: yes
@@ -551,6 +553,6 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|----------|---------------|--------|-----------|
-| 70 | v4.0 | 2/5 | In Progress|  |
+| 70 | v4.0 | 4/5 | In Progress|  |
 | 71 | v4.0 | 0/0 | Not started | - |
 | 72 | v4.0 | 0/0 | Not started | - |
