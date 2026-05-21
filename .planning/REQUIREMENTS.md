@@ -17,9 +17,9 @@
 
 ### Orchestration: Multi-Hop Retry + Rollback
 
-- [ ] **ORCH-08**: Each hop in a multi-agent chain has a configurable retry budget via LangGraph `RetryPolicy` (pending 70-03)
-- [ ] **ORCH-09**: Each forward action declares a paired compensating action stored as a declarative row in `orchestration_lineage` (pending 70-03)
-- [ ] **ORCH-10**: A2A task status reflects granular failure state: "failed at hop N, compensated hops 1..N-1" (pending 70-03)
+- [x] **ORCH-08**: Each hop in a multi-agent chain has a configurable retry budget via LangGraph `RetryPolicy` (pending 70-03)
+- [x] **ORCH-09**: Each forward action declares a paired compensating action stored as a declarative row in `orchestration_lineage` (pending 70-03)
+- [x] **ORCH-10**: A2A task status reflects granular failure state: "failed at hop N, compensated hops 1..N-1" (pending 70-03)
 
 ### Memory Backend Pluggability
 

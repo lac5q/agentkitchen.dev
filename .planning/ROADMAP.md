@@ -485,7 +485,7 @@ interop across agent frameworks. Build order is fixed by two Phase 70
 pre-conditions (WAL pragma on `orchestration.db`, `MemoryAdapter` interface)
 that unblock all downstream features.
 
-- [ ] **Phase 70: Foundation + Engine Core** — WAL fix + HIL edit-and-continue + multi-hop retry/rollback + memory adapter interface
+- [x] **Phase 70: Foundation + Engine Core** — WAL fix + HIL edit-and-continue + multi-hop retry/rollback + memory adapter interface (completed 2026-05-21)
 - [ ] **Phase 71: Recall + HIL SLA + Voice** — LLM semantic recall + SLA escalation timers + Daily.co meeting bot as a governed memory-ingestion channel
 - [ ] **Phase 72: Cross-Project Recall + Behavioral W-lift + UI + Skills** — cross-project recall, true behavioral W-lift, flow trigger/freshness UI, cross-harness skills registry, evidence bundles, governed skill contracts
 
@@ -508,7 +508,7 @@ that unblock all downstream features.
 Plans:
 - [x] 70-01-PLAN.md — Foundation prerequisites: WAL pragma + langgraph pin + Wave 0 RED test scaffolds
 - [x] 70-02-PLAN.md — HIL edit-and-continue: Python orchestration service (edit endpoint + audit)
-- [ ] 70-03-PLAN.md — Multi-hop retry + declarative rollback: Python orchestration service
+- [x] 70-03-PLAN.md — Multi-hop retry + declarative rollback: Python orchestration service
 - [x] 70-04-PLAN.md — MemoryAdapter interface + registry + concrete shim adapters (TypeScript)
 - [x] 70-05-PLAN.md — HIL edit-and-continue: TypeScript route, client, and edit UI
 **UI hint**: yes
@@ -553,6 +553,6 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|----------|---------------|--------|-----------|
-| 70 | v4.0 | 4/5 | In Progress|  |
+| 70 | v4.0 | 5/5 | Complete   | 2026-05-21 |
 | 71 | v4.0 | 0/0 | Not started | - |
 | 72 | v4.0 | 0/0 | Not started | - |
