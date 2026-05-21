@@ -99,6 +99,34 @@ function makeSealService(db: Database.Database, postRun: EvalRunResult) {
   });
 }
 
+
+// ---------------------------------------------------------------------------
+// Helper: seed a minimal seal_proposal row for FK satisfaction
+// ---------------------------------------------------------------------------
+
+function seedProposal(db: Database.Database, id: string, agentId = "agent-1"): void {
+  // Create a minimal eval_run row first (FK requirement from seal_proposals)
+  const runId = `run-for-${id}`;
+  db.prepare(
+    "INSERT OR IGNORE INTO eval_runs " +
+    "(id, trace_id, agent_id, role, composite_w, trusted, drift_agreement, drift_status, " +
+    " layer_breakdown_json, scorer_results_json, judge_provider, judge_model, " +
+    " judge_model_family, prompt_template_version, prompt_hash, golden_set_path, " +
+    " golden_set_version, config_hash, started_at, completed_at) " +
+    "VALUES (?, ?, ?, 'ops', 0.42, 1, 1.0, 'passed', '{}', '[]', 'local', 'judge', " +
+    " 'local', 'v1', 'hash', './golden.jsonl', 'v1', 'config', " +
+    " '2026-05-21T00:00:00.000Z', '2026-05-21T00:00:01.000Z')"
+  ).run(runId, `trace-for-${id}`, agentId);
+
+  db.prepare(
+    "INSERT OR IGNORE INTO seal_proposals " +
+    "(id, trace_id, run_id, agent_id, proposal_type, status, diff_json, rationale, " +
+    " forecast_w_delta, baseline_w, baseline_run_id, baseline_layer_json, created_at, updated_at) " +
+    "VALUES (?, ?, ?, ?, 'noop_test', 'approved', '{}', 'test rationale', " +
+    " 0.0, 0.42, ?, '{}', '2026-05-21T00:00:00.000Z', '2026-05-21T00:00:00.000Z')"
+  ).run(id, `trace-for-${id}`, runId, agentId, runId);
+}
+
 // ---------------------------------------------------------------------------
 // 1. Job state machine tests
 // ---------------------------------------------------------------------------
@@ -109,6 +137,7 @@ describe("Behavioral eval job state machine", () => {
     initSchema(db);
     persistEvalRun(db, baseRun());
 
+    seedProposal(db, "seal-proposal-test-1");
     const job = createEvalJob(db, {
       proposalId: "seal-proposal-test-1",
       proposalType: "agent_instruction_patch",
@@ -128,6 +157,7 @@ describe("Behavioral eval job state machine", () => {
     const db = new Database(":memory:");
     initSchema(db);
 
+    seedProposal(db, "seal-proposal-test-2", "agent-2");
     const created = createEvalJob(db, {
       proposalId: "seal-proposal-test-2",
       proposalType: "skill_addition",
@@ -144,6 +174,7 @@ describe("Behavioral eval job state machine", () => {
     const db = new Database(":memory:");
     initSchema(db);
 
+    seedProposal(db, "p-state-machine");
     const job = createEvalJob(db, {
       proposalId: "p-state-machine",
       proposalType: "agent_instruction_patch",
@@ -161,6 +192,7 @@ describe("Behavioral eval job state machine", () => {
     const db = new Database(":memory:");
     initSchema(db);
 
+    seedProposal(db, "p-failure");
     const job = createEvalJob(db, {
       proposalId: "p-failure",
       proposalType: "agent_instruction_patch",
@@ -179,6 +211,7 @@ describe("Behavioral eval job state machine", () => {
     const db = new Database(":memory:");
     initSchema(db);
 
+    seedProposal(db, "p-rollback");
     const job = createEvalJob(db, {
       proposalId: "p-rollback",
       proposalType: "skill_addition",
@@ -196,6 +229,8 @@ describe("Behavioral eval job state machine", () => {
     const db = new Database(":memory:");
     initSchema(db);
 
+    seedProposal(db, "p-list-1");
+    seedProposal(db, "p-list-2");
     createEvalJob(db, { proposalId: "p-list-1", proposalType: "agent_instruction_patch", agentId: "agent-1" });
     createEvalJob(db, { proposalId: "p-list-2", proposalType: "skill_addition", agentId: "agent-1" });
     createEvalJob(db, { proposalId: "p-list-1", proposalType: "agent_instruction_patch", agentId: "agent-2" });
@@ -218,6 +253,7 @@ describe("Evidence bundle persistence", () => {
     const db = new Database(":memory:");
     initSchema(db);
 
+    seedProposal(db, "p-evidence-1");
     const job = createEvalJob(db, {
       proposalId: "p-evidence-1",
       proposalType: "agent_instruction_patch",
@@ -273,6 +309,7 @@ describe("Evidence bundle persistence", () => {
     const db = new Database(":memory:");
     initSchema(db);
 
+    seedProposal(db, "p-evidence-partial");
     const job = createEvalJob(db, {
       proposalId: "p-evidence-partial",
       proposalType: "skill_addition",

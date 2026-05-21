@@ -1,6 +1,8 @@
 import { createHash } from 'crypto';
 import type Database from 'better-sqlite3';
 
+import { initBehavioralJobSchema } from './seal/behavioral-schema';
+
 /**
  * Initializes the SQLite schema for the conversation store.
  * All DDL uses CREATE IF NOT EXISTS — safe to call on every startup.
@@ -708,6 +710,11 @@ export function initSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS seal_proposals_tenant
       ON seal_proposals(tenant_id, created_at DESC);
   `);
+
+  // Phase 72: behavioral eval job substrate — additive schema (SEAL-04, SEAL-05, SEAL-06)
+  // Tables: seal_eval_jobs, seal_evidence_bundles.
+  // All DDL is guarded with IF NOT EXISTS — safe on every startup.
+  initBehavioralJobSchema(db);
 
   // Phase 63: human team member auth tables
   db.exec(`
