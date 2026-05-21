@@ -30,6 +30,8 @@ vi.mock("@/lib/db", () => ({
 function makeDb(): Database.Database {
   const db = new Database(":memory:");
   initSchema(db);
+  // Note: initSchema already inserts 'default-tenant' into tenants.
+  // hil_escalations and audit_entries have FK on tenant_id — use 'default-tenant'.
   return db;
 }
 
@@ -56,7 +58,7 @@ function seedEscalation(
      VALUES (?, ?, 'task', 'entity-1', ?, 3600, ?, ?, 'user-1', ?)`
   ).run(
     opts.id,
-    opts.tenant_id ?? "tenant-1",
+    opts.tenant_id ?? "default-tenant",
     opts.escalation_type,
     opts.sla_deadline ?? pastDeadline(),
     opts.status ?? "open",
