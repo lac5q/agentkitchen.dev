@@ -41,6 +41,25 @@ export interface OrchestrationHilDecision {
   resolvedAt?: string | null;
 }
 
+export interface HilEditPatch {
+  taskSummary?: string | null;
+  requiredCapability?: string | null;
+  selectedAgentId?: string | null;
+  requiresApproval?: boolean | null;
+}
+
+export interface HilEditSuccess {
+  ok: true;
+  editedFields: string[];
+}
+
+export interface HilEditValidationError {
+  ok: false;
+  validationError: true;
+  status: 422;
+  detail: unknown;
+}
+
 function serviceUrl(): string {
   return (process.env.ORCHESTRATION_SERVICE_URL || "http://localhost:3210").replace(/\/$/, "");
 }
@@ -86,6 +105,24 @@ export async function listOrchestrationHil(): Promise<{ ok: boolean; decisions: 
     response,
     "Orchestration HIL service unavailable"
   );
+}
+
+export async function editOrchestrationHil(
+  id: string,
+  patch: HilEditPatch
+): Promise<HilEditSuccess | HilEditValidationError> {
+  const response = await fetch(`/api/orchestration/hil/${encodeURIComponent(id)}/edit`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(patch),
+  });
+
+  if (response.status === 422) {
+    const detail = await response.json().catch(() => null);
+    return { ok: false, validationError: true, status: 422, detail };
+  }
+
+  return parseServiceResponse<HilEditSuccess>(response, "Orchestration HIL edit failed");
 }
 
 export async function resolveOrchestrationHil(
