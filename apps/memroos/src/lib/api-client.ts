@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { POLL_INTERVALS } from "./constants";
 import type {
@@ -1670,4 +1671,98 @@ export function useResolveEscalation() {
       queryClient.invalidateQueries({ queryKey: ["audit-entries"] });
     },
   });
+}
+
+// ---------------------------------------------------------------------------
+// Phase 72 Plan 04 — Library freshness (QMD index recency vs source mtime)
+// ---------------------------------------------------------------------------
+
+export type FreshnessState = "live" | "empty" | "updating" | "stale" | "degraded" | "missing";
+
+export interface CollectionFreshnessRow {
+  collection: string;
+  state: FreshnessState;
+  /** Age of the index in ms relative to now; null when indexTimestamp is unknown */
+  ageMs: number | null;
+  sourceMtime: string | null;
+  indexTimestamp: string | null;
+}
+
+export interface LibraryFreshnessResponse {
+  collections: CollectionFreshnessRow[];
+  timestamp: string;
+  isUpdating: boolean;
+}
+
+export function useLibraryFreshness() {
+  return useQuery({
+    queryKey: ["library", "freshness"],
+    queryFn: () => fetchJSON<LibraryFreshnessResponse>("/api/library/freshness"),
+    refetchInterval: 60_000,
+  });
+}
+
+export type QmdUpdateEvent =
+  | { type: "started"; pid: number | null }
+  | { type: "stdout"; line: string }
+  | { type: "stderr"; line: string }
+  | { type: "completed"; exitCode: number }
+  | { type: "failed"; error: string };
+
+/**
+ * useTriggerQmdUpdate — streams SSE events from POST /api/library/qmd-update.
+ *
+ * Returns { events, isStreaming, trigger, reset }.
+ * Only POST fires; fetch + ReadableStream reader parses `data: {...}` frames.
+ */
+export function useTriggerQmdUpdate() {
+  const [events, setEvents] = useState<QmdUpdateEvent[]>([]);
+  const [isStreaming, setIsStreaming] = useState(false);
+
+  async function trigger() {
+    setEvents([]);
+    setIsStreaming(true);
+    try {
+      const res = await fetch("/api/library/qmd-update", {
+        method: "POST",
+        credentials: "include",
+      });
+      if (!res.ok || !res.body) {
+        const detail = await res.text().catch(() => "");
+        setEvents([{ type: "failed", error: `HTTP ${res.status}: ${detail}` }]);
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value);
+        for (const line of chunk.split("\n")) {
+          if (!line.startsWith("data: ")) continue;
+          const payload = line.slice(6).trim();
+          try {
+            const parsed = JSON.parse(payload) as QmdUpdateEvent;
+            setEvents((prev) => [...prev, parsed]);
+          } catch {
+            // ignore malformed lines
+          }
+        }
+      }
+    } catch (err) {
+      setEvents((prev) => [
+        ...prev,
+        { type: "failed", error: err instanceof Error ? err.message : String(err) },
+      ]);
+    } finally {
+      setIsStreaming(false);
+    }
+  }
+
+  function reset() {
+    setEvents([]);
+    setIsStreaming(false);
+  }
+
+  return { events, isStreaming, trigger, reset };
 }
