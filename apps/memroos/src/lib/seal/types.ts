@@ -65,7 +65,12 @@ export interface AuditFilter {
   limit?: number;
 }
 
-export interface ApplyResult {
+/**
+ * Synchronous apply result — returned for legacy/non-behavioral proposal types
+ * (memory_rewrite, query_hint, salience_update, tier_route, noop_test, etc.)
+ */
+export interface SyncApplyResult {
+  kind: "sync";
   proposalId: string;
   kept: boolean;
   baselineW: number;
@@ -75,6 +80,24 @@ export interface ApplyResult {
   evalRunId?: string;
   error?: string;
 }
+
+/**
+ * Async job apply result — returned for behavioral proposal types
+ * (agent_instruction_patch, skill_addition) that require true agent re-execution.
+ * The caller should poll GET /api/seal/jobs/:jobId for job status.
+ */
+export interface JobApplyResult {
+  kind: "job";
+  proposalId: string;
+  jobId: string;
+  status: "queued";
+}
+
+/**
+ * Discriminated union of apply result variants.
+ * Use `result.kind` to distinguish sync from async job results.
+ */
+export type ApplyResult = SyncApplyResult | JobApplyResult;
 
 export interface WLayerDelta {
   l1: number;

@@ -10,6 +10,8 @@ import { ensureProposalType, registryEntryFor } from "./proposal-registry";
 import { sealRescoreMetadata, type SealRescoreProposalContext } from "./rescore";
 import type {
   ApplyResult,
+  JobApplyResult,
+  SyncApplyResult,
   AuditFilter,
   ProposalCommandAction,
   ProposalDecisionAction,
@@ -21,6 +23,7 @@ import type {
   WLayerDelta,
 } from "./types";
 import { layerScore } from "./types";
+import { createEvalJob, isBehavioralProposalType } from "./behavioral-jobs";
 
 type ProposalRow = {
   id: string;
@@ -216,6 +219,37 @@ export class SealService {
       detail: { proposalType: proposal.proposalType },
     }, this.db);
 
+    // ── Behavioral async path ───────────────────────────────────────────────
+    // Proposal types that require true agent re-execution (agent_instruction_patch,
+    // skill_addition) enqueue a durable job and return immediately with a jobId.
+    // The caller polls GET /api/seal/jobs/:jobId for status.
+    // Per D-06, D-11: only behavioral proposal types take this path.
+    if (isBehavioralProposalType(proposal.proposalType)) {
+      const job = createEvalJob(this.db, {
+        proposalId,
+        proposalType: proposal.proposalType,
+        agentId: proposal.agentId,
+      });
+      // Audit the async enqueue event
+      writeAuditEntry({
+        proposalId,
+        event: "apply_started",
+        baselineW: proposal.baselineW,
+        detail: { proposalType: proposal.proposalType, jobId: job.id, asyncPath: true },
+      }, this.db);
+      const result: JobApplyResult = {
+        kind: "job",
+        proposalId,
+        jobId: job.id,
+        status: "queued",
+      };
+      return result;
+    }
+
+    // ── Legacy synchronous path ─────────────────────────────────────────────
+    // All non-behavioral proposal types (noop_test, memory_rewrite, query_hint,
+    // salience_update, tier_route, tool_routing_update, eval_case_addition)
+    // keep their existing synchronous apply behavior unchanged.
     const entry = registryEntryFor(proposal.proposalType);
     let postRun: EvalRunResult;
     let applyResult: Record<string, unknown>;
@@ -243,7 +277,8 @@ export class SealService {
         detail: { error: message },
       }, this.db);
       this.transitionProposal(proposalId, "rolled_back", { operator: "system", reasoning: message }, "rolled_back");
-      return {
+      const syncResult: SyncApplyResult = {
+        kind: "sync",
         proposalId,
         kept: false,
         baselineW: proposal.baselineW,
@@ -252,6 +287,7 @@ export class SealService {
         status: "rolled_back",
         error: message,
       };
+      return syncResult;
     }
 
     const delta = deltas(proposal.baselineLayers, postRun.layers, proposal.baselineW, postRun.compositeW);
@@ -269,7 +305,8 @@ export class SealService {
         deltaComposite: delta.composite,
         detail: auditDetailForRun(postRun, { evalRunId: postRun.id, decisionId: decision.id }),
       }, this.db);
-      return {
+      const syncResult: SyncApplyResult = {
+        kind: "sync",
         proposalId,
         kept: true,
         baselineW: proposal.baselineW,
@@ -278,6 +315,7 @@ export class SealService {
         status: "applied",
         evalRunId: postRun.id,
       };
+      return syncResult;
     }
 
     if (entry.rollbackShadow) {
@@ -297,7 +335,8 @@ export class SealService {
       deltaComposite: delta.composite,
       detail: auditDetailForRun(postRun, { evalRunId: postRun.id }),
     }, this.db);
-    return {
+    const syncResult: SyncApplyResult = {
+      kind: "sync",
       proposalId,
       kept: false,
       baselineW: proposal.baselineW,
@@ -306,6 +345,7 @@ export class SealService {
       status: "rolled_back",
       evalRunId: postRun.id,
     };
+    return syncResult;
   }
 
   queryAuditLog(filter: AuditFilter = {}): StoredSealAuditEntry[] {
