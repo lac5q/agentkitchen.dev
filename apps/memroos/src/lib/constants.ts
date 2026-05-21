@@ -1,12 +1,12 @@
 export const POLL_INTERVALS = {
-  agents: 5000,
+  agents: 15000,
   tokens: 30000,
   memory: 15000,
   knowledge: 60000,
-  health: 10000,
+  health: 30000,
   skills: 60000,
-  hive: 5000,
-  paperclip: 5000,
+  hive: 15000,
+  paperclip: 15000,
   voice: 2000,
 } as const;
 

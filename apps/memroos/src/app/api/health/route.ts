@@ -2,6 +2,7 @@ import { execFileSync } from "child_process";
 import { stat as fsStat } from "fs/promises";
 import path from "path";
 import { MEM0_URL, AGENT_CONFIGS_PATH } from "@/lib/constants";
+import { checkGraphHealth } from "@/lib/memory/backends";
 import { getRepoRoot } from "@/lib/paths";
 import type { HealthStatus } from "@/types";
 
@@ -37,12 +38,13 @@ async function checkService(
       lastCheck: new Date().toISOString(),
       detail: result?.detail,
     };
-  } catch {
+  } catch (error) {
     return {
       service: name,
       status: "down",
       latencyMs: null,
       lastCheck: new Date().toISOString(),
+      detail: error instanceof Error ? error.message : "health check failed",
     };
   }
 }
@@ -139,6 +141,25 @@ async function checkKnowledgeIndexing(): Promise<ServiceCheckResult> {
   }
 }
 
+async function checkGraphMemory(): Promise<ServiceCheckResult> {
+  const graph = await checkGraphHealth();
+  if (graph.status === "up") {
+    return { status: "up", detail: graph.backend };
+  }
+
+  if (graph.status === "not_configured") {
+    return {
+      status: "degraded",
+      detail: "Neo4j is not configured; graph memory tier is offline",
+    };
+  }
+
+  return {
+    status: graph.status,
+    detail: graph.detail ?? `${graph.backend} graph memory ${graph.status}`,
+  };
+}
+
 export async function GET() {
   const services = await Promise.all([
     checkService("RTK", async () => {
@@ -152,6 +173,9 @@ export async function GET() {
     }),
     checkService("Knowledge Index", async () => {
       return checkKnowledgeIndexing();
+    }),
+    checkService("Graph Memory", async () => {
+      return checkGraphMemory();
     }),
     checkService("Agents", async () => {
       await fsStat(AGENT_CONFIGS_PATH);

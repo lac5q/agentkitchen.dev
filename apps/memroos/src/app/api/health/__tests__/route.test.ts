@@ -30,6 +30,7 @@ describe("runtime health route", () => {
   afterEach(() => {
     delete process.env.MEM0_URL;
     delete process.env.KNOWLEDGE_INDEX_HEALTH_TTL_MS;
+    delete process.env.NEO4J_PASSWORD;
     vi.unstubAllGlobals();
     vi.resetModules();
   });
@@ -98,6 +99,23 @@ describe("runtime health route", () => {
     expect(mem0.detail).toContain("runtime unavailable: No module named 'mem0'");
   });
 
+  it("includes failure details when a service check throws", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("connect ECONNREFUSED 127.0.0.1:3201");
+      })
+    );
+    const { GET } = await loadRoute();
+
+    const response = await GET();
+    const body = await response.json();
+    const mem0 = body.services.find((service: { service: string }) => service.service === "mem0");
+
+    expect(mem0.status).toBe("down");
+    expect(mem0.detail).toContain("ECONNREFUSED");
+  });
+
   it("includes the source-to-QMD knowledge indexing contract in app health", async () => {
     vi.stubGlobal(
       "fetch",
@@ -118,5 +136,27 @@ describe("runtime health route", () => {
 
     expect(knowledge.status).toBe("up");
     expect(knowledge.detail).toBe("0 pending embeddings");
+  });
+
+  it("includes graph memory status in app health", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          status: "ok",
+          vector_store: "connected",
+          memory_runtime: { status: "available" },
+          queue: { queued: 0 },
+        })
+      )
+    );
+    const { GET } = await loadRoute();
+
+    const response = await GET();
+    const body = await response.json();
+    const graph = body.services.find((service: { service: string }) => service.service === "Graph Memory");
+
+    expect(graph.status).toBe("degraded");
+    expect(graph.detail).toContain("Neo4j is not configured");
   });
 });
