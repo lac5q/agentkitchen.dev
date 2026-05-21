@@ -6,8 +6,8 @@ current_phase: 72
 current_phase_name: cross-project-recall-behavioral-w-lift-ui-skills
 current_plan: 5
 status: executing
-stopped_at: "Phase 72 Plan 02 complete: behavioral eval job substrate shipped"
-last_updated: "2026-05-21T20:36:56.575Z"
+stopped_at: "Phase 72 Plan 05 checkpoint: Tasks 1+2 complete (registry parser + import API), awaiting Task 3 Skills UI human-verify"
+last_updated: "2026-05-21T20:58:00Z"
 last_activity: 2026-05-21
 progress:
   total_phases: 3
@@ -74,6 +74,13 @@ Last activity: 2026-05-21
 - Frame `qmd update` UI work as context freshness and source evidence, not as a search-admin feature.
 - Phase 72 should make evidence bundles and governed skill contracts explicit in acceptance criteria because they explain what memory was consumed, what tools ran, which checks passed, and what can be replayed or rolled back.
 
+### Decisions (Phase 72 Plan 05)
+
+- **Dispatch fail-closed:** completeness < 100% OR missing REQUIRED_CONTRACT_FIELDS → dispatch_status='incomplete'; only fully-complete skill with explicit frontmatter 'enabled' gets dispatch_status='enabled'
+- **Prompt injection as data:** parseSkillMd() stores raw_body and all fields verbatim; no eval, no exec; sanitization is caller responsibility; audit trail preserved
+- **UNIQUE(name, source_harness) with ON CONFLICT DO UPDATE:** idempotent re-import replaces previous entry
+- **Pagination indexes on skill_registry:** (source_harness, dispatch_status) and (dispatch_status, imported_at DESC) per performance note
+
 ### Decisions (Phase 72 Plan 02)
 
 - **ApplyResult discriminated union:** `kind='sync'` for legacy proposal types; `kind='job'` for behavioral types — callers must switch on `result.kind` before accessing type-specific fields
@@ -133,6 +140,7 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 | Phase 72-cross-project-recall-behavioral-w-lift-ui-skills P01 | 6m | 3 tasks | 4 files |
 | Phase 72 P02 | 15m | 3 tasks | 7 files |
 | Phase 72 P04 | 40m | 3 tasks | 6 files |
+| Phase 72 P05 | 18m | 2 tasks (checkpoint) | 4 files |
 
 ### Blockers/Concerns (verified)
 
@@ -182,10 +190,10 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-21T20:36:56.569Z
-Stopped at: Phase 72 Plan 02 complete: behavioral eval job substrate shipped
+Last session: 2026-05-21T20:58:00Z
+Stopped at: Phase 72 Plan 05 checkpoint at Task 3: Skills UI human-verify required. Tasks 1+2 committed (registry parser + import API).
 Resume file: None
-Next action: begin Phase 72; keep Phase 73 UI parity before closing v4.0 operator-complete claims
+Next action: continuation agent to implement Task 3 Skills UI (governed/imported skills section with completeness display), run build, browser verify /skills
 
 ## UAT Findings (2026-05-17)
 
