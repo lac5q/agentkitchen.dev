@@ -51,8 +51,8 @@
 
 ### UI: Flow Trigger + Library Freshness
 
-- [ ] **UI-05**: Operator can trigger `qmd update` pipeline from the UI with SSE progress streaming
-- [ ] **UI-06**: Library page shows QMD index recency timestamp vs latest file mtime per collection as context freshness evidence
+- [x] **UI-05**: Operator can trigger `qmd update` pipeline from the UI with SSE progress streaming
+- [x] **UI-06**: Library page shows QMD index recency timestamp vs latest file mtime per collection as context freshness evidence
 
 ### Cross-Harness Skills
 
@@ -85,6 +85,9 @@
 - [ ] **VERTICAL-01**: Second vertical candidate backlog: after finance reconciliation has a live customer proof, select healthcare, legal, or ops/logistics as the next adapter + golden-set + UI-terminology vertical without baking vertical logic into the core.
 - [ ] **CTX-FOLLOWUP-01**: Context-source contract coverage extends beyond the Phase 69 starter set: every configured source family used by operators (including Drive, Slack, Gmail/Spark, local folders, qmd, mem0, and future connectors) declares ingest, index, freshness, safe-answer, and repair behavior with no silent unindexed lanes.
 - [ ] **CTX-FOLLOWUP-02**: Runtime health reports memory degradation paths, not just service reachability: queued writes, retry backlog, stale semantic recall, replay verification, and source-to-QMD indexing proof must be visible to operators and evals.
+- [ ] **INT-FOLLOWUP-01**: MemroOS MCP consolidation removes the legacy standalone mem0-only MCP adapter from agent registration paths and routes all memory tools through the unified `memroos` MCP facade. Scope includes `services/memory/mcp-mem0.py`, `services/memory/mcp-mem0-wrapper.sh`, stale `memory_get_all`/`memory_health` capability references, docs/configs, and verification that `.mcp.json`, `.cursor/mcp.json`, `.gemini/mcp.json`, ChatGPT LaunchAgent, and onboarding scripts expose only the unified MemroOS MCP surface.
+- [ ] **INT-FOLLOWUP-02**: FastMCP v3.x migration upgrades `services/knowledge-mcp` from `fastmcp>=2,<3` to `fastmcp>=3,<4`, moves server transport/path/stateless/auth options to the v3-compatible runtime API, preserves stdio and Streamable HTTP `/mcp`, and verifies `fastmcp inspect`, `knowledge_health`, `search`, `fetch`, `memory_search`, `memory_save`, `agent_memory_save`, `tool_catalog`, launchd restart, and ChatGPT connector behavior.
+- [ ] **INT-FOLLOWUP-03**: Integration dependency modernization audit covers high-risk or major-version runtime surfaces before they drift further: `mem0ai` 0.1.x to 2.x, A2A/ADK protocol compatibility aliases and method names, Pipecat/Daily import-path assumptions, LangGraph/checkpointer patch drift, Next.js proxy/middleware conventions, Anthropic/OpenAI SDK drift, and UI/toolchain majors such as shadcn v4, ESLint 10, TypeScript 6, and `jose` 6. Each upgrade must have an owner, risk rating, migration notes, rollback path, and live probe matrix before implementation.
 - [ ] **EVAL-FOLLOWUP-01**: Eval engine judge operations include provider-backed judge invocation, judge-model re-baselining, model/prompt/dataset version capture, and cost ownership before customer-facing eval claims are made.
 - [ ] **EVAL-API-FOLLOWUP-01**: Public eval API v2 supports production ingestion and notification patterns: external OpenInference traces, OpenTelemetry collector bridge, bulk trace submission, webhook push delivery, and streaming/SSE result delivery.
 - [ ] **EVAL-API-FOLLOWUP-02**: Public eval API operations are externalization-ready: Redis or shared rate limiting for multi-instance deployments, tenant API-key UI, usage metering/billing hooks, SDK semantic-version automation, and verified `docs/eval-quickstart.md` before customer exposure.
