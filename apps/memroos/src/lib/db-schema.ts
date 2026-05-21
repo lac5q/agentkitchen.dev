@@ -969,4 +969,37 @@ export function initSchema(db: Database.Database): void {
 
     db.prepare(`INSERT OR REPLACE INTO meta(key,value) VALUES('audit_entries_backfill_done','1')`).run();
   }
+
+  // Phase 72: skill_registry — governed cross-harness skill contracts (SKILL-01, SKILL-02)
+  // Additive DDL only. Imported content is stored as data; the parser never executes it.
+  // Indexes support paginated list/search (source_harness, dispatch_status) per perf note.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS skill_registry (
+      id                  INTEGER PRIMARY KEY,
+      name                TEXT    NOT NULL,
+      description         TEXT,
+      owner               TEXT,
+      source_harness      TEXT    NOT NULL,
+      risk_tier           TEXT,
+      dispatch_status     TEXT    NOT NULL DEFAULT 'incomplete'
+                          CHECK(dispatch_status IN ('enabled','disabled','incomplete','review')),
+      version             TEXT,
+      preconditions       TEXT,
+      allowed_tools       TEXT,
+      verification_checks TEXT,
+      rollback_behavior   TEXT,
+      raw_body            TEXT    NOT NULL DEFAULT '',
+      completeness_pct    INTEGER NOT NULL DEFAULT 0,
+      missing_fields_json TEXT    NOT NULL DEFAULT '[]',
+      imported_by         TEXT    NOT NULL,
+      imported_at         TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+      UNIQUE(name, source_harness)
+    );
+    CREATE INDEX IF NOT EXISTS skill_registry_source_status
+      ON skill_registry(source_harness, dispatch_status);
+    CREATE INDEX IF NOT EXISTS skill_registry_dispatch
+      ON skill_registry(dispatch_status, imported_at DESC);
+    CREATE INDEX IF NOT EXISTS skill_registry_imported
+      ON skill_registry(imported_at DESC);
+  `);
 }
