@@ -528,7 +528,14 @@ Plans:
   4. The dashboard shows pending HIL items with live countdown timers and SLA traffic-light status
   5. A Pipecat meeting bot joins a Daily.co room via `DailyTransport`, writes per-speaker transcripts to the `messages` table and highlights to `hive_actions`; meeting URL/join tokens are never written to `audit_log` and a recording-consent UI is shown before joining
 **Research flag**: yes — `--research-phase` when planning (VOICE-06..08 external Daily.co integration has no CI coverage; confirm Daily-only vs Recall.ai bridge before sprint)
-**Plans**: TBD
+**Plans**: 6 plans (2 waves)
+Plans:
+- [ ] 71-01-PLAN.md — Message embeddings schema + Ollama nomic-embed-text provider (wave 1)
+- [ ] 71-02-PLAN.md — Semantic/hybrid recall endpoint + background embedding job (wave 2)
+- [ ] 71-03-PLAN.md — HIL SLA action config + 60s escalation scheduler (wave 1)
+- [ ] 71-04-PLAN.md — HIL dashboard live countdown + SLA traffic-light (wave 2)
+- [ ] 71-05-PLAN.md — Daily.co meeting bot: DailyTransport pipeline + per-speaker transcripts (wave 1)
+- [ ] 71-06-PLAN.md — Recording-consent gate + meeting join UI (wave 2)
 **UI hint**: yes
 
 ### Phase 72: Cross-Project Recall + Behavioral W-lift + UI + Skills
@@ -554,5 +561,5 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|----------|---------------|--------|-----------|
 | 70 | v4.0 | 5/5 | Complete   | 2026-05-21 |
-| 71 | v4.0 | 0/0 | Not started | - |
+| 71 | v4.0 | 0/6 | Planned     | - |
 | 72 | v4.0 | 0/0 | Not started | - |
