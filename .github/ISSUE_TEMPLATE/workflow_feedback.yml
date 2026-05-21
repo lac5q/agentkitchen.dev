@@ -1,0 +1,56 @@
+name: Workflow feedback
+description: Share where your agent workflow loses context or proof.
+title: "[Workflow feedback]: "
+labels: ["feedback"]
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Workflow you tried
+      description: What agent workflow, framework, or team process were you testing?
+      placeholder: "Example: Claude Code debugging a repo issue, LangGraph customer-support handoff, CrewAI research workflow"
+    validations:
+      required: true
+  - type: dropdown
+    id: runtime
+    attributes:
+      label: Agent runtime or framework
+      options:
+        - Claude Code
+        - Codex
+        - Google ADK
+        - LangGraph
+        - CrewAI
+        - AutoGen
+        - Hermes
+        - OpenClaw
+        - Custom REST agent
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: context_gap
+    attributes:
+      label: Where context was missing
+      description: What did the agent have to rediscover, ask again, or infer without enough source-backed context?
+    validations:
+      required: true
+  - type: textarea
+    id: ideal_context_pack
+    attributes:
+      label: What should have been in the runtime context pack?
+      description: List the docs, decisions, memories, skills, prior runs, or proof the agent should have received before dispatch.
+    validations:
+      required: true
+  - type: textarea
+    id: proof_needed
+    attributes:
+      label: Proof trail you wanted after execution
+      description: What evidence, source links, tool outcomes, evals, approvals, or rollback handles would make the run trustworthy?
+  - type: checkboxes
+    id: redaction
+    attributes:
+      label: Redaction checklist
+      options:
+        - label: I removed secrets, tokens, private prompts, customer data, and private hostnames.
+          required: true
