@@ -5,6 +5,7 @@ import {
   useOrchestrationHil,
   useResolveOrchestrationHilMutation,
 } from "@/lib/api-client";
+import { HilEditPanel } from "./HilEditPanel";
 
 export function OrchestrationHilPanel() {
   const { data, isError, isLoading } = useOrchestrationHil();
@@ -58,6 +59,9 @@ export function OrchestrationHilPanel() {
                     Reject
                   </Button>
                 </div>
+              </div>
+              <div className="mt-3 border-t border-stone-200 pt-3">
+                <HilEditPanel task={decision} />
               </div>
             </article>
           ))}

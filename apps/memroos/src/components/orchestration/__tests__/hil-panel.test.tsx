@@ -2,10 +2,12 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mutateDecision = vi.fn();
+const editHilMutate = vi.fn();
 
 vi.mock("@/lib/api-client", () => ({
   useOrchestrationHil: vi.fn(),
   useResolveOrchestrationHilMutation: vi.fn(() => ({ mutate: mutateDecision, isPending: false })),
+  useEditOrchestrationHilMutation: vi.fn(() => ({ mutate: editHilMutate, isPending: false })),
 }));
 
 import { OrchestrationHilPanel } from "../orchestration-hil-panel";
@@ -39,9 +41,24 @@ describe("OrchestrationHilPanel", () => {
 
     expect(screen.getByText("Human approvals")).toBeInTheDocument();
     expect(screen.getByText("Deploy production change")).toBeInTheDocument();
-    expect(screen.getByText("corr-1")).toBeInTheDocument();
+    expect(screen.getAllByText("corr-1").length).toBeGreaterThan(0);
     fireEvent.click(screen.getByText("Approve"));
 
     expect(mutateDecision).toHaveBeenCalledWith({ id: "hil-1", decision: "approve" });
+  });
+
+  it("wires the HIL edit UI into each pending approval before resume", () => {
+    render(<OrchestrationHilPanel />);
+
+    expect(screen.getByRole("form", { name: /edit task/i })).toBeInTheDocument();
+
+    const taskSummaryInput = screen.getByLabelText(/task summary/i);
+    fireEvent.change(taskSummaryInput, { target: { value: "Deploy production change with rollback note" } });
+    fireEvent.click(screen.getByRole("button", { name: /save edit/i }));
+
+    expect(editHilMutate).toHaveBeenCalledWith({
+      id: "hil-1",
+      patch: { taskSummary: "Deploy production change with rollback note" },
+    });
   });
 });

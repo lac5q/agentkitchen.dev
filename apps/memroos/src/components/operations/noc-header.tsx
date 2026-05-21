@@ -27,7 +27,7 @@ export function NocHeader() {
           <span
             style={{
               width: 8, height: 8, borderRadius: 99,
-              background: NOC.success, display: "inline-block",
+              background: NOC.warn, display: "inline-block",
             }}
           />
           <div
@@ -36,10 +36,10 @@ export function NocHeader() {
               color: NOC.terra, textTransform: "uppercase",
             }}
           >
-            Operations · live
+            Operations · telemetry preview
           </div>
           <span style={{ fontSize: 11, color: NOC.soft, fontFamily: NOC_FONT_MONO }}>
-            refreshed 14s ago
+            live wiring pending
           </span>
         </div>
         <h1
@@ -51,7 +51,7 @@ export function NocHeader() {
           Agent NOC
         </h1>
         <div style={{ fontSize: 13.5, color: NOC.muted, maxWidth: 760 }}>
-          Run the agent fleet like infrastructure: memory consumption, model utility, skill drift, savings vs waste — and engage any agent without leaving this screen.
+          Run the agent fleet like infrastructure. Sample-backed panels are labeled at the page level until NOC-01..11 wire live telemetry; missing streams render explicit gaps instead of fabricated numbers.
         </div>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end", flexShrink: 0 }}>

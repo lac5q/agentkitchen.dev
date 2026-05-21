@@ -17,15 +17,16 @@
 - ✅ **v2.5 Eval Engine + Self-Improvement Platform** — Phases 57-62 (Tier 1 shipped 2026-05-17; behavioral W-lift deferred to v3)
 - ✅ **v3.0 Compliance Platform + Finance Vertical** — Phases 63-68 (shipped 2026-05-17)
 - ✅ **v3.1 Context Reliability + Runtime Resilience** — Phase 69 (shipped 2026-05-17)
-- 🚧 **v4.0 Orchestration Depth + Intelligence Uplift** — Phases 70-72 (in progress; Phases 70-71 shipped, Phase 72 next)
+- ✅ **v4.0 Orchestration Depth + Intelligence Uplift** — Phases 70-73 (completed 2026-05-21; milestone audit/closeout next)
 
 ## Phases
 
-### Current Orchestration Depth + Intelligence Uplift Summary — IN PROGRESS
+### Current Orchestration Depth + Intelligence Uplift Summary — COMPLETE
 
 - [x] **Phase 70: Foundation + Engine Core** — WAL fix + HIL edit-and-continue + multi-hop retry/rollback + memory adapter interface
 - [x] **Phase 71: Recall + HIL SLA + Voice** — LLM semantic recall + SLA escalation timers + Daily.co meeting bot
-- [ ] **Phase 72: Cross-Project Recall + Behavioral W-lift + UI + Skills** — cross-project recall, true behavioral W-lift, flow trigger/freshness UI, cross-harness skills registry
+- [x] **Phase 72: Cross-Project Recall + Behavioral W-lift + UI + Skills** — cross-project recall, true behavioral W-lift, flow trigger/freshness UI, cross-harness skills registry
+- [x] **Phase 73: Operator UI Truth + Phase Parity** — HIL edit UI wired into live approvals, NOC truth states corrected, and phase-close UI representation gate added
 
 Full v4.0 detail in the `## v4.0 Orchestration Depth + Intelligence Uplift` section below.
 
@@ -316,33 +317,27 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 
 ### Future Milestone Priority
 
-1. Plan corrective Phase 73: Operator UI Truth + Phase Parity.
-   - Source note: `.planning/phases/73-operator-ui-truth-phase-parity/73-CONTEXT.md`.
-   - Requirements: `UI-PARITY-01..05` in `.planning/REQUIREMENTS.md`.
-   - Goal: reconcile completed/current phase claims against actual operator-visible UI, wire missing panels, replace or honestly label mock NOC panels, and add a phase-close rule that prevents backend-complete work from being mistaken for product-complete work.
-   - Most urgent order: wire Phase 70 HIL edit UI into the real orchestration panel; replace or honestly label NOC mock panels; add the UI representation required gate; preserve Phase 71 Wave 2 summaries as closed parity evidence.
-
-2. Plan v4.1 candidate: Harness Control Plane + Knowledge Graph Intelligence.
+1. Plan v4.1 candidate: Harness Control Plane + Knowledge Graph Intelligence.
    - Research intake: `Code as Agent Harness` (arXiv:2605.18747, 2026-05-18) argues future agent systems need executable, inspectable, stateful, governed harnesses.
    - Research intake: Graphify (`safishamsi/graphify`) shows a practical query-first repo/docs/PDF/image knowledge graph with confidence-tagged edges, wiki/report exports, and commit/search hooks.
    - Research intake: Graphite-style stacked review patterns suggest agent work should move as small, ordered, independently reviewable changes with stack-aware risk and merge gates.
    - Research intake: production-agent checklist patterns (direnv/secrets manager, LLM gateway, eval-pinned commits, LLM-call proxy tracing, Inspect evals, `lessons.md`) map to MemroOS runtime guardrails and evidence capture.
    - Integration call: LiteLLM should be an optional model-gateway adapter first, with direct provider calls retained as fallback; MemroOS owns task evidence, policy, replay, and NOC observability.
 
-3. Plan corrective Operations NOC Real-Data Wiring phase.
+2. Plan corrective Operations NOC Real-Data Wiring phase.
    - Source note: `.planning/notes/operations-noc-real-data-requirements.md`.
    - Requirements: `NOC-01..NOC-11` in `.planning/REQUIREMENTS.md`.
    - Goal: replace mock home-screen panels with live operational data, explicit missing/degraded states, real engagement dispatch, and the telemetry streams needed for efficiency signals.
-4. Plan Phase 70 follow-up topology closure.
+3. Plan Phase 70 follow-up topology closure.
    - Source note: `.planning/phases/70-foundation-engine-core/deferred-items.md`.
    - Requirement: `ORCH-FOLLOWUP-01` in `.planning/REQUIREMENTS.md`.
    - Goal: close deferred LangGraph multi-hop topology and rollback-compensation gaps before claiming full multi-hop orchestration depth.
-5. Plan recent-deferred hardening sweep.
+4. Plan recent-deferred hardening sweep.
    - Source notes: Phase 57-64 context/summary deferred sections plus `.planning/PROJECT.md` v5 candidates.
    - Requirements: `CTX-FOLLOWUP-01..02`, `INT-FOLLOWUP-01..07`, `EVAL-FOLLOWUP-01`, `EVAL-API-FOLLOWUP-01..02`, `MEMGEN-FOLLOWUP-01`, `SEAL-FOLLOWUP-01..02`, `AGENTGEN-FOLLOWUP-01`, `L3-FOLLOWUP-01..03`, `AUTH-FOLLOWUP-01..03`, `AUDIT-FOLLOWUP-01..03`, `UX-FOLLOWUP-01..06`, and `GSD-FOLLOWUP-01`.
    - Goal: prevent recent deferred notes from living only in phase-local context by turning them into plan-ready backlog requirements.
 
-6. Plan integration modernization: unified MCP + FastMCP v3.x + dependency drift.
+5. Plan integration modernization: unified MCP + FastMCP v3.x + dependency drift.
    - Source finding: current configs already register unified `memroos` MCP, but legacy `services/memory/mcp-mem0.py` and `mcp-mem0-wrapper.sh` still exist as a standalone mem0-only adapter and one capability manifest still advertises standalone-only memory tools.
    - Source finding: `services/knowledge-mcp` runs FastMCP 2.14.7 while PyPI latest is 3.3.1; v3 migration must move HTTP/path/stateless/auth options to the v3-compatible runtime API rather than doing a blind pin bump.
    - Source finding: `services/memory` uses `mem0ai` 0.1.118 while PyPI latest is 2.0.2; this is a separate memory-backend migration from the FastMCP upgrade.
@@ -520,7 +515,7 @@ recurring degradation evals.
 **UI hint**: yes
 
 
-## v4.0 Orchestration Depth + Intelligence Uplift (Phases 70-72)
+## v4.0 Orchestration Depth + Intelligence Uplift (Phases 70-73)
 
 Depth-over-breadth milestone. Extends existing LangGraph/Pipecat/mem0 substrate
 with smarter HIL semantics, multi-hop resilience, LLM-powered recall, voice
@@ -534,6 +529,7 @@ that unblock all downstream features.
 - [x] **Phase 70: Foundation + Engine Core** — WAL fix + HIL edit-and-continue + multi-hop retry/rollback + memory adapter interface (completed 2026-05-21)
 - [x] **Phase 71: Recall + HIL SLA + Voice** — LLM semantic recall + SLA escalation timers + Daily.co meeting bot as a governed memory-ingestion channel (completed 2026-05-21)
 - [x] **Phase 72: Cross-Project Recall + Behavioral W-lift + UI + Skills** — cross-project recall, true behavioral W-lift, flow trigger/freshness UI, cross-harness skills registry, evidence bundles, governed skill contracts (completed 2026-05-21)
+- [x] **Phase 73: Operator UI Truth + Phase Parity** — HIL edit UI wired into visible approvals, NOC telemetry truth corrected, and phase-close UI representation gate added (completed 2026-05-21)
 
 ### Phase 70: Foundation + Engine Core
 **Goal**: Operators can edit a paused orchestration task's state before resuming, multi-agent chains recover from mid-chain failure via per-hop retry and declarative rollback, and memory backends are swappable behind a stable adapter interface.
@@ -602,6 +598,20 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
+### Phase 73: Operator UI Truth + Phase Parity
+**Goal**: Completed/current phase claims agree with actual operator-visible behavior, the Phase 70 HIL edit path is reachable from the live approval panel, the Operations NOC does not present unimplemented telemetry as live, and future phase closes require explicit UI/API/follow-up representation decisions.
+**Depends on**: Phase 72 (v4.0 feature work complete; parity closeout requires full milestone context)
+**Requirements**: UI-PARITY-01, UI-PARITY-02, UI-PARITY-03, UI-PARITY-04, UI-PARITY-05
+**Success Criteria**:
+  1. `REQUIREMENTS.md`, `ROADMAP.md`, `STATE.md`, and Phase 73 summary agree that v4.0 is complete through the parity closeout while NOC-01..11 remain broader real-data backlog.
+  2. A pending HIL approval in `/flow` exposes the edit form before approve/reject, preserving validation and changed-field summary behavior.
+  3. The Operations NOC header says telemetry preview/live wiring pending, and the efficiency section renders missing telemetry streams instead of sample values.
+  4. The phase done definition requires every completed requirement to declare visible UI, existing UI provenance, API/backend-only scope, or follow-up UI debt.
+**Plans**: 1/1 complete
+Plans:
+- [x] 73-01-PLAN.md — Operator UI truth and phase parity
+**UI hint**: yes
+
 ### v4.0 Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -609,3 +619,4 @@ Plans:
 | 70 | v4.0 | 5/5 | Complete   | 2026-05-21 |
 | 71 | v4.0 | 6/6 | Complete | 2026-05-21 |
 | 72 | v4.0 | 6/6 | Complete   | 2026-05-21 |
+| 73 | v4.0 | 1/1 | Complete   | 2026-05-21 |

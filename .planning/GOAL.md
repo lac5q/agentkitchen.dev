@@ -139,7 +139,8 @@ Every GSD phase is complete only when:
 4. Risky user-facing flows receive browser or visual verification.
 5. Security and data-access implications are reviewed.
 6. GitNexus detects only the expected affected symbols and flows.
-7. A summary, verification note, and any follow-up debt are written back into planning.
+7. Each completed requirement declares its operator representation: visible UI, visible status/provenance in an existing UI, API/backend-only with an explicit label, or a promoted follow-up UI requirement.
+8. A summary, verification note, and any follow-up debt are written back into planning.
 
 ### Final Completion Definition
 

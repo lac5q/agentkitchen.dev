@@ -3,17 +3,17 @@ gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Orchestration Depth + Intelligence Uplift
 current_phase: 72
-current_phase_name: cross-project-recall-behavioral-w-lift-ui-skills
-current_plan: 6
-status: executing
-stopped_at: "Phase 72 Plan 06 complete. All 3 tasks done: skill-lookup module (TDD), dispatcher integration, evidence integration. Phase 72 fully complete."
-last_updated: "2026-05-21T21:16:32.614Z"
+current_phase_name: operator-ui-truth-phase-parity
+current_plan: 1
+status: complete
+stopped_at: "Phase 73 Plan 01 complete. UI-PARITY-01..05 closed; v4.0 complete through operator UI truth and phase parity."
+last_updated: "2026-05-21T21:45:00.000Z"
 last_activity: 2026-05-21
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 17
-  completed_plans: 17
+  total_phases: 4
+  completed_phases: 4
+  total_plans: 18
+  completed_plans: 18
   percent: 100
 ---
 
@@ -24,24 +24,26 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 **Core value:** Any agent framework plugs into Memroos — and every agent, knowledge system, and skill becomes visible, connected, and self-improving.
-**Current focus:** Phase 72 — cross-project-recall-behavioral-w-lift-ui-skills
+**Current focus:** Phase 73 — operator-ui-truth-phase-parity
 
 ## Current Position
 
-Current Phase: 72
-Current Phase Name: cross-project-recall-behavioral-w-lift-ui-skills
-Current Plan: 6
-Total Phases: 3
-Total Plans in Phase: 6
+Current Phase: 73
+Current Phase Name: operator-ui-truth-phase-parity
+Current Plan: 1
+Total Phases: 4
+Total Plans in Phase: 1
 Progress: [██████████] 100%
-Status: Ready to execute
+Status: Complete
 
-Phase: 72 (cross-project-recall-behavioral-w-lift-ui-skills) — EXECUTING
-Plan: 6 of 6
+Phase: 73 (operator-ui-truth-phase-parity) — COMPLETE
+Plan: 1 of 1
 Wave 1 (complete): 71-01 recall foundation, 71-03 HIL SLA engine, 71-05 voice Daily bot
 Wave 2 (complete): 71-02 recall endpoint+job, 71-04 HIL dashboard, 71-06 voice consent UI
 Deployment closeout: merged to `main` at c2ff997, pushed to origin, rebuilt, restarted `com.memroos` launchd service on port 3002, and verified `https://memroos.epiloguecapital.com/login` returned HTTP 200.
-Next action: start Phase 72 planning/execution; do not run `$gsd-complete-milestone` for v4.0 until Phase 72 is complete and open artifact audit items are resolved or explicitly acknowledged.
+Phase 72 closeout: skill-aware dispatch and evidence integration complete with fail-closed SQL governance.
+Phase 73 closeout: HIL edit UI mounted in live approvals, NOC telemetry truth corrected, and phase-close UI representation gate added.
+Next action: run v4.0 milestone audit/closeout, then decide whether to deploy Phase 73 after separating unrelated dirty worktree changes.
 Last activity: 2026-05-21
 
 ## Roadmap Summary (v4.0)
@@ -51,9 +53,10 @@ Last activity: 2026-05-21
 | 70 | Foundation + Engine Core — HIL edit-and-continue, multi-hop retry/rollback, memory adapter interface (incl. WAL pragma fix) | HIL-01..03, ORCH-08..10, MEM-06..08 (9) |
 | 71 | Recall + HIL SLA + Voice — LLM semantic recall, SLA escalation timers, Daily.co meeting bot | RECALL-01..02, HIL-04..06, VOICE-06..08 (8) |
 | 72 | Cross-Project Recall + Behavioral W-lift + UI + Skills | RECALL-03..04, SEAL-04..06, UI-05..06, SKILL-01..04 (11) |
+| 73 | Operator UI Truth + Phase Parity | UI-PARITY-01..05 (5) |
 
-**Coverage:** 28/28 v4.0 requirements mapped, no orphans.
-**Current v4.0 completion:** Phase 70 and Phase 71 are complete, with UI parity follow-up tracked as Phase 73 before claiming full operator-complete status.
+**Coverage:** 33/33 v4.0 requirements mapped, no orphans.
+**Current v4.0 completion:** Phase 70 through Phase 73 are complete. Broader Operations NOC live-data wiring remains tracked separately as NOC-01..11.
 **Completed so far:** Phase 34 through Phase 69 (v2.0–v3.1 shipped).
 
 ## Performance Metrics
@@ -199,10 +202,10 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-21T21:16:28.155Z
-Stopped at: Phase 72 Plan 05 complete. All 3 tasks done: registry parser (TDD), import API, Skills UI.
+Last session: 2026-05-21T21:45:00.000Z
+Stopped at: Phase 73 Plan 01 complete. UI-PARITY-01..05 closed.
 Resume file: None
-Next action: Execute Phase 72 Plan 06
+Next action: Run v4.0 milestone audit/closeout; keep unrelated dirty worktree changes separate from Phase 73.
 
 ## UAT Findings (2026-05-17)
 
