@@ -23,6 +23,7 @@ import type { MemoryTierHealth } from "../backends";
 function makeStubAdapter(tier: MemoryTier): MemoryAdapter {
   return {
     tiers: [tier],
+    capabilities: [],
     search: async (_query: string, _limit: number) => [],
     write: async (_payload: Record<string, unknown>) => {},
     health: async (): Promise<MemoryTierHealth> => ({
@@ -73,6 +74,7 @@ describe("MemoryAdapter registry (MEM-07)", () => {
     // REQ: MEM-07 — adapter.tiers drives multi-tier registration
     const multiTier: MemoryAdapter = {
       tiers: ["vector", "graph"],
+      capabilities: ["semantic", "graphTraversal"],
       search: async () => [],
       write: async () => {},
       health: async (): Promise<MemoryTierHealth> => ({
