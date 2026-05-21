@@ -1721,6 +1721,117 @@ export function useResolveEscalation() {
 }
 
 // ---------------------------------------------------------------------------
+// Phase 72 Plan 03 — Behavioral eval job status and evidence polling
+// ---------------------------------------------------------------------------
+
+export type EvalJobStatus =
+  | "queued"
+  | "running"
+  | "passed"
+  | "failed"
+  | "rolled_back"
+  | "canceled";
+
+export interface EvalJobRow {
+  id: string;
+  proposalId: string;
+  proposalType: string;
+  agentId: string;
+  status: EvalJobStatus;
+  errorMessage: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EvalJobResponse {
+  job: EvalJobRow;
+  timestamp: string;
+}
+
+export interface RecordedToolCall {
+  toolName: string;
+  inputs: Record<string, unknown>;
+  denied: boolean;
+  denyReason?: string;
+  output?: unknown;
+}
+
+export interface PromotionMetadata {
+  modelVersion: string | null;
+  promptTemplateVersion: string | null;
+  datasetSeed: string | null;
+  passRate: number | null;
+  configHash: string | null;
+}
+
+export interface EvidenceBundleRow {
+  jobId: string;
+  proposalId: string;
+  agentId: string;
+  taskSampleId: string | null;
+  toolCallTranscript: RecordedToolCall[];
+  verificationChecks: string[];
+  unverifiedAssumptions: string[];
+  residualRisks: string[];
+  sourcesConsumed: string[];
+  replayHandle: string | null;
+  rollbackHandle: string | null;
+  promotionMetadata: PromotionMetadata | null;
+  preApplyBaselineW: number;
+  postApplyW: number | null;
+}
+
+export interface EvidenceBundleResponse {
+  evidence: EvidenceBundleRow;
+  timestamp: string;
+}
+
+/**
+ * Polls a behavioral eval job's current status.
+ * Callers should refetch every ~5s until status is terminal
+ * (passed | failed | rolled_back | canceled).
+ */
+export function useSealJob(jobId: string | null) {
+  return useQuery({
+    queryKey: ["seal", "job", jobId],
+    queryFn: () =>
+      fetchJSON<EvalJobResponse>(
+        `/api/seal/jobs/${encodeURIComponent(jobId as string)}`
+      ),
+    enabled: Boolean(jobId),
+    refetchInterval: (query) => {
+      const status = query.state.data?.job?.status;
+      if (!status) return 5_000;
+      // Stop polling once terminal
+      if (["passed", "failed", "rolled_back", "canceled"].includes(status)) {
+        return false;
+      }
+      return 5_000;
+    },
+  });
+}
+
+/**
+ * Fetches the evidence bundle for a completed behavioral eval job.
+ * Returns null (404) when the bundle is not yet available.
+ */
+export function useSealJobEvidence(jobId: string | null) {
+  return useQuery({
+    queryKey: ["seal", "job-evidence", jobId],
+    queryFn: async () => {
+      const res = await fetch(
+        `/api/seal/jobs/${encodeURIComponent(jobId as string)}/evidence`
+      );
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error(`/api/seal/jobs/${jobId}/evidence: ${res.status}`);
+      return res.json() as Promise<EvidenceBundleResponse>;
+    },
+    enabled: Boolean(jobId),
+    refetchInterval: 10_000,
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Phase 72 Plan 04 — Library freshness (QMD index recency vs source mtime)
 // ---------------------------------------------------------------------------
 
