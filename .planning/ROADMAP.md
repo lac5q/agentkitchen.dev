@@ -23,8 +23,8 @@
 
 ### Current Orchestration Depth + Intelligence Uplift Summary — IN PLANNING
 
-- [ ] **Phase 70: Foundation + Engine Core** — WAL fix + HIL edit-and-continue + multi-hop retry/rollback + memory adapter interface
-- [ ] **Phase 71: Recall + HIL SLA + Voice** — LLM semantic recall + SLA escalation timers + Daily.co meeting bot
+- [x] **Phase 70: Foundation + Engine Core** — WAL fix + HIL edit-and-continue + multi-hop retry/rollback + memory adapter interface
+- [x] **Phase 71: Recall + HIL SLA + Voice** — LLM semantic recall + SLA escalation timers + Daily.co meeting bot
 - [ ] **Phase 72: Cross-Project Recall + Behavioral W-lift + UI + Skills** — cross-project recall, true behavioral W-lift, flow trigger/freshness UI, cross-harness skills registry
 
 Full v4.0 detail in the `## v4.0 Orchestration Depth + Intelligence Uplift` section below.
@@ -316,12 +316,31 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 
 ### Future Milestone Priority
 
-1. Plan v4.1 candidate: Harness Control Plane + Knowledge Graph Intelligence.
+1. Plan corrective Phase 73: Operator UI Truth + Phase Parity.
+   - Source note: `.planning/phases/73-operator-ui-truth-phase-parity/73-CONTEXT.md`.
+   - Requirements: `UI-PARITY-01..05` in `.planning/REQUIREMENTS.md`.
+   - Goal: reconcile completed/current phase claims against actual operator-visible UI, wire missing panels, replace or honestly label mock NOC panels, and add a phase-close rule that prevents backend-complete work from being mistaken for product-complete work.
+   - Most urgent order: wire Phase 70 HIL edit UI into the real orchestration panel; replace or honestly label NOC mock panels; add the UI representation required gate; preserve Phase 71 Wave 2 summaries as closed parity evidence.
+
+2. Plan v4.1 candidate: Harness Control Plane + Knowledge Graph Intelligence.
    - Research intake: `Code as Agent Harness` (arXiv:2605.18747, 2026-05-18) argues future agent systems need executable, inspectable, stateful, governed harnesses.
    - Research intake: Graphify (`safishamsi/graphify`) shows a practical query-first repo/docs/PDF/image knowledge graph with confidence-tagged edges, wiki/report exports, and commit/search hooks.
    - Research intake: Graphite-style stacked review patterns suggest agent work should move as small, ordered, independently reviewable changes with stack-aware risk and merge gates.
    - Research intake: production-agent checklist patterns (direnv/secrets manager, LLM gateway, eval-pinned commits, LLM-call proxy tracing, Inspect evals, `lessons.md`) map to MemroOS runtime guardrails and evidence capture.
    - Integration call: LiteLLM should be an optional model-gateway adapter first, with direct provider calls retained as fallback; MemroOS owns task evidence, policy, replay, and NOC observability.
+
+3. Plan corrective Operations NOC Real-Data Wiring phase.
+   - Source note: `.planning/notes/operations-noc-real-data-requirements.md`.
+   - Requirements: `NOC-01..NOC-11` in `.planning/REQUIREMENTS.md`.
+   - Goal: replace mock home-screen panels with live operational data, explicit missing/degraded states, real engagement dispatch, and the telemetry streams needed for efficiency signals.
+4. Plan Phase 70 follow-up topology closure.
+   - Source note: `.planning/phases/70-foundation-engine-core/deferred-items.md`.
+   - Requirement: `ORCH-FOLLOWUP-01` in `.planning/REQUIREMENTS.md`.
+   - Goal: close deferred LangGraph multi-hop topology and rollback-compensation gaps before claiming full multi-hop orchestration depth.
+5. Plan recent-deferred hardening sweep.
+   - Source notes: Phase 57-64 context/summary deferred sections plus `.planning/PROJECT.md` v5 candidates.
+   - Requirements: `CTX-FOLLOWUP-01..02`, `EVAL-FOLLOWUP-01`, `EVAL-API-FOLLOWUP-01..02`, `MEMGEN-FOLLOWUP-01`, `SEAL-FOLLOWUP-01..02`, `AGENTGEN-FOLLOWUP-01`, `L3-FOLLOWUP-01..03`, `AUTH-FOLLOWUP-01..03`, `AUDIT-FOLLOWUP-01..03`, `UX-FOLLOWUP-01..06`, and `GSD-FOLLOWUP-01`.
+   - Goal: prevent recent deferred notes from living only in phase-local context by turning them into plan-ready backlog requirements.
 
 ### Later Ideas
 
@@ -334,6 +353,11 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 - Library freshness indicator (QMD index recency vs file mtime)
 - LLM-powered recall scoring upgrade (embedding over BM25)
 - Cross-project recall (similar-task recommendations across repos)
+- Operations NOC real-data contract: replace sample `noc-mock-data` panels with live data, source provenance, honest empty/degraded states, and tests that fail on production mock imports
+- Operations NOC efficiency telemetry: track retrieval calls before useful work, source re-reads, raw-context ingest share, operator re-ask redundancy, and rediscovered-fact rate
+- Operations NOC engagement binding: wire home-screen agent selection and directives to canonical registry plus real chat/dispatch APIs
+- Phase 70 topology follow-up: add rollback compensation as a LangGraph node, multi-hop graph iteration, per-hop retry counters, and A2A compensation dispatch
+- Agentic stack architecture coverage: document and expose health for goal, orchestration, agents, tools, memory, monitoring, reliability/failure, and governance/security layers
 - Harness Control Plane: task-level Plan-Execute-Verify timeline showing context assembled, tools exposed, permissions granted, actions taken, verification run, and memory updated
 - Evidence bundles on agent outputs: sources used, memories consumed, tools/commands run, checks passed, unverified assumptions, residual risks, and rollback/replay artifacts
 - Shared harness state substrate: authoritative task state with read/write sets, assumptions, version dependencies, verifier obligations, conflict policy, and belief-drift detection for stale context
@@ -347,6 +371,19 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 - Eval-pinned promotion commits: when an eval suite passes, capture model version, prompt/harness version, pass rate, dataset seed, and commit/release pointer for incident-grade rollback
 - Agent lessons ledger: maintain a repo-level `lessons.md`/lessons table for weird behavior, edge cases, config changes, incident notes, and promoted skills, then surface it in context packs and graph freshness checks
 - Third-party eval adapter: evaluate whether Inspect-style eval packs should plug into the existing eval engine for safety behaviors such as deception, tool misuse, manipulation, and policy-boundary violations
+- Eval Engine product packaging: decide bundled vs separate eval/self-improvement product surface, pricing axis, trace-ingestion contract, judge-model cost ownership, golden-set marketplace strategy, compliance floor, and competitive framing
+- Second vertical: after finance reconciliation has live customer proof, choose healthcare, legal, or ops/logistics as the next adapter + golden-set + UI terminology vertical
+- Context-source follow-up coverage: extend source contracts to all operator source families, including Drive and Slack, and expose memory queue/retry/degradation plus source-to-QMD indexing proof in health/evals
+- Eval engine operationalization: provider-backed judge invocation, judge re-baselining, version/cost capture, OpenInference/OpenTelemetry ingestion, bulk traces, webhooks, streaming results, metering, tenant key UI, and verified quickstart docs
+- Memory autogen live validation: convert retro-documented memory-autogen behavior into an explicit contract with non-fixture mem0/graph/vector evals and replay evidence
+- SEAL proposal lifecycle hardening: governed auto-apply, bulk review, expiry/GC, tenant isolation, proposal-type plugin model, and file-system snapshot/restore for skill mutations
+- Agent autogen trajectory workflow: trace capture to human annotation, max trajectory step caps, and audit events for W-preset changes
+- Business outcome live adapters: Salesforce, Zendesk, NetSuite, inbound webhooks, correlation-ID automation, per-company golden sets, W-threshold alerts, and SLA/TTR targets
+- Team/auth hardening: email invitations, password reset, email verification/change, OAuth/SSO, role-aware navigation gating, tenant settings, API-key rotation, and legacy audit actor migration
+- Audit/HIL hardening: hash chaining, retention/archival policy, escalation notifications, bulk resolution, audit FTS, and tenant-scoped audit access
+- Operator UX v5 surfaces: ClaudeClaw-style chat tab, unified memory search, schedules/routines console, Hivemind graph view, Paperclip system completion, and Flow canvas redesign
+- GSD backlog hygiene: milestone close must promote or explicitly close every deferred item, context question, scope trim, and retro-documented gap
+- Phase/UI parity gate: reconcile phase claims against operator-visible surfaces, wire Phase 70 HIL edit UI, replace or honestly label mock NOC panels, and require an explicit UI/API-only/follow-up decision at phase close
 
 Run `$gsd-new-milestone` to start the next milestone workflow.
 
@@ -486,7 +523,7 @@ pre-conditions (WAL pragma on `orchestration.db`, `MemoryAdapter` interface)
 that unblock all downstream features.
 
 - [x] **Phase 70: Foundation + Engine Core** — WAL fix + HIL edit-and-continue + multi-hop retry/rollback + memory adapter interface (completed 2026-05-21)
-- [ ] **Phase 71: Recall + HIL SLA + Voice** — LLM semantic recall + SLA escalation timers + Daily.co meeting bot as a governed memory-ingestion channel
+- [x] **Phase 71: Recall + HIL SLA + Voice** — LLM semantic recall + SLA escalation timers + Daily.co meeting bot as a governed memory-ingestion channel (completed 2026-05-21)
 - [ ] **Phase 72: Cross-Project Recall + Behavioral W-lift + UI + Skills** — cross-project recall, true behavioral W-lift, flow trigger/freshness UI, cross-harness skills registry, evidence bundles, governed skill contracts
 
 ### Phase 70: Foundation + Engine Core
@@ -531,11 +568,11 @@ Plans:
 **Plans**: 6 plans (2 waves)
 Plans:
 - [x] 71-01-PLAN.md — Message embeddings schema + Ollama nomic-embed-text provider (wave 1)
-- [ ] 71-02-PLAN.md — Semantic/hybrid recall endpoint + background embedding job (wave 2)
+- [x] 71-02-PLAN.md — Semantic/hybrid recall endpoint + background embedding job (wave 2)
 - [x] 71-03-PLAN.md — HIL SLA action config + 60s escalation scheduler (wave 1)
-- [ ] 71-04-PLAN.md — HIL dashboard live countdown + SLA traffic-light (wave 2)
+- [x] 71-04-PLAN.md — HIL dashboard live countdown + SLA traffic-light (wave 2)
 - [x] 71-05-PLAN.md — Daily.co meeting bot: DailyTransport pipeline + per-speaker transcripts (wave 1)
-- [ ] 71-06-PLAN.md — Recording-consent gate + meeting join UI (wave 2)
+- [x] 71-06-PLAN.md — Recording-consent gate + meeting join UI (wave 2)
 **UI hint**: yes
 
 ### Phase 72: Cross-Project Recall + Behavioral W-lift + UI + Skills
@@ -561,5 +598,5 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|----------|---------------|--------|-----------|
 | 70 | v4.0 | 5/5 | Complete   | 2026-05-21 |
-| 71 | v4.0 | 3/6 | In Progress|  |
+| 71 | v4.0 | 6/6 | Complete | 2026-05-21 |
 | 72 | v4.0 | 0/0 | Not started | - |

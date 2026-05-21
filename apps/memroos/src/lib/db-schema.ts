@@ -808,6 +808,21 @@ export function initSchema(db: Database.Database): void {
     END;
   `);
 
+  // Phase 71: recording consent for Daily.co meeting bot joins.
+  // Deliberately stores only an opaque meeting_id and human label; room URLs and
+  // join tokens remain transient and must never be persisted here.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS meeting_consents (
+      meeting_id    TEXT PRIMARY KEY,
+      operator_id   TEXT NOT NULL,
+      meeting_label TEXT,
+      consented     INTEGER NOT NULL DEFAULT 1 CHECK(consented IN (0,1)),
+      consented_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS meeting_consents_operator
+      ON meeting_consents(operator_id, consented_at DESC);
+  `);
+
   // Phase 64: hil_escalations — mutable open-work-item state (AUDIT-04)
   // Each lifecycle event (created/resolved/sla_breached) writes to audit_entries.
   db.exec(`

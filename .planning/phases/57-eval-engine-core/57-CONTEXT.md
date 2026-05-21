@@ -53,6 +53,8 @@ Out of scope for Phase 57:
 <deferred>
 ## Deferred Ideas
 
+Backlog status: promoted to `.planning/REQUIREMENTS.md` as `EVAL-FOLLOWUP-01`, `EVAL-API-FOLLOWUP-01..02`, `L3-FOLLOWUP-01..03`, and the existing behavioral golden-set future requirement.
+
 - Provider-backed judge invocation and judge-model re-baselining workflow.
 - Full 50-example role golden sets.
 - External OpenInference trace ingestion.

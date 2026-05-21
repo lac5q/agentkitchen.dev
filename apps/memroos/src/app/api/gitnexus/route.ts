@@ -21,7 +21,7 @@ export async function GET() {
   const repos: GitNexusRepo[] = [];
 
   try {
-    const registry = JSON.parse(await readFile(GITNEXUS_REGISTRY, "utf-8"));
+    const registry = JSON.parse(await readFile(/* turbopackIgnore: true */ GITNEXUS_REGISTRY, "utf-8"));
 
     // Registry is an object of { repoPath: { name, path, ... } }
     // or an array — handle both
@@ -34,7 +34,7 @@ export async function GET() {
       // Try to read per-repo meta.json
       let meta: Record<string, unknown> = {};
       try {
-        const metaPath = path.join(repoPath, ".gitnexus", "meta.json");
+        const metaPath = path.join(/* turbopackIgnore: true */ repoPath, ".gitnexus", "meta.json");
         meta = JSON.parse(await readFile(metaPath, "utf-8"));
       } catch { /* no meta */ }
 

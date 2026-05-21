@@ -258,6 +258,8 @@ public_api:
 <deferred>
 ## Deferred Ideas
 
+Backlog status: promoted to `.planning/REQUIREMENTS.md` as `EVAL-API-FOLLOWUP-01..02`, with external packaging covered by `PRODUCT-01..02`.
+
 - Redis-backed rate limiting for multi-instance deployments (in-memory LRU is correct for v1 single-instance)
 - Webhook push delivery for async proposal notifications
 - Streaming eval results (chunked or SSE) — future SDK v2

@@ -64,3 +64,4 @@ services/**/logs/
 # Local agent/tool state — never committed
 .codex/
 .agents/
+.gemini/

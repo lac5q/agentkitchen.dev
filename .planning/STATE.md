@@ -4,17 +4,17 @@ milestone: v4.0
 milestone_name: Orchestration Depth + Intelligence Uplift
 current_phase: 71
 current_phase_name: Recall + HIL SLA + Voice
-current_plan: 71-01 next
-status: verifying
-stopped_at: Phase 70 executing; Plans 03 and 05 still pending
-last_updated: "2026-05-21T15:19:03.230Z"
+current_plan: post-71 merge/deploy checks
+status: phase_71_complete
+stopped_at: Phase 71 Wave 2 complete; merge/deploy verification pending
+last_updated: "2026-05-21T16:52:42Z"
 last_activity: 2026-05-21
 progress:
   total_phases: 3
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 11
-  completed_plans: 8
-  percent: 33
+  completed_plans: 11
+  percent: 67
 ---
 
 # State: Memroos
@@ -30,17 +30,17 @@ See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 Current Phase: 71
 Current Phase Name: Recall + HIL SLA + Voice
-Current Plan: 71-01 next
+Current Plan: post-71 merge/deploy checks
 Total Phases: 3
 Total Plans in Phase: 6
-Progress: [███████░░░] 73%
-Status: Phase complete — ready for verification
+Progress: [██████████] 100%
+Status: Phase 71 complete — merge/deploy verification pending
 
 Phase: 71 — Recall + HIL SLA + Voice (planned)
 Plan: planning complete (71-CONTEXT.md, 71-VALIDATION.md, 71-01..06-PLAN.md)
-Wave 1 (parallel): 71-01 recall foundation, 71-03 HIL SLA engine, 71-05 voice Daily bot
-Wave 2 (parallel): 71-02 recall endpoint+job, 71-04 HIL dashboard, 71-06 voice consent UI
-Next action: execute Phase 71 — start with Wave 1 (71-01, 71-03, 71-05)
+Wave 1 (complete): 71-01 recall foundation, 71-03 HIL SLA engine, 71-05 voice Daily bot
+Wave 2 (complete): 71-02 recall endpoint+job, 71-04 HIL dashboard, 71-06 voice consent UI
+Next action: run final GitNexus detect-changes, commit Phase 71, merge, and deploy; keep Phase 73 UI parity as the corrective backlog guard before claiming full operator-complete status
 Last activity: 2026-05-21
 
 ## Roadmap Summary (v4.0)
@@ -52,7 +52,7 @@ Last activity: 2026-05-21
 | 72 | Cross-Project Recall + Behavioral W-lift + UI + Skills | RECALL-03..04, SEAL-04..06, UI-05..06, SKILL-01..04 (11) |
 
 **Coverage:** 28/28 v4.0 requirements mapped, no orphans.
-**Current v4.0 completion:** 3/28 requirements fully complete (MEM-06..08); HIL-01..03 are backend-partial until 70-05 lands; ORCH-08..10 are pending 70-03.
+**Current v4.0 completion:** Phase 70 and Phase 71 are complete, with UI parity follow-up tracked as Phase 73 before claiming full operator-complete status.
 **Completed so far:** Phase 34 through Phase 69 (v2.0–v3.1 shipped).
 
 ## Performance Metrics
@@ -172,10 +172,10 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-21T15:19:03.224Z
-Stopped at: Phase 70 executing; Plans 03 and 05 still pending
+Last session: 2026-05-21T16:52:42Z
+Stopped at: Phase 71 Wave 2 complete; merge/deploy verification pending
 Resume file: None
-Next action: execute Phase 70 Plan 03, then Phase 70 Plan 05; do not route to Phase 71 until Phase 70 summaries and validation are current
+Next action: run final GitNexus detect-changes, commit Phase 71, merge, and deploy; keep Phase 73 UI parity before closing v4.0 operator-complete claims
 
 ## UAT Findings (2026-05-17)
 

@@ -3,6 +3,7 @@ title: Eval Engine + Self-Improvement as an external product surface
 planted_date: 2026-05-14
 trigger_condition: "After v2.5 phases 57–60 ship and the eval engine is dogfooded on MemroOS itself; before phase 62 (public API)"
 related_phases: [62]
+backlog_status: Promoted to backlog as PRODUCT-01..PRODUCT-02 in .planning/REQUIREMENTS.md and Eval Engine product packaging in .planning/ROADMAP.md
 ---
 
 # Eval Engine as Product

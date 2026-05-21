@@ -52,7 +52,7 @@ const MODEL_ALIASES: Record<string, string> = {
 
 async function tryRead(filePath: string, maxLines = 150): Promise<string | null> {
   try {
-    const content = await readFile(filePath, "utf-8");
+    const content = await readFile(/* turbopackIgnore: true */ filePath, "utf-8");
     const lines = content.split("\n");
     return lines.length > maxLines
       ? lines.slice(0, maxLines).join("\n") + "\n\n[...truncated]"
@@ -79,10 +79,10 @@ async function resolveAgentDir(agentId: string): Promise<{ dir: string; source: 
 
   for (const { root, source } of roots) {
     for (const id of candidates) {
-      const candidate = path.join(root, id);
+      const candidate = path.join(/* turbopackIgnore: true */ root, id);
       if (
-        (await tryRead(path.join(candidate, "SOUL.md"), 1)) ||
-        (await tryRead(path.join(candidate, "AGENTS.md"), 1))
+        (await tryRead(path.join(/* turbopackIgnore: true */ candidate, "SOUL.md"), 1)) ||
+        (await tryRead(path.join(/* turbopackIgnore: true */ candidate, "AGENTS.md"), 1))
       ) {
         return { dir: candidate, source };
       }
@@ -106,12 +106,12 @@ export async function buildAgentContext(agentId: string): Promise<AgentContext> 
   }
 
   const [soul, agentInstructions, memory, lessons, heartbeatState, heartbeat] = await Promise.all([
-    tryRead(path.join(dir, "SOUL.md")),
-    tryRead(path.join(dir, "AGENTS.md")),
-    tryRead(path.join(dir, "MEMORY.md"), 80),
-    tryRead(path.join(dir, "LESSONS.md"), 80),
-    tryRead(path.join(dir, "HEARTBEAT_STATE.md"), 50),
-    tryRead(path.join(dir, "HEARTBEAT.md"), 100),
+    tryRead(path.join(/* turbopackIgnore: true */ dir, "SOUL.md")),
+    tryRead(path.join(/* turbopackIgnore: true */ dir, "AGENTS.md")),
+    tryRead(path.join(/* turbopackIgnore: true */ dir, "MEMORY.md"), 80),
+    tryRead(path.join(/* turbopackIgnore: true */ dir, "LESSONS.md"), 80),
+    tryRead(path.join(/* turbopackIgnore: true */ dir, "HEARTBEAT_STATE.md"), 50),
+    tryRead(path.join(/* turbopackIgnore: true */ dir, "HEARTBEAT.md"), 100),
   ]);
 
   const sections: string[] = [];

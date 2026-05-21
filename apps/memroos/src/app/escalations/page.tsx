@@ -3,19 +3,11 @@
 import { useState } from "react";
 import { useEscalations, useResolveEscalation } from "@/lib/api-client";
 import type { EscalationWithCountdown } from "@/lib/api-client";
+import { SlaCountdown } from "@/components/escalations/sla-countdown";
 import { Btn, Card, PageHeader, Pill } from "@/components/shared/ui";
 import { NOC } from "@/lib/noc-theme";
 
 type TabStatus = "open" | "resolved" | "sla_breached" | "all";
-
-function formatMs(ms: number): string {
-  if (ms <= 0) return "Overdue";
-  const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  if (hours > 0) return `${hours}h ${minutes}m`;
-  return `${minutes}m`;
-}
 
 function formatTimestamp(ts: string): string {
   try {
@@ -63,14 +55,11 @@ function EscalationCard({
 
         <div className="text-right shrink-0">
           {!isResolved && (
-            <div
-              className={[
-                "text-sm font-semibold",
-              ].join(" ")}
-              style={{ color: isOverdue ? NOC.warn : NOC.muted }}
-            >
-              {formatMs(escalation.slaRemainingMs)}
-            </div>
+            <SlaCountdown
+              deadline={escalation.sla_deadline}
+              slaSeconds={escalation.sla_seconds}
+              status={escalation.status}
+            />
           )}
           <div className="text-xs mt-0.5" style={{ color: NOC.soft }}>
             {isResolved ? "Resolved" : "SLA remaining"}

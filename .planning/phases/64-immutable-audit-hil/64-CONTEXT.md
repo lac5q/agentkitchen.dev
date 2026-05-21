@@ -313,6 +313,8 @@ hil:
 <deferred>
 ## Deferred to Later Phases
 
+Backlog status: promoted to `.planning/REQUIREMENTS.md` as `AUDIT-FOLLOWUP-01..03`, `AUTH-FOLLOWUP-02`, and `L3-FOLLOWUP-03` for finance-vertical terminology/target follow-through.
+
 - **Tamper-evident hash chaining** (`prev_hash TEXT` column linking each row to its predecessor SHA-256 hash) — Phase 66 compliance hardening. The column slot is reserved in schema docs but not created in Phase 64. Adding it requires computing the hash chain on insert, which is a performance concern at high write rates.
 - **Log retention and archival policies** — Phase 66. Admin panel will configure maximum retention days; old entries archived to cold storage or deleted per operator policy.
 - **Audit log access from the public eval API** — Phase 62's external surface is not extended in Phase 64. Tenant-scoped audit access for external customers is a post-v3 consideration.

@@ -219,6 +219,8 @@ The sidebar does not get per-role conditional rendering in Phase 63 — that com
 <deferred>
 ## Deferred to Later Phases
 
+Backlog status: promoted to `.planning/REQUIREMENTS.md` as `AUTH-FOLLOWUP-01..03` and `AUDIT-FOLLOWUP-03` where auth identity affects audit access.
+
 - Email delivery for invitations (Phase 66 adds SMTP config)
 - Per-role nav item visibility hiding in sidebar (Phase 66)
 - Password reset flow (Phase 66)

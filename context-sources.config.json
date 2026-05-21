@@ -8,7 +8,7 @@
       "envVars": ["KNOWLEDGE_BASE_PATH"],
       "sourcePath": "${KNOWLEDGE_BASE_PATH:-./docs}",
       "ingestCommand": "qmd ingest",
-      "indexCommand": "qmd query health --limit 1",
+      "indexCommand": "env QMD_FORCE_CPU=1 qmd query health --limit 1",
       "freshnessThresholdMinutes": 1440,
       "qmdCollection": "knowledge",
       "safeAnswerPolicy": "source_required"
@@ -45,7 +45,7 @@
       "enabled": true,
       "requiredTools": ["python3"],
       "envVars": ["MEM0_URL"],
-      "sourcePath": "./services/memory/logs",
+      "sourcePath": "./services/memory/logs/mem0-server.log",
       "ingestCommand": "services/memory/healthcheck.sh",
       "indexCommand": "curl -fsS ${MEM0_URL:-http://localhost:3201}/health",
       "freshnessThresholdMinutes": 15,

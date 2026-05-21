@@ -3,6 +3,8 @@
 Items discovered during plan execution that are out of scope for the originating plan.
 These must be addressed in a future plan before the deferred capability is considered complete.
 
+Backlog status: promoted to `.planning/REQUIREMENTS.md` as `ORCH-FOLLOWUP-01` and to `.planning/ROADMAP.md` under Future Milestone Priority / Later Ideas.
+
 ---
 
 ## From 70-03: Multi-hop retry + declarative rollback
