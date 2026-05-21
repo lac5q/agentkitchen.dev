@@ -57,7 +57,13 @@ const ADMIN_ROUTES: Array<{ method?: string; pattern: RegExp }> = [
 ];
 
 const ROUTE_LOCAL_AUTH_API_ROUTES: Array<{ method?: string; pattern: RegExp }> = [
+  { pattern: /^\/api\/chatgpt\/actions\// },
+  { method: "POST", pattern: /^\/api\/agents\/register$/ },
   { method: "POST", pattern: /^\/api\/dispatch$/ },
+  { method: "POST", pattern: /^\/api\/heartbeat$/ },
+  { method: "POST", pattern: /^\/api\/memory\/add$/ },
+  { method: "POST", pattern: /^\/api\/skills\/report$/ },
+  { method: "POST", pattern: /^\/api\/tool-attention\/record$/ },
 ];
 
 function hasRouteLocalAuth(pathname: string, method: string): boolean {

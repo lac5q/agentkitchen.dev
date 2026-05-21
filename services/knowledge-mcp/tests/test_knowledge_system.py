@@ -154,6 +154,88 @@ def test_chatgpt_fetch_returns_connector_document_shape(monkeypatch):
         }
 
 
+def test_agent_memory_save_posts_to_memroos_app_with_agent_key(monkeypatch):
+    calls = []
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"ok": True, "tier": "vector"}
+
+    def fake_post(url, **kwargs):
+        calls.append((url, kwargs))
+        return Response()
+
+    monkeypatch.setenv("MEMROOS_APP_URL", "http://memroos.test")
+    monkeypatch.setenv("MEMROOS_AGENT_ID", "multica-vega")
+    monkeypatch.setenv("MEMROOS_AGENT_API_KEY", "agent-key")
+    monkeypatch.setattr(mcp_server.httpx, "post", fake_post)
+
+    payload = mcp_server.agent_memory_save(
+        "Vega learned the Multica bridge should use MemroOS for recall.",
+        type="vector",
+        metadata={"source_type": "multica", "multica_issue_id": "MUL-18"},
+    )
+
+    assert payload == {"status": "ok", "response": {"ok": True, "tier": "vector"}}
+    assert calls[0][0] == "http://memroos.test/api/memory/add"
+    assert calls[0][1]["headers"]["Authorization"] == "Bearer agent-key"
+    body = calls[0][1]["json"]
+    assert body["agentId"] == "multica-vega"
+    assert body["content"] == "Vega learned the Multica bridge should use MemroOS for recall."
+    assert body["text"] == body["content"]
+    assert body["type"] == "vector"
+    assert body["metadata"]["source_type"] == "multica"
+    assert body["metadata"]["saved_by_agent"] == "multica-vega"
+
+
+def test_agent_memory_save_requires_agent_key(monkeypatch):
+    monkeypatch.delenv("MEMROOS_AGENT_API_KEY", raising=False)
+
+    payload = mcp_server.agent_memory_save("no key")
+
+    assert payload["status"] == "missing_agent_key"
+    assert "MEMROOS_AGENT_API_KEY" in payload["error"]
+
+
+def test_agent_tool_outcome_record_posts_to_memroos_app(monkeypatch):
+    calls = []
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"ok": True}
+
+    def fake_post(url, **kwargs):
+        calls.append((url, kwargs))
+        return Response()
+
+    monkeypatch.setenv("MEMROOS_APP_URL", "http://memroos.test/")
+    monkeypatch.setenv("MEMROOS_AGENT_ID", "multica-vega")
+    monkeypatch.setenv("MEMROOS_AGENT_API_KEY", "agent-key")
+    monkeypatch.setattr(mcp_server.httpx, "post", fake_post)
+
+    payload = mcp_server.agent_tool_outcome_record(
+        tool_id="memroos",
+        task="Multica issue MUL-18",
+        outcome="helped",
+        metadata={"multica_task_id": "task-123"},
+    )
+
+    assert payload == {"status": "ok", "response": {"ok": True}}
+    assert calls[0][0] == "http://memroos.test/api/tool-attention/record"
+    body = calls[0][1]["json"]
+    assert body["agentId"] == "multica-vega"
+    assert body["toolId"] == "memroos"
+    assert body["task"] == "Multica issue MUL-18"
+    assert body["outcome"] == "helped"
+    assert body["metadata"]["multica_task_id"] == "task-123"
+
+
 def test_core_tools_stay_small_for_progressive_disclosure():
     assert CORE_TOOLS == [
         "knowledge_health",

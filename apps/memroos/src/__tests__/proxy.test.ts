@@ -26,4 +26,40 @@ describe("proxy", () => {
     expect(response.headers.get("location")).toBe("https://app.memroos.test/login");
     delete process.env.MEMROOS_HTTPS_APP_HOSTS;
   });
+
+  it("lets agent-authenticated API routes handle their own authorization", async () => {
+    const response = await proxy(
+      new NextRequest("http://localhost:3002/api/memory/add", {
+        method: "POST",
+        headers: { host: "localhost:3002", authorization: "Bearer agent-key" },
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("");
+  });
+
+  it("lets operator-key API routes handle their own authorization", async () => {
+    const response = await proxy(
+      new NextRequest("http://localhost:3002/api/agents/register", {
+        method: "POST",
+        headers: { host: "localhost:3002", "x-memroos-operator-key": "operator-key" },
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("");
+  });
+
+  it("lets ChatGPT Action routes handle their own API key authorization", async () => {
+    const response = await proxy(
+      new NextRequest("https://memroos.epiloguecapital.com/api/chatgpt/actions/search", {
+        method: "POST",
+        headers: { host: "memroos.epiloguecapital.com", "x-api-key": "action-key" },
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("");
+  });
 });

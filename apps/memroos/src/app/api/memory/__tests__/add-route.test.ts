@@ -64,7 +64,7 @@ describe("POST /api/memory/add", () => {
   });
 
   it("forwards valid memory writes to mem0 and audits the write", async () => {
-    const { POST, getDb, registerAgent } = await loadRoute();
+    const { POST, getDb, memoryWriteTimeoutMs, registerAgent } = await loadRoute();
     const { apiKey } = registerAgent({
       id: "memory-agent",
       name: "Memory Agent",
@@ -87,8 +87,25 @@ describe("POST /api/memory/add", () => {
       "http://mem0.test/memory/add",
       expect.objectContaining({ method: "POST" })
     );
+    const forwarded = JSON.parse(vi.mocked(fetch).mock.calls[0]?.[1]?.body as string);
+    expect(forwarded).toMatchObject({
+      agent_id: "memory-agent",
+      text: "remember this",
+      type: "episodic",
+      metadata: { source: "test", tier: "episodic", backend: "sqlite-episodic" },
+    });
+    expect(memoryWriteTimeoutMs()).toBe(30_000);
     const rows = getDb().prepare("SELECT agent_id, memory_type FROM agent_memory_writes").all();
     expect(rows).toEqual([{ agent_id: "memory-agent", memory_type: "episodic" }]);
+  });
+
+  it("allows the memory write timeout to be tuned for slow local embedders", async () => {
+    process.env.MEMROOS_MEMORY_WRITE_TIMEOUT_MS = "45000";
+    const { memoryWriteTimeoutMs } = await loadRoute();
+
+    expect(memoryWriteTimeoutMs()).toBe(45_000);
+
+    delete process.env.MEMROOS_MEMORY_WRITE_TIMEOUT_MS;
   });
 
   it("returns a safe 502 when mem0 is unreachable", async () => {

@@ -8,6 +8,11 @@ import { responseCache } from "@/lib/response-cache";
 
 export const dynamic = "force-dynamic";
 
+export function memoryWriteTimeoutMs(): number {
+  const parsed = Number(process.env.MEMROOS_MEMORY_WRITE_TIMEOUT_MS ?? 30_000);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.trunc(parsed) : 30_000;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
@@ -25,7 +30,12 @@ export async function POST(request: Request) {
 
   let mem0Response: Response;
   let result: Record<string, unknown>;
-  const tieredBody = buildTieredMemoryPayload(body);
+  const rawContent = typeof body.content === "string" ? body.content : typeof body.text === "string" ? body.text : undefined;
+  const tieredBody = buildTieredMemoryPayload({
+    ...body,
+    agent_id: agent.id,
+    text: rawContent,
+  });
   const tier = resolveMemoryTier(tieredBody);
   const policy = checkMemoryWritePolicy(agent, tier);
   if (!policy.allowed) {
@@ -52,7 +62,7 @@ export async function POST(request: Request) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(tieredBody),
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(memoryWriteTimeoutMs()),
     });
     result = (await mem0Response.json().catch(() => ({}))) as Record<string, unknown>;
   } catch {

@@ -9,6 +9,12 @@ PORT="${PORT:-3002}"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG_DIR="$REPO_DIR/logs"
 mkdir -p "$LOG_DIR"
+RUNTIME_ENV_FILE="${MEMROOS_RUNTIME_ENV_FILE:-$HOME/.memroos/memroos-runtime.env}"
+if [ -f "$RUNTIME_ENV_FILE" ]; then
+  set -a
+  . "$RUNTIME_ENV_FILE"
+  set +a
+fi
 NODE_BIN="${MEMROOS_NODE_BIN:-}"
 if [ -z "$NODE_BIN" ]; then
   if [ -x /opt/homebrew/opt/node@22/bin/node ]; then

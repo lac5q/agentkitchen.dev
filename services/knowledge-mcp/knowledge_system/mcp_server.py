@@ -161,6 +161,48 @@ def _mem0_url() -> str:
     return os.environ.get("MEM0_URL", "http://localhost:3201").rstrip("/")
 
 
+def _memroos_app_url() -> str:
+    return os.environ.get("MEMROOS_APP_URL", os.environ.get("MEMROOS_BASE_URL", "http://localhost:3002")).rstrip("/")
+
+
+def _memroos_agent_id(agent_id: Optional[str] = None) -> str:
+    return (agent_id or os.environ.get("MEMROOS_AGENT_ID") or "shared").strip() or "shared"
+
+
+def _memroos_agent_headers() -> dict[str, str] | None:
+    key = os.environ.get("MEMROOS_AGENT_API_KEY", "").strip()
+    if not key:
+        return None
+    return {
+        "Authorization": f"Bearer {key}",
+        "Content-Type": "application/json",
+    }
+
+
+def _post_memroos_agent_api(path: str, payload: dict, timeout: int = 10) -> dict:
+    if httpx is None:
+        return {"status": "unavailable", "error": "httpx is not installed"}
+
+    headers = _memroos_agent_headers()
+    if headers is None:
+        return {
+            "status": "missing_agent_key",
+            "error": "Set MEMROOS_AGENT_API_KEY for audited MemroOS agent writes.",
+        }
+
+    try:
+        response = httpx.post(
+            f"{_memroos_app_url()}{path}",
+            json=payload,
+            headers=headers,
+            timeout=timeout,
+        )
+        response.raise_for_status()
+        return {"status": "ok", "response": response.json()}
+    except Exception as exc:
+        return {"status": "unavailable", "error": str(exc)}
+
+
 def _qmd_bin() -> str:
     return os.environ.get("QMD_BIN", "qmd")
 
@@ -378,6 +420,56 @@ def memory_save(text: str, agent_id: str = "shared", metadata: Optional[dict] = 
         return {"status": "ok", "response": response.json()}
     except Exception as exc:
         return {"status": "unavailable", "error": str(exc)}
+
+
+@_mcp_tool
+def agent_memory_save(
+    content: str,
+    type: str = "episodic",
+    metadata: Optional[dict] = None,
+    agent_id: Optional[str] = None,
+) -> dict:
+    """Save memory through the MemroOS app so agent registry policy and audit rows are applied."""
+    resolved_agent_id = _memroos_agent_id(agent_id)
+    return _post_memroos_agent_api(
+        "/api/memory/add",
+        {
+            "agentId": resolved_agent_id,
+            "content": content,
+            "text": content,
+            "type": type,
+            "metadata": normalize_metadata(
+                metadata,
+                agent_id=resolved_agent_id,
+                default_source="multica-agent",
+            ),
+        },
+    )
+
+
+@_mcp_tool
+def agent_tool_outcome_record(
+    tool_id: str,
+    outcome: str,
+    task: str = "",
+    metadata: Optional[dict] = None,
+    agent_id: Optional[str] = None,
+) -> dict:
+    """Record an authenticated tool outcome through MemroOS for agent/tool auditing."""
+    resolved_agent_id = _memroos_agent_id(agent_id)
+    return _post_memroos_agent_api(
+        "/api/tool-attention/record",
+        {
+            "agentId": resolved_agent_id,
+            "toolId": tool_id,
+            "task": task,
+            "outcome": outcome,
+            "metadata": {
+                **(metadata or {}),
+                "source": "multica",
+            },
+        },
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -22,6 +22,7 @@
     "eval:memory-degradation": "bash scripts/run-memory-degradation-checks.sh",
     "check:knowledge-indexing": "node scripts/check-knowledge-indexing.mjs",
     "install:runtime-services": "node scripts/install-runtime-services.mjs install",
+    "setup:multica-memroos": "node scripts/setup-multica-memroos.mjs",
     "lint": "npm --prefix apps/memroos run lint",
     "check:agents": "node scripts/check-agent-systems.mjs",
     "curate:skills": "node scripts/curate-agent-skills.mjs",
