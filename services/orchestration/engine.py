@@ -170,8 +170,13 @@ class OrchestrationStore:
         hop_type: str,
         agent_id: str | None = None,
         detail: dict[str, Any] | None = None,
-    ) -> None:
-        self.conn.execute(
+    ) -> int:
+        """Insert a lineage row and return its auto-generated row id.
+
+        The returned id is used as forward_hop_id in paired compensation_pending rows
+        (ORCH-09: declarative compensation, not Python closures).
+        """
+        cursor = self.conn.execute(
             """
             INSERT INTO orchestration_lineage (
               correlation_id, run_id, hop_type, agent_id, detail_json, created_at
@@ -187,6 +192,7 @@ class OrchestrationStore:
             ),
         )
         self.conn.commit()
+        return cursor.lastrowid
 
     def list_lineage(self, correlation_id: str) -> list[dict[str, Any]]:
         rows = self.conn.execute(
@@ -198,6 +204,38 @@ class OrchestrationStore:
             (correlation_id,),
         ).fetchall()
         return [dict(row) for row in rows]
+
+    def list_compensation_pending(self, run_id: str) -> list[dict[str, Any]]:
+        """Return all compensation_pending lineage rows for a run, ordered descending
+        (most-recent hop first) so rollback can replay in reverse order (ORCH-09)."""
+        rows = self.conn.execute(
+            """
+            SELECT * FROM orchestration_lineage
+            WHERE run_id = ? AND hop_type = 'compensation_pending'
+            ORDER BY id DESC
+            """,
+            (run_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+
+    def update_lineage_hop_type(self, row_id: int, *, hop_type: str, detail: dict[str, Any] | None = None) -> None:
+        """Update an existing lineage row's hop_type (and optionally detail_json).
+
+        Used to transition compensation_pending → compensation_done or compensation_skipped.
+        """
+        self.conn.execute(
+            """
+            UPDATE orchestration_lineage
+            SET hop_type = ?, detail_json = COALESCE(?, detail_json)
+            WHERE id = ?
+            """,
+            (
+                hop_type,
+                json.dumps(detail, sort_keys=True) if detail is not None else None,
+                row_id,
+            ),
+        )
+        self.conn.commit()
 
     def create_hil_decision(
         self,
@@ -346,12 +384,26 @@ class OrchestrationEngine:
             agent_id=selected_agent_id,
             detail={"reason": "capability_match"},
         )
-        self.store.append_lineage(
+        dispatch_row_id = self.store.append_lineage(
             correlation_id=correlation_id,
             run_id=run_id,
             hop_type="dispatch_request",
             agent_id=selected_agent_id,
             detail={"protocol": selected_agent.get("protocol")},
+        )
+        # ORCH-09: write a declarative compensation_pending row paired with the dispatch.
+        # Compensation instructions are stored as lineage rows — NEVER Python closures.
+        # Remote agents without requiredCapability="compensate" yield compensation_skipped.
+        self.store.append_lineage(
+            correlation_id=correlation_id,
+            run_id=run_id,
+            hop_type="compensation_pending",
+            agent_id=selected_agent_id,
+            detail={
+                "forward_hop_id": dispatch_row_id,
+                "compensation_verb": "undo",
+                "agent_id": selected_agent_id,
+            },
         )
         return self._result(
             run_id=run_id,

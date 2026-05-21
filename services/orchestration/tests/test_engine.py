@@ -57,7 +57,11 @@ class OrchestrationEngineTest(unittest.TestCase):
         run = self.store.get_run(result["runId"])
         self.assertEqual(run["selected_agent_id"], "active-agent")
         lineage = self.store.list_lineage(result["correlationId"])
-        self.assertEqual([hop["hop_type"] for hop in lineage], ["ingress", "route", "dispatch_request"])
+        # ORCH-09: compensation_pending row is now paired with dispatch_request at dispatch time.
+        self.assertEqual(
+            [hop["hop_type"] for hop in lineage],
+            ["ingress", "route", "dispatch_request", "compensation_pending"],
+        )
 
     def test_creates_pending_hil_decision_when_approval_required(self):
         result = self.engine.route_task(
