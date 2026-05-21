@@ -61,10 +61,33 @@ const loop = [
   { label: "Improve", icon: RefreshCw, detail: "Outcomes update memory and promote repeatable work into durable skills." },
 ];
 
+const marketSignals = [
+  {
+    title: "Memory beyond chat history",
+    icon: Brain,
+    detail: "Teams need organizational memory that survives agents, projects, repos, tools, and handoffs.",
+  },
+  {
+    title: "Durable orchestration",
+    icon: GitBranch,
+    detail: "Long-running agent work needs checkpoints, human review, retries, rollback, and state operators can inspect.",
+  },
+  {
+    title: "Interop over lock-in",
+    icon: UsersRound,
+    detail: "MCP, A2A, REST shims, and agent cards make the winning layer the one that can govern mixed agent stacks.",
+  },
+  {
+    title: "Evidence as the trust layer",
+    icon: ShieldCheck,
+    detail: "Useful agent systems show which memory was consumed, what tools ran, what checks passed, and what remains unverified.",
+  },
+];
+
 const proofPoints = [
   { value: "8", label: "operator groups", detail: "Operations, Memory, Skills, Agents, Engage, Improve, Governance, and Workflow Map stay in one console." },
   { value: "5", label: "memory moves", detail: "Capture, consolidate, retrieve, act, and improve become one operating loop." },
-  { value: "1", label: "context plane", detail: "One shared source of retained knowledge across agents, files, decisions, skills, and outcomes." },
+  { value: "3", label: "interop paths", detail: "Local agents, REST shims, and A2A-style agent cards can feed the same governed context plane." },
 ];
 
 const operatorSurfaces = [
@@ -84,9 +107,9 @@ const operatorSurfaces = [
     detail: "Direct chat and group-room standups ask agents what happened yesterday, what should happen today, and what is blocked.",
   },
   {
-    label: "Consistent shell",
-    value: "8 groups",
-    detail: "A calmer NOC visual language carries from public promise into authenticated product surfaces and child routes.",
+    label: "Evidence loop",
+    value: "trace",
+    detail: "The roadmap ties agent output back to sources used, memories consumed, tool actions, verification checks, and residual risk.",
   },
 ];
 
@@ -100,17 +123,17 @@ const topValueFeatures = [
   },
   {
     number: "02",
-    title: "Runtime context packs before dispatch",
-    icon: Send,
-    detail: "MemroOS assembles the right memories, knowledge files, and skills before product, sales, or engineering work begins.",
-    outcome: "Fewer back-and-forths. Better first responses from every agent.",
+    title: "Governed orchestration, not black-box runs",
+    icon: GitBranch,
+    detail: "MemroOS is adding editable HIL state, per-hop retry, rollback lineage, and audit trails around long-running agent work.",
+    outcome: "Operators can pause, inspect, correct, resume, and explain agent work instead of hoping a run succeeds.",
   },
   {
     number: "03",
-    title: "One place to engage active agents",
+    title: "Interop with the agent stack you already use",
     icon: MessageSquareText,
-    detail: "Direct chat, voice prompts, group-room standups, live delegations, and agent status sit in one operator surface.",
-    outcome: "Small teams get a practical agent command center that can ask the room what happened, what is next, and what is blocked.",
+    detail: "Local agents, REST reporting, A2A-compatible cards, MCP-facing context, and framework-specific adapters meet behind one registry.",
+    outcome: "MemroOS does not need to replace Claude Code, Codex, ADK, LangGraph, CrewAI, AutoGen, or custom workers.",
   },
   {
     number: "04",
@@ -121,18 +144,20 @@ const topValueFeatures = [
   },
   {
     number: "05",
-    title: "Trust, evals, and speed built in",
+    title: "Evidence, evals, and trust built in",
     icon: ShieldCheck,
-    detail: "Security checks, permissions, human approval, model routing, evaluation signals, and caching support safer agent work.",
-    outcome: "Ship with confidence, audit what happened, and keep agent work fast.",
+    detail: "Security checks, permissions, human approval, model routing, evaluation signals, and evidence bundles support safer agent work.",
+    outcome: "Teams can ask what memory was used, what tools ran, what checks passed, and what still needs review.",
   },
 ];
 
 const proofs = [
   "Context packs before agent dispatch",
   "Source-backed memory for product, sales, and engineering",
+  "Human-in-the-loop edit, retry, rollback, and audit work in the active roadmap",
+  "MCP/A2A-friendly boundaries for mixed agent stacks",
   "Skills promoted from repeated successful workflows",
-  "Governance hooks for identity, permissions, and audit",
+  "Governance hooks for identity, permissions, evidence, and audit",
 ];
 
 const featureGroups = [
@@ -143,6 +168,7 @@ const featureGroups = [
       "Shared semantic, graph, and episodic memory",
       "Multi-memory search",
       "Memory timeline and retention signals",
+      "MemoryAdapter interface for backend pluggability",
       "Memory access controls",
       "Outcome capture after agent work",
     ],
@@ -176,6 +202,7 @@ const featureGroups = [
       "Canonical agent registry",
       "Local, REST, UI, and A2A agents",
       "Agent cards and capabilities",
+      "MCP-facing context surface",
       "Dispatch and live delegations",
       "Direct chat and group-room standups",
     ],
@@ -186,6 +213,7 @@ const featureGroups = [
     items: [
       "Review queue for discovered skill files",
       "Draft notes and source previews",
+      "Governed skill-contract roadmap",
       "Request-change and approval workflow",
       "Enterprise promotion path",
       "Coverage and budget health signals",
@@ -199,7 +227,7 @@ const featureGroups = [
       "Prompt-injection checks",
       "Tool permission governance",
       "Human-in-the-loop approvals",
-      "Audit logs and security reports",
+      "Audit logs, evidence bundles, and security reports",
     ],
   },
   {
@@ -210,7 +238,7 @@ const featureGroups = [
       "LLM recommendation surfaces",
       "Evaluation fixtures",
       "Quality reports",
-      "Skill extraction and promotion signals",
+      "Behavioral W-lift roadmap",
     ],
   },
   {
@@ -220,6 +248,7 @@ const featureGroups = [
       "Runtime middleware",
       "Memory client v2 paths",
       "Agent observability",
+      "Retry and rollback roadmap",
       "Task lifecycle routes",
       "SSE task updates",
     ],
@@ -270,6 +299,24 @@ const completedRoadmap = [
   },
 ];
 
+const currentRoadmap = [
+  {
+    phase: "Phase 70",
+    label: "Foundation + Engine Core",
+    detail: "MemoryAdapter is complete; remaining work is multi-hop retry/rollback plus the auth-guarded HIL edit route, client, and UI.",
+  },
+  {
+    phase: "Phase 71",
+    label: "Recall + HIL SLA + Voice",
+    detail: "Semantic recall and SLA escalation move memory from passive search to timed operator control; voice is treated as one ingestion channel.",
+  },
+  {
+    phase: "Phase 72",
+    label: "Cross-project memory + evidence",
+    detail: "Cross-project recall, behavioral eval, qmd freshness, cross-harness skills, evidence bundles, and governed skill contracts become the next proof layer.",
+  },
+];
+
 const testimonials = [
   {
     quote:
@@ -305,8 +352,14 @@ function LandingPage() {
           </Link>
           <div className="flex items-center gap-2">
             <Link
-              href="#memory-first"
+              href="#why-now"
               className="hidden rounded border border-transparent px-4 py-2 text-sm font-semibold text-[#4a4a45] transition hover:border-[#c9c9c2] hover:bg-white hover:text-[#0f0f0e] sm:inline-flex"
+            >
+              Why now
+            </Link>
+            <Link
+              href="#memory-first"
+              className="hidden rounded border border-transparent px-4 py-2 text-sm font-semibold text-[#4a4a45] transition hover:border-[#c9c9c2] hover:bg-white hover:text-[#0f0f0e] md:inline-flex"
             >
               Memory
             </Link>
@@ -332,7 +385,7 @@ function LandingPage() {
               Stop making every agent start from zero.
             </h1>
             <p className="mt-7 max-w-[62ch] text-[18px] leading-8 text-[#4a4a45]">
-              MemroOS is the shared memory layer for product, sales, and engineering agents: retain what the company learns, retrieve the right context at runtime, and operate every agent from one NOC-style console.
+              MemroOS is the shared memory and governed orchestration layer for product, sales, and engineering agents: retain what the company learns, retrieve the right context at runtime, and operate mixed agent stacks from one NOC-style console.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
@@ -357,8 +410,8 @@ function LandingPage() {
             </div>
             <div className="mt-8 flex flex-wrap items-center gap-6 text-[12px] uppercase tracking-[0.1em] text-[#4a4a45]">
               <span className="font-semibold text-[#0f0f0e]">Agentic knowledge retention</span>
-              <span className="border-l border-[#c9c9c2] pl-6">Runtime context packs</span>
-              <span className="border-l border-[#c9c9c2] pl-6">NOC UI, standups, skills workflow</span>
+              <span className="border-l border-[#c9c9c2] pl-6">MCP/A2A-friendly interop</span>
+              <span className="border-l border-[#c9c9c2] pl-6">HIL, evidence, skills workflow</span>
             </div>
           </div>
 
@@ -377,7 +430,7 @@ function LandingPage() {
             </div>
 
             <div className="grid gap-px bg-[#c9c9c2] md:grid-cols-3">
-              {["98 skills", "8 nav groups", "15 min standups"].map((metric) => (
+              {["shared memory", "agent cards", "evidence loop"].map((metric) => (
                 <div key={metric} className="bg-[#fafaf7] p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#4a4a45]">linked</p>
                   <p className="mt-2 text-[22px] font-semibold text-[#0f0f0e]">{metric}</p>
@@ -407,10 +460,10 @@ function LandingPage() {
           <div className="mk-reveal">
             <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#e7b6a8]">Memory is feature one</p>
             <h2 className="mt-3 text-[42px] font-semibold leading-tight tracking-normal text-white">
-              The product is not another chat box. It is company memory agents can consume.
+              The product is not another chat box. It is company memory agents can consume and operators can govern.
             </h2>
             <p className="mt-5 text-[17px] leading-8 text-[#d8d4cb]">
-              For AI-native small businesses, the advantage is not having more agents. It is making every agent start with the same retained context: customer history, product decisions, sales notes, repo patterns, incidents, tasks, and outcomes.
+              For AI-native small businesses, the advantage is not having more agents. It is making every agent start with the same retained context and leaving behind evidence that explains what happened: customer history, product decisions, sales notes, repo patterns, incidents, tasks, tools, checks, and outcomes.
             </p>
           </div>
           <div className="grid gap-px bg-[#4a4a45] md:grid-cols-3">
@@ -422,6 +475,33 @@ function LandingPage() {
               <article key={title} className="bg-[#171715] p-6">
                 <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#e7b6a8]">{title}</p>
                 <p className="mt-4 text-[20px] leading-8 text-white">{detail}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="why-now" className="border-b border-[#c9c9c2] bg-[#fafaf7]">
+        <div className="mx-auto max-w-[1180px] px-5 py-16 sm:px-8 lg:py-20">
+          <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
+            <div>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#7a2a1e]">What matters now</p>
+              <h2 className="mt-3 text-[42px] font-semibold leading-tight tracking-normal text-[#0f0f0e]">
+                Agentic systems are converging on memory, orchestration, interop, and proof.
+              </h2>
+            </div>
+            <p className="text-[17px] leading-8 text-[#4a4a45]">
+              MemroOS is intentionally not trying to be every agent framework. It sits where the stack is getting painful: retained context, governed handoffs, mixed-framework visibility, and evidence that makes agent work auditable.
+            </p>
+          </div>
+          <div className="mt-8 grid gap-px bg-[#c9c9c2] md:grid-cols-2 lg:grid-cols-4">
+            {marketSignals.map((signal) => (
+              <article key={signal.title} className="bg-white p-5">
+                <span className="flex h-10 w-10 items-center justify-center bg-[#f2e2dc] text-[#a8392c]">
+                  <signal.icon className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <h3 className="mt-5 text-[19px] font-semibold leading-snug text-[#0f0f0e]">{signal.title}</h3>
+                <p className="mt-3 text-[15px] leading-7 text-[#4a4a45]">{signal.detail}</p>
               </article>
             ))}
           </div>
@@ -490,10 +570,10 @@ function LandingPage() {
           <div className="mk-reveal">
             <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#7a2a1e]">Top 5 value features</p>
             <h2 className="mt-3 text-[42px] font-semibold leading-tight tracking-normal text-[#0f0f0e]">
-              Memory first, then context, engagement, skills, and trust.
+              Memory first, then orchestration, interop, skills, and proof.
             </h2>
             <p className="mt-4 text-[17px] leading-8 text-[#4a4a45]">
-              Native AI small businesses need agents that remember the company before they act. Everything else in MemroOS supports that memory loop.
+              Native AI small businesses need agents that remember the company before they act, operate inside visible guardrails, and leave behind enough evidence to trust the result.
             </p>
           </div>
           <div className="divide-y divide-[#c9c9c2] border-y border-[#c9c9c2]">
@@ -658,10 +738,10 @@ function LandingPage() {
             <div className="mk-reveal">
               <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#7a2a1e]">Full feature map</p>
               <h2 className="mt-3 text-[42px] font-semibold leading-tight tracking-normal text-[#0f0f0e]">
-                Memory is the durable layer beneath every agent workflow.
+                The durable layer beneath agent workflows.
               </h2>
               <p className="mt-4 text-[17px] leading-8 text-[#4a4a45]">
-                The product surface is intentionally broad, but it starts with memory: retained context, source-backed retrieval, runtime consumption, governance, evaluation, and speed working together.
+                The product surface is broad only where the operating loop requires it: retained context, source-backed retrieval, orchestration, interop, skill promotion, governance, evaluation, and evidence.
               </p>
             </div>
             <div className="grid gap-px bg-[#c9c9c2] md:grid-cols-2">
@@ -691,13 +771,22 @@ function LandingPage() {
       <section id="roadmap" className="border-y border-[#c9c9c2] bg-[#f2f2ee]">
         <div className="mx-auto max-w-[1180px] px-5 py-16 sm:px-8 lg:py-20">
           <div className="max-w-[760px]">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#7a2a1e]">Completed roadmap</p>
+            <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#7a2a1e]">Build direction</p>
             <h2 className="mt-3 text-[42px] font-semibold leading-tight tracking-normal text-[#0f0f0e]">
-              Public polish, trust, evals, runtime, and speed are already in the loop.
+              The roadmap is narrowing around governed agent work.
             </h2>
             <p className="mt-4 text-[17px] leading-8 text-[#4a4a45]">
-              The public preview includes the production-readiness phases that make memory useful for real agent workflows, not just demos.
+              The public preview already includes the operator shell, memory surfaces, skills workflow, registry, dispatch, and trust hooks. Current work deepens the pieces that make agent work safer to delegate.
             </p>
+          </div>
+          <div className="mt-9 grid gap-px bg-[#c9c9c2] md:grid-cols-3">
+            {currentRoadmap.map((item) => (
+              <article key={item.phase} className="bg-white p-6">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#7a2a1e]">{item.phase}</p>
+                <h3 className="mt-4 text-[20px] font-semibold leading-snug text-[#0f0f0e]">{item.label}</h3>
+                <p className="mt-4 text-[15px] leading-7 text-[#4a4a45]">{item.detail}</p>
+              </article>
+            ))}
           </div>
           <div className="mt-9 divide-y divide-[#c9c9c2] border-y border-[#c9c9c2]">
             {completedRoadmap.map((item) => (
