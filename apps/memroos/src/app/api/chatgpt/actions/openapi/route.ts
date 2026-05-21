@@ -1,7 +1,20 @@
 export const dynamic = "force-dynamic";
 
+function publicBaseUrl(request: Request): string {
+  const configured = process.env.MEMROOS_CHATGPT_ACTIONS_PUBLIC_BASE_URL?.trim();
+  if (configured) return configured.replace(/\/$/, "");
+
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
+    const proto = request.headers.get("x-forwarded-proto") ?? "https";
+    return `${proto}://${host.split(",")[0].trim()}`;
+  }
+
+  return new URL(request.url).origin;
+}
+
 export async function GET(request: Request) {
-  const origin = new URL(request.url).origin;
+  const origin = publicBaseUrl(request);
   return Response.json({
     openapi: "3.1.0",
     info: {

@@ -93,6 +93,31 @@ describe("ChatGPT Actions bridge", () => {
     expect(body.components.securitySchemes.ApiKeyAuth.name).toBe("x-api-key");
   });
 
+  it("uses the configured public base URL in the OpenAPI schema", async () => {
+    process.env.MEMROOS_CHATGPT_ACTIONS_PUBLIC_BASE_URL = "https://memroos.epiloguecapital.com";
+    const { GET } = await loadOpenApiRoute();
+    const response = await GET(new Request("https://localhost:3002/api/chatgpt/actions/openapi"));
+    const body = await response.json();
+
+    expect(body.servers).toEqual([{ url: "https://memroos.epiloguecapital.com" }]);
+    delete process.env.MEMROOS_CHATGPT_ACTIONS_PUBLIC_BASE_URL;
+  });
+
+  it("uses forwarded host headers for the OpenAPI schema behind a proxy", async () => {
+    const { GET } = await loadOpenApiRoute();
+    const response = await GET(
+      new Request("https://localhost:3002/api/chatgpt/actions/openapi", {
+        headers: {
+          "x-forwarded-host": "memroos.epiloguecapital.com",
+          "x-forwarded-proto": "https",
+        },
+      })
+    );
+    const body = await response.json();
+
+    expect(body.servers).toEqual([{ url: "https://memroos.epiloguecapital.com" }]);
+  });
+
   it("searches MemRoOS on loopback without requiring a setup key", async () => {
     const { POST } = await loadSearchRoute();
     const response = await POST(

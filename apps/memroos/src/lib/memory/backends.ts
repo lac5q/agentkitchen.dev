@@ -17,6 +17,11 @@ function timeoutSignal(ms: number): AbortSignal {
   return AbortSignal.timeout(ms);
 }
 
+function memorySearchTimeoutMs(): number {
+  const parsed = Number(process.env.MEMROOS_MEMORY_SEARCH_TIMEOUT_MS ?? 15_000);
+  return Number.isFinite(parsed) && parsed > 0 ? Math.trunc(parsed) : 15_000;
+}
+
 export function neo4jConfig() {
   return {
     url: (process.env.NEO4J_HTTP_URL || "http://localhost:7474").replace(/\/$/, ""),
@@ -34,7 +39,7 @@ export function neo4jConfig() {
 
 async function _searchVectorMemoryDirect(query: string, limit: number) {
   const params = new URLSearchParams({ q: query || "recent", agent_id: "luis", limit: String(limit) });
-  const response = await fetch(`${MEM0_URL}/memory/search?${params}`, { signal: timeoutSignal(5000) });
+  const response = await fetch(`${MEM0_URL}/memory/search?${params}`, { signal: timeoutSignal(memorySearchTimeoutMs()) });
   const result = await response.json().catch(() => ({}));
   if (!response.ok) {
     const detail = typeof result.detail === "string" ? result.detail : "Vector memory backend unavailable";
