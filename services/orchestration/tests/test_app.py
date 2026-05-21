@@ -88,5 +88,53 @@ class OrchestrationAppTest(unittest.TestCase):
         self.assertEqual(rejected_body["graphState"]["approvalDecision"], "reject")
 
 
+    # HIL-02: Unknown keys in the edit payload must be rejected with HTTP 422.
+    # Tests that HilEditRequest Pydantic model on PATCH /hil/{id}/edit enforces schema.
+    def test_hil_edit_validation(self):
+        # REQ: HIL-02
+        # First create a paused HIL task
+        route_resp = self.client.post(
+            "/tasks/route",
+            json={
+                "taskSummary": "Validate edit payload",
+                "requiredCapability": "research",
+                "agents": AGENTS,
+                "requiresApproval": True,
+                "correlationId": "corr-edit-validation",
+            },
+        )
+        self.assertEqual(route_resp.status_code, 200)
+        hil_id = route_resp.json().get("hilDecisionId")
+        self.assertTrue(hil_id, "must have a hilDecisionId to edit")
+
+        # PATCH /hil/{id}/edit does not exist yet (Wave 0 RED) — endpoint missing returns 404 or 405
+        # Once HIL-02 is implemented, unknown_key must return 422
+        valid_edit = self.client.patch(
+            f"/hil/{hil_id}/edit",
+            json={"taskSummary": "Edited summary"},
+        )
+        # Accept 200 (success) only after implementation. Now expects 404/405/422.
+        self.assertIn(
+            valid_edit.status_code,
+            [200],
+            f"Expected 200 for valid edit after implementation; got {valid_edit.status_code}",
+        )
+        # Response contract verification (Plan 05 depends on this shape)
+        body = valid_edit.json()
+        self.assertTrue(body.get("ok"), "Response must include ok=true")
+        self.assertIn("editedFields", body, "Response must include editedFields list")
+        self.assertIn("taskSummary", body["editedFields"], "Edited field must appear in editedFields")
+
+        unknown_key_edit = self.client.patch(
+            f"/hil/{hil_id}/edit",
+            json={"unknown_key_that_does_not_exist": "injected_value"},
+        )
+        self.assertEqual(
+            unknown_key_edit.status_code,
+            422,
+            "Unknown keys in edit payload must return 422 (Pydantic validation)",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

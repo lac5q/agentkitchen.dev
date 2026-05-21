@@ -2,15 +2,19 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Orchestration Depth + Intelligence Uplift
-status: planning
-last_updated: "2026-05-17T17:00:00.000Z"
-last_activity: 2026-05-17
+current_phase: 71
+current_phase_name: Recall + HIL SLA + Voice
+current_plan: post-71 merge/deploy checks
+status: phase_71_complete
+stopped_at: Phase 71 Wave 2 complete; merge/deploy verification pending
+last_updated: "2026-05-21T16:52:42Z"
+last_activity: 2026-05-21
 progress:
   total_phases: 3
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  completed_phases: 2
+  total_plans: 11
+  completed_plans: 11
+  percent: 67
 ---
 
 # State: Memroos
@@ -20,14 +24,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 **Core value:** Any agent framework plugs into Memroos — and every agent, knowledge system, and skill becomes visible, connected, and self-improving.
-**Current focus:** Phase 70 — Foundation + Engine Core
+**Current focus:** Phase 71 — Recall + HIL SLA + Voice
 
 ## Current Position
 
-Phase: 70 — Foundation + Engine Core (not started)
-Plan: —
-Status: Roadmap created — ready for /gsd:plan-phase 70
-Last activity: 2026-05-17 — v4.0 roadmap created (Phases 70-72)
+Current Phase: 71
+Current Phase Name: Recall + HIL SLA + Voice
+Current Plan: post-71 merge/deploy checks
+Total Phases: 3
+Total Plans in Phase: 6
+Progress: [██████████] 100%
+Status: Phase 71 complete — merge/deploy verification pending
+
+Phase: 71 — Recall + HIL SLA + Voice (planned)
+Plan: planning complete (71-CONTEXT.md, 71-VALIDATION.md, 71-01..06-PLAN.md)
+Wave 1 (complete): 71-01 recall foundation, 71-03 HIL SLA engine, 71-05 voice Daily bot
+Wave 2 (complete): 71-02 recall endpoint+job, 71-04 HIL dashboard, 71-06 voice consent UI
+Next action: run final GitNexus detect-changes, commit Phase 71, merge, and deploy; keep Phase 73 UI parity as the corrective backlog guard before claiming full operator-complete status
+Last activity: 2026-05-21
 
 ## Roadmap Summary (v4.0)
 
@@ -38,6 +52,7 @@ Last activity: 2026-05-17 — v4.0 roadmap created (Phases 70-72)
 | 72 | Cross-Project Recall + Behavioral W-lift + UI + Skills | RECALL-03..04, SEAL-04..06, UI-05..06, SKILL-01..04 (11) |
 
 **Coverage:** 28/28 v4.0 requirements mapped, no orphans.
+**Current v4.0 completion:** Phase 70 and Phase 71 are complete, with UI parity follow-up tracked as Phase 73 before claiming full operator-complete status.
 **Completed so far:** Phase 34 through Phase 69 (v2.0–v3.1 shipped).
 
 ## Performance Metrics
@@ -50,6 +65,20 @@ Last activity: 2026-05-17 — v4.0 roadmap created (Phases 70-72)
 - Latest Phase 40 gate: docs link/content review, markdown grep checks, Memroos lint, and build passed
 
 ## Accumulated Context
+
+### Positioning Guardrails (2026-05-21)
+
+- Lead public positioning with shared organizational memory, governed orchestration, evidence/provenance, and interop across agent frameworks.
+- Treat voice as an ingestion surface for memory, not a standalone product pillar.
+- Frame `qmd update` UI work as context freshness and source evidence, not as a search-admin feature.
+- Phase 72 should make evidence bundles and governed skill contracts explicit in acceptance criteria because they explain what memory was consumed, what tools ran, which checks passed, and what can be replayed or rolled back.
+
+### Decisions (Phase 70 Plan 04)
+
+- **MemoryAdapter interface:** `capabilities` field is required (not optional) — MemoryCapability union = semantic|graphTraversal|reasoningTrace|bufferedWrite|tenantScoped|auditEdges
+- **Registry pattern:** `Map<MemoryTier, MemoryAdapter[]>` with registerAdapter/getAdapters/clearRegistry; module-init idempotency via `_registered` guard
+- **Shim delegation:** existing exported functions check `getAdapters(tier)[0]` first, fallback to direct impl — exactly one path per tier, no double-writer (T-70-12)
+- **EpisodicMemoryAdapter.write() is a no-op stub** — episodic writes must go through the full db-ingest pipeline for FTS5 index integrity
 
 ### Decisions (carried into v2.0)
 
@@ -91,6 +120,9 @@ Verdict: coherent partial work (real logic, not scaffolding), NOT shippable.
 
 Scope creep outside v2.5: phases 63 (Rename+Team Auth) & 64 (Immutable Audit+HIL)
 have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
+| Phase 70-foundation-engine-core P05 | 11 minutes | 3 tasks | 6 files |
+| Phase 70-foundation-engine-core P03 | 35m | 3 tasks | 4 files |
+| Phase 71-recall-hil-sla-voice P03 | 8 | 3 tasks | 7 files |
 
 ### Blockers/Concerns (verified)
 
@@ -140,10 +172,10 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-17T09:30:00.000Z
-Stopped at: all phases complete; 8 critical security findings fixed; 680 tests passing; deployed to Vercel
+Last session: 2026-05-21T16:52:42Z
+Stopped at: Phase 71 Wave 2 complete; merge/deploy verification pending
 Resume file: None
-Next action: v4.0 milestone planning
+Next action: run final GitNexus detect-changes, commit Phase 71, merge, and deploy; keep Phase 73 UI parity before closing v4.0 operator-complete claims
 
 ## UAT Findings (2026-05-17)
 

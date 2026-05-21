@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { hashPassword, verifyPassword } from '../password';
 import { signAccessToken, verifyAccessToken } from '../jwt';
 import { requireRole } from '../middleware-roles';

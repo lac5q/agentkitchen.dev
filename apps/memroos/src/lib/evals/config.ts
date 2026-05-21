@@ -4,7 +4,7 @@ import path from "path";
 
 import { resolveFromRepoRoot } from "@/lib/paths";
 import { BUILT_IN_PRESETS, resolveWeights } from "./presets";
-import type { BusinessOpsConfig, CompanyEvalConfig, EvalConfig, EvalWeights } from "./types";
+import type { CompanyEvalConfig, EvalConfig, EvalWeights } from "./types";
 
 export const EVAL_CONFIG_PATH = "memroos.eval.yaml";
 

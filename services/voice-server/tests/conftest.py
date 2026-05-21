@@ -113,6 +113,26 @@ websocket_server_mod = MagicMock()
 websocket_server_mod.WebsocketServerTransport = _FakeTransport
 websocket_server_mod.WebsocketServerParams = MagicMock
 
+# Daily transport mock — pipecat 1.2.x path: pipecat.transports.daily.transport
+# DailyTransport accepts (room_url, token, params) but does NOT expose them as
+# public attributes (D-13: secrets must not be readable from the returned object)
+class _FakeDailyTransport(MagicMock):
+    def __init__(self, *args, **kwargs):
+        # Do not store room_url/token as public attributes
+        super().__init__(*args, **kwargs)
+    def input(self):
+        return MagicMock(name="daily_transport.input()")
+    def output(self):
+        return MagicMock(name="daily_transport.output()")
+
+class _FakeDailyParams:
+    def __init__(self, **kwargs):
+        pass
+
+daily_transport_mod = MagicMock()
+daily_transport_mod.DailyTransport = _FakeDailyTransport
+daily_transport_mod.DailyParams = _FakeDailyParams
+
 # Register all fake modules into sys.modules
 _PIPECAT_MOCKS = {
     "pipecat": MagicMock(),
@@ -146,6 +166,8 @@ _PIPECAT_MOCKS = {
     "pipecat.transports": MagicMock(),
     "pipecat.transports.network": MagicMock(),
     "pipecat.transports.network.websocket_server": websocket_server_mod,
+    "pipecat.transports.daily": MagicMock(),
+    "pipecat.transports.daily.transport": daily_transport_mod,
 }
 
 for mod_name, mock in _PIPECAT_MOCKS.items():

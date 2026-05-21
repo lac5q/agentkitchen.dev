@@ -204,6 +204,8 @@ companies:
 <deferred>
 ## Deferred Ideas
 
+Backlog status: promoted to `.planning/REQUIREMENTS.md` as `L3-FOLLOWUP-01..03`, with external API/product packaging covered by `PRODUCT-01..02` and `EVAL-API-FOLLOWUP-01..02`.
+
 - Live Salesforce, Zendesk, NetSuite integrations (v2 adapters — full OAuth/SOAP setup deferred)
 - Inbound webhooks from business systems (v2; polling only at v1)
 - Per-company golden sets derived from business-system data

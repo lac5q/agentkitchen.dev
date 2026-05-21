@@ -18,15 +18,7 @@ This is not a wholesale replacement phase. MemroOS already has production surfac
 ### Memory Architecture
 - Keep MemroOS's current three-tier operating model: vector via mem0/Qdrant, graph via Neo4j, episodic via SQLite/FTS.
 - Introduce a `MemoryAdapter` interface and registry as planned, but define the interface around memory contracts, not backend clients: `search()`, `write()`, `health()`, plus typed capabilities metadata.
-- Add a Neo4j context-graph adapter behind the registry, either by wrapping `neo4j-agent-memory` from a Python bridge service or by mirroring its data model directly in Cypher if the package proves too unstable.
-- Do not let `neo4j-agent-memory` become a required hot-path dependency until shadow-mode evals pass and operational health is observable in the NOC UI.
-
-### Neo4j Agent Memory Patterns To Adopt
-- Model short-term, long-term, and reasoning memory as connected graph concepts instead of isolated APIs.
-- Adopt existing Neo4j nodes into memory with an idempotent `:Entity` super-label strategy to avoid duplicate graph nodes.
-- Record reasoning/tool execution to graph memory, especially direct `(:ReasoningStep)-[:TOUCHED]->(:Entity)` audit edges for one-hop provenance.
-- Treat buffered/fire-and-forget graph writes as an explicit capability with backpressure, flush, and surfaced background errors.
-- Expand memory evals from recall-only to include entity retrieval, touched-edge audit completeness, and preference/user-scope fidelity.
+- Do not add a Neo4j context-graph shadow adapter in Phase 70 — this track is deferred to Phase 70.1 (see `<deferred>` section). Phase 70 ships the stable MemoryAdapter interface and registry so Phase 70.1 can register the shadow adapter without modifying existing code.
 
 ### Safety And Release Posture
 - Gate new context-graph behavior behind env flags and adapter registry selection.
@@ -79,6 +71,7 @@ This is not a wholesale replacement phase. MemroOS already has production surfac
 <deferred>
 ## Deferred Ideas
 
+- **Phase 70.1 (Neo4j shadow adapter track):** All `neo4j-agent-memory` patterns are deferred to Phase 70.1 — specifically: the Neo4j context-graph shadow adapter, idempotent `:Entity` super-label adoption, `(:ReasoningStep)-[:TOUCHED]->(:Entity)` audit edges, buffered/fire-and-forget writes with backpressure, graph adoption dry-run script, orchestration→graph shadow writes, and expanded memory evals (entity retrieval, touched-edge audit, preference fidelity). Phase 70.1 depends on Phase 70's `MemoryAdapter` interface (including `capabilities`) being stable.
 - Replacing mem0/Qdrant with Neo4j vector indexes is deferred. Qdrant Cloud is still the vector source of truth.
 - Full `neo4j-agent-memory` MCP server adoption is deferred; MemroOS should expose its own stable API/MCP surfaces rather than outsourcing product semantics.
 - Background enrichment providers such as Wikipedia/Diffbot are deferred until core entity adoption, dedupe, and audit evals pass.

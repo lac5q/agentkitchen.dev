@@ -50,7 +50,7 @@ function makeRun(compositeW: number, id = `run-${compositeW}`): EvalRunResult {
 
 /** A deterministic evaluator that returns a fixed W per variant name. */
 function makeFixedEvaluator(wByName: Record<string, number>): PolicyEvaluator {
-  return (variant, _goldenSetPath) => {
+  return (variant) => {
     const w = wByName[variant.name];
     if (w === undefined) throw new Error(`Unknown variant in test: ${variant.name}`);
     return makeRun(w, `run-${variant.name}`);

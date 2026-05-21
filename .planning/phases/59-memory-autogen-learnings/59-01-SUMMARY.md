@@ -33,6 +33,8 @@ green within the full suite.
 
 ## Gaps / Deferred
 
+Backlog status: promoted to `.planning/REQUIREMENTS.md` as `MEMGEN-FOLLOWUP-01`, `GSD-FOLLOWUP-01`, and the existing v4 `SEAL-04..06` behavioral W-lift requirements.
+
 - **No original phase contract** — this is retro-documented. Success criteria
   were never defined up front; "covered" here means "implemented + tested",
   not "validated against an agreed bar".

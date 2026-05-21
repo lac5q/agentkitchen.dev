@@ -20,6 +20,7 @@
     "test": "npm --prefix apps/memroos run test --",
     "eval:context-sources": "node scripts/run-context-source-evals.mjs",
     "eval:memory-degradation": "bash scripts/run-memory-degradation-checks.sh",
+    "check:knowledge-indexing": "node scripts/check-knowledge-indexing.mjs",
     "install:runtime-services": "node scripts/install-runtime-services.mjs install",
     "lint": "npm --prefix apps/memroos run lint",
     "check:agents": "node scripts/check-agent-systems.mjs",

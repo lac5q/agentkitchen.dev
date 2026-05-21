@@ -8,8 +8,12 @@ export async function register() {
     const { startConsolidationScheduler } = await import('./lib/memory-consolidation');
     const { startDecayScheduler } = await import('./lib/memory-decay');
     const { prewarmResponseCaches } = await import('./lib/response-cache');
+    const { startSlaScheduler } = await import('./lib/hil/sla-scheduler');
+    const { startEmbeddingJob } = await import('./lib/embeddings/embedding-job');
     startConsolidationScheduler();
     startDecayScheduler();
+    startSlaScheduler();
+    startEmbeddingJob();
     void prewarmResponseCaches();
   }
 }

@@ -1,7 +1,6 @@
 // @vitest-environment node
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { signAccessToken } from '../jwt';
-import type { UserRole } from '../types';
 
 // Mock the DB module to avoid needing a real database.
 // This is hoisted to module level by Vitest's vi.mock mechanism.

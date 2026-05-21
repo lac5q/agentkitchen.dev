@@ -44,6 +44,14 @@ export const AUDIT_EVENT_TYPES = {
   HIL_RESOLVED: "hil.resolved",
   /** SLA deadline passed without resolution (system event). */
   HIL_SLA_BREACHED: "hil.sla_breached",
+  /** SLA expired: configured action was notify (durable audit record before notification delivery). */
+  HIL_SLA_NOTIFIED: "hil.sla_notified",
+  /** SLA expired: escalation abandoned per configured action. */
+  HIL_SLA_ABANDONED: "hil.sla_abandoned",
+
+  // Voice / meeting bot
+  /** Daily.co meeting bot join was consented and requested. */
+  MEETING_JOINED: "meeting.joined",
 
   // Finance reconciliation vertical
   /** Finance transaction reconciled cleanly. */
@@ -71,6 +79,7 @@ export const ENTITY_TYPES = {
   SEAL_PROPOSAL: "seal_proposal",
   EVAL_RUN: "eval_run",
   HIL_ESCALATION: "hil_escalation",
+  MEETING: "meeting",
   FINANCE_RECONCILIATION: "finance_reconciliation",
   COMPLIANCE_CONTROL: "compliance_control",
 } as const;

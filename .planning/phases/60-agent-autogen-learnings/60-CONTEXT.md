@@ -152,6 +152,8 @@ Trajectory scoring is Phoenix-style in spirit: each step in `steps[]` is judged 
 
 ## Open Questions
 
+Backlog status: promoted to `.planning/REQUIREMENTS.md` as `AGENTGEN-FOLLOWUP-01`, `SEAL-FOLLOWUP-02`, and the existing v4 `SEAL-04..06` behavioral W-lift requirements.
+
 1. **Trajectory golden-set authorship workflow.** Phase 60 hand-authors 50-example `.jsonl` files. A semi-automated workflow (run a real agent, capture the trace, human-annotate it) would be faster and more realistic. Should Phase 60 include a simple trace-capture → annotation CLI tool, or is that a Phase 62 / external-API concern?
 
 2. **Trajectory scorer step count bounds.** No upper bound on `steps[]` length is currently defined. A 100-step trajectory run by the judge N times is expensive. Should there be a `max_trajectory_steps` config cap, defaulting to e.g. 10? Defer to Phase 61 or address in Phase 60 implementation.

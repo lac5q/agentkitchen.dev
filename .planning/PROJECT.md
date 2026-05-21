@@ -154,6 +154,8 @@ Any agent framework plugs into Memroos — and every agent, knowledge system, an
 
 ### Deferred (v5.0+ candidates)
 
+Backlog status: promoted to `.planning/REQUIREMENTS.md` as `UX-FOLLOWUP-01..06` and to `.planning/ROADMAP.md` Later Ideas.
+
 - [ ] ClaudeClaw-inspired Chat tab — dedicated command/chat workspace for CLIs, Paperclip project agents, runtime subagents, and Memroos system identities, separate from Flow
 - [ ] Memory search surface — unified search across SQLite recall, mem0/vector memory, Neo4j graph memory, and knowledge files with filters for agent, project, source, date, and tier
 - [ ] Schedules and routines console — visible recurring jobs, cron health, standing delegations, maintenance routines, and approval-required automations

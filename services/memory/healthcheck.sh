@@ -12,6 +12,7 @@ MEM0_URL="http://localhost:3201"
 QMD_URL="http://localhost:9472"
 KNOWLEDGE_DIR="$HOME/github/knowledge"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MEMROOS_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 MEM0_ENV_FILE="${MEM0_ENV_FILE:-$SCRIPT_DIR/.env}"
 if [ -f "$MEM0_ENV_FILE" ]; then
   set -a
@@ -218,7 +219,7 @@ import sys
 from pathlib import Path
 
 path = Path(sys.argv[1])
-now = dt.datetime.now(dt.UTC)
+now = dt.datetime.now(dt.timezone.utc)
 count = 0
 for line in path.read_text(errors="replace").splitlines()[-200:]:
     if " | ERROR | " not in line:
@@ -280,6 +281,33 @@ else
 - Status: $QMD_STATUS"
 fi
 
+# ── Check 2.55: Source → QMD indexing contract ───────────────────────────────
+log "Checking source-to-QMD indexing contract..."
+INDEX_CHECK_SCRIPT="$MEMROOS_ROOT/scripts/check-knowledge-indexing.mjs"
+if [ ! -f "$INDEX_CHECK_SCRIPT" ]; then
+  alert "qmd_index_contract_missing" "MemroOS indexing contract checker is *missing*
+- Expected: \`$INDEX_CHECK_SCRIPT\`"
+else
+  INDEX_CHECK_OUTPUT=$(KNOWLEDGE_DIR="$KNOWLEDGE_DIR" node "$INDEX_CHECK_SCRIPT" \
+    --days="${MEMORY_INDEX_DAYS:-2}" \
+    --max-pending-embeddings="${QMD_MAX_PENDING_EMBEDDINGS:-10000}" 2>&1)
+  INDEX_CHECK_STATUS=$?
+  if [ "$INDEX_CHECK_STATUS" -eq 0 ]; then
+    log "Source-to-QMD indexing: OK"
+    recover "qmd_index_contract_missing" "MemroOS indexing contract checker restored"
+    recover "qmd_index_contract" "Recent knowledge sources are indexed in QMD again"
+  else
+    INDEX_CHECK_SUMMARY=$(printf '%s\n' "$INDEX_CHECK_OUTPUT" | tail -25)
+    alert "qmd_index_contract" "Recent knowledge sources are *NOT agent-searchable*
+- Source files may exist on disk while agents cannot retrieve them
+- Run: \`KNOWLEDGE_DIR=\"$KNOWLEDGE_DIR\" node $INDEX_CHECK_SCRIPT --days=${MEMORY_INDEX_DAYS:-2}\`
+
+\`\`\`
+$INDEX_CHECK_SUMMARY
+\`\`\`"
+  fi
+fi
+
 # ── Check 2.6: Email context ingestion freshness ─────────────────────────────
 log "Checking Gmail context ingestion..."
 EMAIL_LAST_RUN=$(python3 - "$KNOWLEDGE_DIR/ingestion-state.json" <<'PY' 2>/dev/null || echo "missing"
@@ -298,7 +326,7 @@ if not last_run:
     print("missing")
     raise SystemExit
 when = dt.datetime.fromisoformat(last_run.replace("Z", "+00:00"))
-age_hours = (dt.datetime.now(dt.UTC) - when).total_seconds() / 3600
+age_hours = (dt.datetime.now(dt.timezone.utc) - when).total_seconds() / 3600
 print(f"{age_hours:.2f}|{last_run}")
 PY
 )
@@ -325,7 +353,8 @@ fi
 
 # ── Check 3: Embeddings (Mem0 add round-trip) ────────────────────────────────
 log "Checking embedding pipeline (Mem0 /memory/add round-trip)..."
-EMBED_RESP=$(curl -s --max-time 20 -X POST "$MEM0_URL/memory/add" \
+MEM0_WRITE_TIMEOUT_SECONDS="${MEM0_WRITE_TIMEOUT_SECONDS:-45}"
+EMBED_RESP=$(curl -s --max-time "$MEM0_WRITE_TIMEOUT_SECONDS" -X POST "$MEM0_URL/memory/add" \
   -H "Content-Type: application/json" \
   -d '{"agent_id":"healthcheck","text":"healthcheck ping test"}' \
   2>/dev/null)
@@ -355,7 +384,10 @@ elif echo "$EMBED_OK" | grep -q "^error:"; then
 - Error: ${EMBED_OK#error:}
 - Check Ollama is running and local models are pulled: \`qwen2.5:3b\`, \`nomic-embed-text\`"
 else
-  log "Embeddings: unexpected response ($EMBED_OK) — not alerting"
+  alert "embeddings_fail" "Embedding pipeline returned *unexpected/no response*
+- Result: ${EMBED_OK}
+- Timeout: ${MEM0_WRITE_TIMEOUT_SECONDS}s
+- Check \`tail -50 $MEM0_LOG_DIR/mem0-server.log\`"
 fi
 
 if [ "${MEMORY_HEALTHCHECK_ONLY:-0}" = "1" ]; then

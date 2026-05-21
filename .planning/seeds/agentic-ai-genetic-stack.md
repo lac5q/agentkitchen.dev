@@ -3,7 +3,7 @@
 **Source:** https://x.com/aamiransar94694/status/2056280345797087740  
 **Author:** Amir Ansari  
 **Discovered:** 2026-05-18  
-**Status:** Seed / Not yet a requirement
+**Status:** Promoted to backlog as `ARCH-01..ARCH-03` in `.planning/REQUIREMENTS.md` and "Agentic stack architecture coverage" in `.planning/ROADMAP.md`
 
 ---
 
@@ -59,7 +59,7 @@ Nothing explicitly maps the **Goal** layer or the full stack as an architectural
 
 ---
 
-## Potential Requirement (if promoted)
+## Promoted Requirements
 
 **ARCH-01**: MemroOS should document and verify coverage of the 8-layer agentic AI genetic stack, with explicit gaps tracked per release.
 
@@ -69,9 +69,9 @@ Nothing explicitly maps the **Goal** layer or the full stack as an architectural
 
 ---
 
-## Decision Needed
+## Backlog Decision
 
-Does MemroOS want to adopt this as a formal architecture framework, or keep it as a reference seed? The stack is popular on X (85 likes, 35 bookmarks) and may become a de facto standard for explaining agentic AI architecture.
+Resolved as backlog: MemroOS should adopt this as a formal architecture framework candidate through `ARCH-01..ARCH-03`; implementation timing remains a future milestone decision.
 
 ---
 

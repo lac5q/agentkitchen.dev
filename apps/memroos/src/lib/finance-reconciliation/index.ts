@@ -1,7 +1,7 @@
 import type Database from "better-sqlite3";
 
 import { getDb } from "@/lib/db";
-import type { EvalConfig, GoldenSetExample } from "@/lib/evals/types";
+import type { GoldenSetExample } from "@/lib/evals/types";
 import { AUDIT_EVENT_TYPES, ENTITY_TYPES } from "@/lib/audit/event-types";
 import type { AuditEventType } from "@/lib/audit/event-types";
 import { openEscalation, writeAuditEntry } from "@/lib/audit/write";

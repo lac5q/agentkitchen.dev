@@ -117,6 +117,8 @@ seal:
 <deferred>
 ## Deferred Ideas
 
+Backlog status: promoted to `.planning/REQUIREMENTS.md` as `SEAL-FOLLOWUP-01..02`; phase-specific memory/agent proposal families remain covered by Phases 59/60 and v4 `SEAL-04..06`.
+
 - Memory-specific proposal types — Phase 59
 - Agent instruction / skill / tool-routing proposal types — Phase 60
 - File-system snapshot/restore strategy for `skill_addition` mutations — Phase 60

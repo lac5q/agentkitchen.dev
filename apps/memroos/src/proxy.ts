@@ -5,6 +5,7 @@ import type { UserRole } from "@/lib/auth/types";
 
 const PUBLIC_HOSTS = new Set(["memroos.com", "www.memroos.com", "memroos.vercel.app"]);
 const LEGACY_HOSTS = new Set(["memroos.dev", "www.memroos.dev"]);
+const DEFAULT_HTTPS_APP_HOSTS = new Set(["memroos.epiloguecapital.com"]);
 
 function normalizeHost(host: string): string {
   return host.split(":")[0]?.toLowerCase() ?? "";
@@ -26,12 +27,13 @@ function isLandingAsset(pathname: string): boolean {
 }
 
 function getHttpsAppHosts(): Set<string> {
-  return new Set(
-    (process.env.MEMROOS_HTTPS_APP_HOSTS ?? "")
+  return new Set([
+    ...DEFAULT_HTTPS_APP_HOSTS,
+    ...(process.env.MEMROOS_HTTPS_APP_HOSTS ?? "")
       .split(",")
       .map((host) => host.trim().toLowerCase())
-      .filter(Boolean)
-  );
+      .filter(Boolean),
+  ]);
 }
 
 function shouldRedirectToHttps(request: NextRequest, host: string): boolean {

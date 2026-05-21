@@ -6,15 +6,22 @@ and checkpoint resume semantics.
 
 from __future__ import annotations
 
+import os
 from contextlib import contextmanager
 from typing import Any, Dict, Iterator, List, Optional, TypedDict
 
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, START, StateGraph
-from langgraph.types import Command, Interrupt, interrupt
+from langgraph.types import Command, Interrupt, RetryPolicy, interrupt
+
+# ORCHESTRATION_RETRY_LIMIT controls per-hop max_attempts for the RetryPolicy
+# on the dispatch node. Default: 3 (matches RESEARCH.md ORCH-08 guidance).
+# Bounded at 1 minimum to satisfy RetryPolicy's max_attempts > 0 invariant.
+_RETRY_LIMIT = max(1, int(os.environ.get("ORCHESTRATION_RETRY_LIMIT", "3")))
 
 
 class OrchestrationState(TypedDict, total=False):
+    # Existing fields (Phase 36):
     runId: str
     taskSummary: str
     requiredCapability: str
@@ -22,6 +29,11 @@ class OrchestrationState(TypedDict, total=False):
     requiresApproval: bool
     status: str
     approvalDecision: str
+    # New fields (Phase 70 — ORCH-08..10):
+    hops: List[Dict[str, Any]]       # per-hop dispatch records [{agent_id, hop_id, attempts, ...}]
+    currentHopIndex: int             # 0-based index into hops list
+    rollbackPolicy: str              # "compensate_and_fail" | "fail_fast" | "ignore"
+    rollbackReason: Optional[str]    # set by rollback_compensation node
 
 
 def _interrupts_from_result(result: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -72,12 +84,25 @@ def build_langgraph(checkpointer: SqliteSaver) -> Any:
         return {**state, "approvalDecision": decision, "status": status}
 
     def dispatch(state: OrchestrationState) -> OrchestrationState:
-        return {**state, "status": "dispatched"}
+        # Advance currentHopIndex through the hops list for multi-hop support.
+        # Per-hop attempt counts are tracked in orchestration_lineage.detail_json
+        # keyed by lineage row id — NOT in orchestration_runs.attempts (RESEARCH.md Pitfall 3).
+        hop_index = int(state.get("currentHopIndex") or 0)
+        hops = list(state.get("hops") or [])
+        return {**state, "status": "dispatched", "currentHopIndex": hop_index + 1, "hops": hops}
 
     graph = StateGraph(OrchestrationState)
     graph.add_node("route_policy", route_policy)
     graph.add_node("approval", approval)
-    graph.add_node("dispatch", dispatch)
+    # RetryPolicy on dispatch: max_attempts reads from ORCHESTRATION_RETRY_LIMIT env var.
+    # Exhausted budget surfaces as a terminal error — caller (engine) triggers compensation.
+    # ORCH-08: per-hop retry budget configurable, not hardcoded.
+    # Using retry_policy (not deprecated `retry`) per LangGraph 1.2 API.
+    graph.add_node(
+        "dispatch",
+        dispatch,
+        retry_policy=RetryPolicy(max_attempts=_RETRY_LIMIT, retry_on=[Exception]),
+    )
     graph.add_edge(START, "route_policy")
     graph.add_conditional_edges(
         "route_policy",
@@ -112,3 +137,24 @@ class LangGraphRuntime:
         with self._compiled() as graph:
             result = graph.invoke(Command(resume=decision), config=config)
         return _public_state(result)
+
+    def edit_and_checkpoint(self, run_id: str, patch: Dict[str, Any]) -> Dict[str, Any]:
+        """Patch a paused HIL thread's checkpoint state without resuming.
+
+        Uses as_node="route_policy" so that a subsequent resume() re-enters the
+        needs_approval conditional and routes to dispatch rather than END.
+
+        Security: as_node is hardcoded — never sourced from caller input (T-70-03).
+        Caller must invoke resume() separately to continue graph execution.
+
+        Returns {"before": {...}, "after": {...}} with pre- and post-edit values.
+        """
+        config = {"configurable": {"thread_id": run_id}}
+        with self._compiled() as graph:
+            current = graph.get_state(config)
+            before = {k: current.values.get(k) for k in patch}
+            # as_node="route_policy" ensures resume re-enters the needs_approval
+            # conditional and dispatches when requiresApproval=False. Never use
+            # as_node="approval" — approval's only successor is END. (HIL-P1)
+            graph.update_state(config, patch, as_node="route_policy")
+        return {"before": before, "after": patch}

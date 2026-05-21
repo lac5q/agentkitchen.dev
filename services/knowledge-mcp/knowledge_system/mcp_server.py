@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import secrets
+import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
@@ -158,6 +159,60 @@ def _recipes_catalog_text() -> str:
 
 def _mem0_url() -> str:
     return os.environ.get("MEM0_URL", "http://localhost:3201").rstrip("/")
+
+
+def _qmd_bin() -> str:
+    return os.environ.get("QMD_BIN", "qmd")
+
+
+def _qmd_env() -> dict[str, str]:
+    env = dict(os.environ)
+    env.setdefault("QMD_FORCE_CPU", "1")
+    return env
+
+
+def _qmd_run(args: list[str], timeout: int = 30) -> dict:
+    try:
+        completed = subprocess.run(
+            [_qmd_bin(), *args],
+            check=False,
+            capture_output=True,
+            env=_qmd_env(),
+            text=True,
+            timeout=timeout,
+        )
+    except FileNotFoundError:
+        return {"status": "unavailable", "error": f"qmd binary not found: {_qmd_bin()}"}
+    except subprocess.TimeoutExpired as exc:
+        return {"status": "timeout", "error": str(exc), "args": args}
+
+    payload = {
+        "status": "ok" if completed.returncode == 0 else "error",
+        "returncode": completed.returncode,
+        "stdout": completed.stdout.strip(),
+        "stderr": completed.stderr.strip(),
+    }
+    if completed.returncode != 0:
+        payload["args"] = args
+    return payload
+
+
+def _qmd_json(args: list[str], timeout: int = 60) -> dict:
+    result = _qmd_run(args, timeout=timeout)
+    if result.get("status") != "ok":
+        return result
+    try:
+        import json
+
+        result["data"] = json.loads(str(result.get("stdout") or "null"))
+        result.pop("stdout", None)
+        return result
+    except Exception as exc:
+        return {
+            **result,
+            "status": "error",
+            "error": f"qmd returned invalid JSON: {exc}",
+        }
 
 
 def _public_base_url() -> str:
@@ -400,6 +455,53 @@ def knowledge_workspace_call(workspace: str, action: str, arguments: Optional[di
         return {"status": "ok", "content": wiki_index_resource()}
     if workspace == "agent-memory" and action == "health":
         return {"status": "ok", "health": knowledge_health().get("mem0")}
+    if workspace == "vector":
+        limit = max(1, min(int(args.get("limit", 5)), 50))
+        collection = str(args.get("collection", "")).strip()
+        qmd_args: list[str]
+        if action in {"search", "query", "vector_search"}:
+            query = str(args.get("query", "")).strip()
+            if not query:
+                return {"status": "error", "error": "query is required"}
+            command = "query" if action == "query" else "search"
+            qmd_args = [command, query, "-n", str(limit), "--json"]
+            if collection:
+                qmd_args.extend(["-c", collection])
+            return _qmd_json(qmd_args)
+        if action in {"vsearch", "semantic_search"}:
+            query = str(args.get("query", "")).strip()
+            if not query:
+                return {"status": "error", "error": "query is required"}
+            qmd_args = ["vsearch", query, "-n", str(limit), "--json"]
+            if collection:
+                qmd_args.extend(["-c", collection])
+            return _qmd_json(qmd_args)
+        if action in {"status", "index_status"}:
+            return _qmd_run(["status"])
+        if action == "ls":
+            target = str(args.get("target", collection)).strip()
+            return _qmd_run(["ls", target] if target else ["ls"])
+        if action == "get":
+            document = str(args.get("document", args.get("file", ""))).strip()
+            if not document:
+                return {"status": "error", "error": "document is required"}
+            lines = int(args.get("lines", 80))
+            return _qmd_run(["get", document, "-l", str(max(1, min(lines, 1000)))])
+        if action == "update":
+            return _qmd_run(["update"], timeout=300)
+        if action == "embed":
+            qmd_args = ["embed"]
+            if collection:
+                qmd_args.extend(["-c", collection])
+            if bool(args.get("force", False)):
+                qmd_args.append("-f")
+            return _qmd_run(qmd_args, timeout=600)
+        return {
+            "status": "unsupported_action",
+            "workspace": workspace,
+            "action": action,
+            "capabilities": get_capabilities(workspace),
+        }
     if workspace == "graph" and action in {"read", "stats"}:
         root = _root()
         graph_path = root / "wiki" / "graph" / "knowledge-graph.json"

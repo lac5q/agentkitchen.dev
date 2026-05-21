@@ -54,3 +54,10 @@ export const FAILURES_LOG = process.env.FAILURES_LOG || `${process.env.HOME}/.op
 // SQLite conversation store path — resolved relative to the monorepo root in db.ts
 // Keep as plain string (no path import) so this file stays safe for client-side imports
 export const SQLITE_DB_PATH = process.env.SQLITE_DB_PATH || 'data/conversations.db';
+
+// Ollama local embedding service (D-01). Override OLLAMA_URL for non-default host/port.
+export const OLLAMA_URL = process.env.OLLAMA_URL || "http://localhost:11434";
+
+// Embedding provider gate (D-01). Set to "ollama" to enable nomic-embed-text compute.
+// Any other value (including the default "null") disables embedding compute and forces BM25-only.
+export const EMBEDDING_PROVIDER = process.env.MEMROOS_EMBEDDING_PROVIDER || "null";

@@ -476,19 +476,19 @@ export function clearRegistry(): void {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **LangGraph 1.2 on Python 3.14**
+1. **LangGraph 1.2 on Python 3.14** RESOLVED
    - What we know: Python 3.14.2 is installed; `langgraph` is unpinned; `RetryPolicy` requires >= 1.2
    - What's unclear: Whether the current installed version is already >= 1.2, or whether the pin upgrade may surface compatibility issues with Python 3.14 (an alpha/beta Python version)
    - Recommendation: First task should `pip install langgraph>=1.2,<2.0 --dry-run` to verify compatibility before changing `requirements.txt`
 
-2. **A2A compensation capability convention**
+2. **A2A compensation capability convention** RESOLVED
    - What we know: A2A v1 has no rollback verb; compensation must be Memroos-side; remote agents receive a task with `requiredCapability: "compensate"`
    - What's unclear: Which existing agents (if any) implement a `compensate` capability? There are no multi-hop chains today, so this is greenfield.
    - Recommendation: Define the convention in Phase 70 as `requiredCapability: "compensate"` with `correlationId` back-reference; document `compensation_skipped` as the safe default for non-implementing agents.
 
-3. **`recallByKeyword` adapter wrapper**
+3. **`recallByKeyword` adapter wrapper** RESOLVED
    - What we know: `recallByKeyword` in `lib/db-ingest.ts` is a synchronous function receiving a `Database` handle; it implements episodic search; the `MemoryAdapter.search()` interface is async
    - What's unclear: How to cleanly wrap the synchronous better-sqlite3 call in an async `MemoryAdapter.search()` — technically trivial (`return Promise.resolve(recallByKeyword(...))`) but requires the adapter to hold a `db` handle reference
    - Recommendation: The episodic adapter's constructor accepts a `() => Database` factory (uses existing `getDb()` singleton pattern). This is consistent with the CLAUDE.md constraint against exposing DB handles externally.

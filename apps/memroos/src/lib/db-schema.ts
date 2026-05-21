@@ -265,6 +265,21 @@ export function initSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS recall_log_ts ON recall_log(timestamp);
   `);
 
+  // message_embeddings: per-message vector storage for semantic recall (RECALL-01, RECALL-02)
+  // Embeddings are packed as Float32 BLOBs to keep the table compact.
+  // Qdrant is untouched — message embeddings live exclusively in conversations.db (D-02).
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS message_embeddings (
+      message_id INTEGER PRIMARY KEY REFERENCES messages(id) ON DELETE CASCADE,
+      model      TEXT    NOT NULL,
+      dim        INTEGER NOT NULL,
+      vector     BLOB    NOT NULL,
+      created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS message_embeddings_model
+      ON message_embeddings(model);
+  `);
+
   // registered_agents: canonical v2.0 agent registry (REST, UI, future A2A adapters)
   db.exec(`
     CREATE TABLE IF NOT EXISTS registered_agents (
@@ -791,6 +806,21 @@ export function initSchema(db: Database.Database): void {
     BEGIN
       SELECT RAISE(ABORT, 'audit_entries is append-only: DELETE is not permitted');
     END;
+  `);
+
+  // Phase 71: recording consent for Daily.co meeting bot joins.
+  // Deliberately stores only an opaque meeting_id and human label; room URLs and
+  // join tokens remain transient and must never be persisted here.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS meeting_consents (
+      meeting_id    TEXT PRIMARY KEY,
+      operator_id   TEXT NOT NULL,
+      meeting_label TEXT,
+      consented     INTEGER NOT NULL DEFAULT 1 CHECK(consented IN (0,1)),
+      consented_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS meeting_consents_operator
+      ON meeting_consents(operator_id, consented_at DESC);
   `);
 
   // Phase 64: hil_escalations — mutable open-work-item state (AUDIT-04)

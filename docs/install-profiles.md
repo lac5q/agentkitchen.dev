@@ -76,11 +76,11 @@ npm run profiles:check
 npm run first-run:check
 ```
 
-`setup.sh` validates required tools, copies `.env.example` when needed, validates the selected profile, checks Qdrant unless `SKIP_QDRANT_CHECK=1`, and starts Docker Compose unless `START_SERVICES=0`.
+`setup.sh` validates required tools, copies `.env.example` when needed, validates the selected profile, checks Qdrant unless `SKIP_QDRANT_CHECK=1`, installs the memory-service Python requirements into `.venv`, and starts Docker Compose unless `START_SERVICES=0`. Set `INSTALL_MEMORY_SERVICE_DEPS=0` only when you intentionally manage that virtualenv yourself.
 
 On macOS, setup installs two launchd-backed Memory Resilience jobs unless `INSTALL_MEMORY_RESILIENCE=0` is set:
 
-- `com.memroos.memory-healthcheck` runs every 5 minutes and alerts when memory infrastructure degrades.
+- `com.memroos.memory-healthcheck` runs every 5 minutes and alerts when memory infrastructure degrades, including when recent knowledge artifacts exist on disk but are missing from QMD.
 - `com.memroos.memory-degradation-evals` runs daily at 9:15 AM and verifies the degradation scenarios stay covered by tests.
 
 Manage them directly with:
@@ -92,6 +92,16 @@ node scripts/install-memory-resilience.mjs uninstall
 ```
 
 The healthcheck reads `services/memory/.env` when present. Configure `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` or `DISCORD_KNOWLEDGE_WEBHOOK` for remote notifications; otherwise macOS local notifications are used.
+
+The app-owned `/api/health` route also reports the source-to-QMD contract as `Knowledge Index`, so the Memroos UI can show when files exist on disk but are not agent-searchable yet. Mem0 health is degraded when the runtime package, vector store, or queued-write path is unavailable; a live process alone is not treated as healthy.
+
+Run the source-to-QMD contract check manually with:
+
+```bash
+npm run check:knowledge-indexing -- --days=2
+```
+
+The check covers recent Google Drive exports, meeting recordings, Spark notes, emails, Slack source files, project meetings, journals, and analysis content.
 
 ## Optional Progressive Capabilities
 

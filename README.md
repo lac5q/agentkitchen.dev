@@ -293,10 +293,16 @@ npm install
 
 On macOS, `setup.sh` also installs the Memory Resilience monitors by default:
 
-- `com.memroos.memory-healthcheck`: every 5 minutes, checks mem0, QMD, queued writes, Gmail context freshness, and embedding round-trip health.
+- `com.memroos.memory-healthcheck`: every 5 minutes, checks mem0, QMD, queued writes, Gmail context freshness, source-to-QMD indexing for recent knowledge artifacts, and embedding round-trip health.
 - `com.memroos.memory-degradation-evals`: daily at 9:15 AM, runs the degradation regression suite.
 
 Set `INSTALL_MEMORY_RESILIENCE=0` before `./setup.sh` to skip launchd monitor installation, or run `npm run install:memory-resilience` later.
+
+To verify that Google Drive exports, meeting recordings, Spark notes, emails, Slack source files, and analysis files are actually agent-searchable, not merely present on disk:
+
+```bash
+npm run check:knowledge-indexing -- --days=2
+```
 
 Open MemroOS:
 

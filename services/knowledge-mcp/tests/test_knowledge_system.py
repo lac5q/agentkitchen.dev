@@ -235,6 +235,49 @@ def test_capability_registry_hides_deep_tools_until_requested():
     assert "tool_discover" in tool_workspace["tools"]
 
 
+def test_vector_workspace_routes_search_to_qmd_json(monkeypatch):
+    calls = []
+
+    class Completed:
+        returncode = 0
+        stdout = json.dumps([{"file": "qmd://memroos/README.md", "score": 0.9}])
+        stderr = ""
+
+    def fake_run(command, **kwargs):
+        calls.append((command, kwargs))
+        return Completed()
+
+    monkeypatch.setenv("QMD_BIN", "/opt/homebrew/bin/qmd")
+    monkeypatch.delenv("QMD_FORCE_CPU", raising=False)
+    monkeypatch.setattr(mcp_server.subprocess, "run", fake_run)
+
+    result = mcp_server.knowledge_workspace_call(
+        "vector",
+        "search",
+        {"query": "agent memory", "collection": "memroos", "limit": 3},
+    )
+
+    assert result["status"] == "ok"
+    assert result["data"] == [{"file": "qmd://memroos/README.md", "score": 0.9}]
+    assert calls[0][0] == [
+        "/opt/homebrew/bin/qmd",
+        "search",
+        "agent memory",
+        "-n",
+        "3",
+        "--json",
+        "-c",
+        "memroos",
+    ]
+    assert calls[0][1]["env"]["QMD_FORCE_CPU"] == "1"
+
+
+def test_vector_workspace_rejects_missing_query():
+    result = mcp_server.knowledge_workspace_call("vector", "search", {"query": ""})
+
+    assert result == {"status": "error", "error": "query is required"}
+
+
 def test_open_brain_catalog_doc_tracks_imports_workflows_skills_and_integrations():
     catalog = (Path(__file__).resolve().parents[1] / "docs" / "OPEN_BRAIN_RECIPES_CATALOG.md").read_text()
     assert "ChatGPT Import" in catalog

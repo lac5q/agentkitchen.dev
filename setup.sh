@@ -83,6 +83,20 @@ validate_optional_capabilities() {
   node scripts/optional-capabilities.mjs
 }
 
+install_memory_service_deps() {
+  if [[ "${INSTALL_MEMORY_SERVICE_DEPS:-1}" == "0" ]]; then
+    echo "INSTALL_MEMORY_SERVICE_DEPS=0, skipping memory service Python dependencies."
+    return
+  fi
+
+  if [[ ! -d ".venv" ]]; then
+    python3 -m venv .venv
+  fi
+
+  .venv/bin/python3 -m pip install -q --upgrade pip
+  .venv/bin/python3 -m pip install -q -r services/memory/requirements.txt
+}
+
 install_memory_resilience() {
   if [[ "${INSTALL_MEMORY_RESILIENCE:-1}" == "0" ]]; then
     echo "INSTALL_MEMORY_RESILIENCE=0, skipping memory resilience monitor install."
@@ -122,6 +136,7 @@ main() {
   validate_profile
   validate_optional_capabilities
   validate_qdrant
+  install_memory_service_deps
   install_memory_resilience
   start_services
 

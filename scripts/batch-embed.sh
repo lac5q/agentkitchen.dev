@@ -6,9 +6,13 @@
 # Environment flags:
 #   QMD_EMBED_FORCE=1      run qmd embed -f
 #   QMD_UPDATE_FIRST=1     run qmd update before embedding
+#   QMD_EMBED_COLLECTIONS  optional space-separated qmd collections to embed first
 #   QMD_DAYTIME_CHECK=1    skip daytime runs when CPU or memory is busy
 #   QMD_MIN_FREE_GB=4      minimum free+speculative memory for daytime runs
 #   QMD_MAX_LOAD_PER_CPU=.75 maximum 1-minute load per CPU for daytime runs
+#   QMD_FORCE_CPU=1      disable Metal/GPU offload for qmd model calls
+#   QMD_MAX_DOCS_PER_BATCH cap docs loaded per embedding batch
+#   QMD_MAX_BATCH_MB       cap UTF-8 MB loaded per embedding batch
 #
 # Usage:
 #   ./scripts/batch-embed.sh [--dry-run]
@@ -21,7 +25,7 @@ LOG_DIR="$ROOT_DIR/services/memory/logs"
 LOG_FILE="$LOG_DIR/batch-embed.log"
 LOCK_DIR="$LOG_DIR/batch-embed.lock"
 
-PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+PATH="/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 export PATH
 
 DRY_RUN=0
@@ -30,10 +34,14 @@ if [[ "${1:-}" == "--dry-run" ]]; then
 fi
 
 QMD_EMBED_FORCE="${QMD_EMBED_FORCE:-0}"
-QMD_UPDATE_FIRST="${QMD_UPDATE_FIRST:-0}"
+QMD_UPDATE_FIRST="${QMD_UPDATE_FIRST:-1}"
+QMD_EMBED_COLLECTIONS="${QMD_EMBED_COLLECTIONS:-}"
 QMD_DAYTIME_CHECK="${QMD_DAYTIME_CHECK:-1}"
 QMD_MIN_FREE_GB="${QMD_MIN_FREE_GB:-4}"
 QMD_MAX_LOAD_PER_CPU="${QMD_MAX_LOAD_PER_CPU:-0.75}"
+QMD_MAX_DOCS_PER_BATCH="${QMD_MAX_DOCS_PER_BATCH:-80}"
+QMD_MAX_BATCH_MB="${QMD_MAX_BATCH_MB:-8}"
+export QMD_FORCE_CPU="${QMD_FORCE_CPU:-1}"
 
 mkdir -p "$LOG_DIR"
 
@@ -132,10 +140,18 @@ main() {
     log "Skipping qmd update; set QMD_UPDATE_FIRST=1 to refresh collections first."
   fi
 
+  local embed_args=("--max-docs-per-batch" "$QMD_MAX_DOCS_PER_BATCH" "--max-batch-mb" "$QMD_MAX_BATCH_MB")
   if [[ "$QMD_EMBED_FORCE" == "1" ]]; then
-    run_awake qmd embed -f
+    embed_args=("-f" "${embed_args[@]}")
+  fi
+
+  if [[ -n "$QMD_EMBED_COLLECTIONS" ]]; then
+    local collection
+    for collection in $QMD_EMBED_COLLECTIONS; do
+      run_awake qmd embed -c "$collection" "${embed_args[@]}"
+    done
   else
-    run_awake qmd embed
+    run_awake qmd embed "${embed_args[@]}"
   fi
 
   run_cmd qmd status
