@@ -17,11 +17,11 @@
 - ✅ **v2.5 Eval Engine + Self-Improvement Platform** — Phases 57-62 (Tier 1 shipped 2026-05-17; behavioral W-lift deferred to v3)
 - ✅ **v3.0 Compliance Platform + Finance Vertical** — Phases 63-68 (shipped 2026-05-17)
 - ✅ **v3.1 Context Reliability + Runtime Resilience** — Phase 69 (shipped 2026-05-17)
-- 🚧 **v4.0 Orchestration Depth + Intelligence Uplift** — Phases 70-72 (planning 2026-05-17)
+- 🚧 **v4.0 Orchestration Depth + Intelligence Uplift** — Phases 70-72 (in progress; Phases 70-71 shipped, Phase 72 next)
 
 ## Phases
 
-### Current Orchestration Depth + Intelligence Uplift Summary — IN PLANNING
+### Current Orchestration Depth + Intelligence Uplift Summary — IN PROGRESS
 
 - [x] **Phase 70: Foundation + Engine Core** — WAL fix + HIL edit-and-continue + multi-hop retry/rollback + memory adapter interface
 - [x] **Phase 71: Recall + HIL SLA + Voice** — LLM semantic recall + SLA escalation timers + Daily.co meeting bot

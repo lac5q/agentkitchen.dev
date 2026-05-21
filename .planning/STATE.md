@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Orchestration Depth + Intelligence Uplift
-current_phase: 71
-current_phase_name: Recall + HIL SLA + Voice
-current_plan: post-71 merge/deploy checks
-status: phase_71_complete
-stopped_at: Phase 71 Wave 2 complete; merge/deploy verification pending
-last_updated: "2026-05-21T16:52:42Z"
+current_phase: 72
+current_phase_name: Cross-Project Recall + Behavioral W-lift + UI + Skills
+current_plan: not_started
+status: phase_71_deployed_phase_72_ready
+stopped_at: Phase 71 complete, merged to main, pushed, and deployed; Phase 72 is next before v4.0 milestone close
+last_updated: "2026-05-21T17:10:44Z"
 last_activity: 2026-05-21
 progress:
   total_phases: 3
@@ -24,23 +24,24 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 **Core value:** Any agent framework plugs into Memroos — and every agent, knowledge system, and skill becomes visible, connected, and self-improving.
-**Current focus:** Phase 71 — Recall + HIL SLA + Voice
+**Current focus:** Phase 72 — Cross-Project Recall + Behavioral W-lift + UI + Skills
 
 ## Current Position
 
-Current Phase: 71
-Current Phase Name: Recall + HIL SLA + Voice
-Current Plan: post-71 merge/deploy checks
+Current Phase: 72
+Current Phase Name: Cross-Project Recall + Behavioral W-lift + UI + Skills
+Current Plan: not started
 Total Phases: 3
-Total Plans in Phase: 6
-Progress: [██████████] 100%
-Status: Phase 71 complete — merge/deploy verification pending
+Total Plans in Phase: 0
+Progress: [██████░░░░] 67%
+Status: Phase 71 complete, merged, pushed, deployed, and production-restarted; Phase 72 remains before v4.0 milestone archival
 
 Phase: 71 — Recall + HIL SLA + Voice (planned)
 Plan: planning complete (71-CONTEXT.md, 71-VALIDATION.md, 71-01..06-PLAN.md)
 Wave 1 (complete): 71-01 recall foundation, 71-03 HIL SLA engine, 71-05 voice Daily bot
 Wave 2 (complete): 71-02 recall endpoint+job, 71-04 HIL dashboard, 71-06 voice consent UI
-Next action: run final GitNexus detect-changes, commit Phase 71, merge, and deploy; keep Phase 73 UI parity as the corrective backlog guard before claiming full operator-complete status
+Deployment closeout: merged to `main` at c2ff997, pushed to origin, rebuilt, restarted `com.memroos` launchd service on port 3002, and verified `https://memroos.epiloguecapital.com/login` returned HTTP 200.
+Next action: start Phase 72 planning/execution; do not run `$gsd-complete-milestone` for v4.0 until Phase 72 is complete and open artifact audit items are resolved or explicitly acknowledged.
 Last activity: 2026-05-21
 
 ## Roadmap Summary (v4.0)
@@ -172,10 +173,10 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-21T16:52:42Z
-Stopped at: Phase 71 Wave 2 complete; merge/deploy verification pending
+Last session: 2026-05-21T17:10:44Z
+Stopped at: Phase 71 merged to main, pushed, deployed, and launchd production service restarted
 Resume file: None
-Next action: run final GitNexus detect-changes, commit Phase 71, merge, and deploy; keep Phase 73 UI parity before closing v4.0 operator-complete claims
+Next action: begin Phase 72; keep Phase 73 UI parity before closing v4.0 operator-complete claims
 
 ## UAT Findings (2026-05-17)
 
