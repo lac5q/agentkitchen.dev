@@ -112,3 +112,24 @@ class LangGraphRuntime:
         with self._compiled() as graph:
             result = graph.invoke(Command(resume=decision), config=config)
         return _public_state(result)
+
+    def edit_and_checkpoint(self, run_id: str, patch: Dict[str, Any]) -> Dict[str, Any]:
+        """Patch a paused HIL thread's checkpoint state without resuming.
+
+        Uses as_node="route_policy" so that a subsequent resume() re-enters the
+        needs_approval conditional and routes to dispatch rather than END.
+
+        Security: as_node is hardcoded — never sourced from caller input (T-70-03).
+        Caller must invoke resume() separately to continue graph execution.
+
+        Returns {"before": {...}, "after": {...}} with pre- and post-edit values.
+        """
+        config = {"configurable": {"thread_id": run_id}}
+        with self._compiled() as graph:
+            current = graph.get_state(config)
+            before = {k: current.values.get(k) for k in patch}
+            # as_node="route_policy" ensures resume re-enters the needs_approval
+            # conditional and dispatches when requiresApproval=False. Never use
+            # as_node="approval" — approval's only successor is END. (HIL-P1)
+            graph.update_state(config, patch, as_node="route_policy")
+        return {"before": before, "after": patch}
