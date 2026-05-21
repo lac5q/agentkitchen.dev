@@ -15,7 +15,7 @@ function isPublicLandingHost(host: string): boolean {
 
 export const metadata: Metadata = {
   title: "MemroOS",
-  description: "Agent memory OS for AI-native product, sales, and engineering workflows",
+  description: "Shared memory and governed orchestration for agentic product, sales, and engineering workflows",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
