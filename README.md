@@ -1,11 +1,11 @@
 # MemroOS
 
 <p align="center">
-  <strong>Memory OS for agent workflows.</strong>
+  <strong>Shared memory and governed orchestration for agent workflows.</strong>
 </p>
 
 <p align="center">
-  MemroOS retains what product, sales, and engineering agents learn, retrieves the right context at runtime, and gives operators one NOC-style surface for memory, skills, dispatch, evals, and trust.
+  MemroOS retains what product, sales, and engineering agents learn, retrieves the right context at runtime, and gives operators one NOC-style surface for memory, orchestration, skills, dispatch, evals, and trust.
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 
 <p align="center">
   <a href="https://github.com/lac5q/memroos/blob/main/LICENSE"><img alt="License: PolyForm Small Business 1.0.0" src="https://img.shields.io/badge/license-PolyForm%20Small%20Business-a8392c.svg"></a>
-  <img alt="Release: v0.1.0" src="https://img.shields.io/badge/release-v0.1.0-a8392c.svg">
+  <img alt="Release: v0.9.0" src="https://img.shields.io/badge/release-v0.9.0-a8392c.svg">
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black.svg">
   <img alt="A2A ready" src="https://img.shields.io/badge/A2A-ready-7a2a1e.svg">
   <img alt="Local first" src="https://img.shields.io/badge/local--first-yes-4a4a45.svg">
@@ -33,13 +33,15 @@
 
 Most agent systems remember too little, too late. Product decisions live in docs. Sales context lives in calls and CRM notes. Engineering knowledge lives in commits, incidents, and terminal history. Every new agent starts by rediscovering the same context.
 
-MemroOS is the operating layer that gives agents a memory plane:
+MemroOS is the operating layer that gives agents a memory and governance plane:
 
 - **Retain:** capture decisions, files, conversations, outcomes, and workflow history.
 - **Retrieve:** assemble permission-aware context packs before an agent starts work.
+- **Orchestrate:** pause, inspect, edit, resume, retry, and roll back long-running agent work with audit lineage.
 - **Operate:** see memory health, model utility, live agents, governance, savings, and waste in one console.
 - **Dispatch:** chat with agents, run group-room standups, and send work to local, REST, or A2A agents with source-backed context.
-- **Improve:** review, edit, approve, and promote repeated successful workflows into durable skills and playbooks.
+- **Prove:** connect agent output to the memories consumed, sources used, tools run, checks passed, and residual risks.
+- **Improve:** review, edit, approve, and promote repeated successful workflows into durable governed skills and playbooks.
 
 The repository began as `memroos.dev`; some internal package names, paths, and environment variables still use `memroos` for compatibility. The public product and positioning are now MemroOS.
 
@@ -89,8 +91,11 @@ Native AI companies are moving from one-off prompt demos to agent workflows that
 - What does the agent already know?
 - Where did that knowledge come from?
 - Which memory did it consume before acting?
+- Which framework, agent card, MCP server, or local worker is actually doing the work?
+- Who can pause, edit, resume, retry, or roll back a run?
 - What should be retained from the outcome?
 - When should repeated work become a skill?
+- What proof shows the work was checked?
 - Which agent is allowed to do what?
 
 MemroOS is built for that layer.
@@ -120,11 +125,11 @@ After setup, you can:
 5. Dispatch work and inspect live delegation state.
 6. Run a 15-minute group-room standup or direct agent chat from the Engage surface.
 7. Review skill proposals before they modify instructions or playbooks.
-8. Keep memory, knowledge, skills, agents, usage, and governance in one operator surface.
+8. Keep memory, knowledge, orchestration, skills, agents, usage, and governance in one operator surface.
 
-## Release 0.1
+## Release 0.9
 
-`v0.1.0` is the first public operator preview of MemroOS.
+`v0.9.0` is the public documentation release for MemroOS's memory-plus-governance positioning.
 
 The current release includes:
 
@@ -147,14 +152,25 @@ The current release includes:
 - **Phases 53-54: v2.4 Performance + Caching** - response caching, query-path tuning, and faster memory/knowledge retrieval for operator workflows.
 - **UI migration: Memory OS operator surface** - NOC-style home, 8-group navigation, Workflow Map, full authenticated page reskin, task-first Dispatch, and a first-class Skills workflow.
 
+## Current Roadmap Focus
+
+The active GSD milestone is `v4.0: Orchestration Depth + Intelligence Uplift`. It is intentionally narrower than "do everything with agents":
+
+- **Phase 70: Foundation + Engine Core** - in progress. MemoryAdapter is complete; remaining work is multi-hop retry/rollback and the authenticated TypeScript HIL edit route/client/UI.
+- **Phase 71: Recall + HIL SLA + Voice** - planned. Semantic recall and HIL SLA escalation deepen operator control; voice is treated as a governed memory-ingestion channel, not a standalone product pillar.
+- **Phase 72: Cross-project memory + evidence** - planned. Cross-project recall, behavioral eval, qmd freshness, cross-harness skills, evidence bundles, and governed skill contracts become the next proof layer.
+
 ## What MemroOS Does
 
 - **Memory search:** Search retained context before an agent starts work.
+- **Governed orchestration:** Edit paused HIL state, retry and roll back multi-hop runs, and keep audit lineage for operator decisions.
 - **Operations NOC:** Watch memory consumption, undigested work, agent workload, model utility, governance, savings, and waste from the first screen.
 - **Knowledge corpus:** Track files, freshness, collections, and source health.
-- **Skill workflow:** Review, edit, approve, and promote repeatable procedures into governed skills.
+- **Evidence loop:** Connect outputs to sources, memories, tool actions, checks, assumptions, risks, and replay or rollback handles as the roadmap lands.
+- **Skill workflow:** Review, edit, approve, and promote repeatable procedures into governed skills with contract fields.
 - **Agent registry:** Maintain one canonical roster for local, REST, UI, and A2A agents.
 - **A2A broker:** Expose agent cards, JSON-RPC endpoints, task lifecycle routes, SSE task updates, and outbound A2A delegation.
+- **MCP-facing context:** Keep memory, knowledge, and skills behind a shared context surface instead of scattering direct tool access across every agent.
 - **REST shim:** Let agents report heartbeats, memories, skills, and outcomes before they speak A2A.
 - **Task-first dispatch:** Run direct chat, group-room standups, live delegations, and spoken prompts with inspectable context.
 - **Workflow map:** Visualize agents, memory, skills, dispatch paths, and infrastructure.
@@ -163,6 +179,8 @@ The current release includes:
 ## What MemroOS Is Not
 
 - Not a replacement for Claude Code, Codex, OpenClaw, Hermes, Google ADK, LangGraph, CrewAI, or AutoGen.
+- Not a voice bot company. Voice is one ingestion path for organizational memory.
+- Not a search-admin UI. qmd freshness work exists to prove context is current before agents act.
 - Not a hosted SaaS control plane in this repo.
 - Not an excuse to expose private agents directly to the public internet.
 - Not finished. It is useful, inspectable, hackable, and moving quickly.
@@ -549,14 +567,14 @@ memroos/
 
 ## Roadmap
 
-Near-term focus after `v0.1.0`:
+Near-term focus:
 
-- Cleaner first-run onboarding for non-localhost deployments.
-- Stronger memory-consumption evidence in dispatch and agent run records.
-- More A2A compatibility fixtures and interop tests.
-- More adapters for popular agent runtimes.
-- Hardened production profile examples for Tailscale, Docker, and HTTPS reverse proxies.
-- Iris secure dispatch gate for prompt-injection checks, tool-call validation, and post-execution output scanning.
+- Finish Phase 70: multi-hop retry/rollback and auth-guarded HIL edit-and-continue UI.
+- Add semantic/hybrid recall and HIL SLA countdown/escalation without replacing qmd BM25 or mem0/Qdrant memory.
+- Treat voice as a memory-ingestion surface with consent and token-safety controls.
+- Add cross-project recall with explicit allowed project IDs.
+- Make evidence bundles visible: memories consumed, tools/commands run, checks passed, unverified assumptions, residual risks, and replay/rollback artifacts.
+- Normalize cross-harness skills into governed contracts with preconditions, allowed tools, risk tier, verification checks, owner, rollback behavior, and dispatch status.
 
 ## Contributing
 
