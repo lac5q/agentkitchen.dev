@@ -530,7 +530,7 @@ Plans:
 **Research flag**: yes — `--research-phase` when planning (VOICE-06..08 external Daily.co integration has no CI coverage; confirm Daily-only vs Recall.ai bridge before sprint)
 **Plans**: 6 plans (2 waves)
 Plans:
-- [ ] 71-01-PLAN.md — Message embeddings schema + Ollama nomic-embed-text provider (wave 1)
+- [x] 71-01-PLAN.md — Message embeddings schema + Ollama nomic-embed-text provider (wave 1)
 - [ ] 71-02-PLAN.md — Semantic/hybrid recall endpoint + background embedding job (wave 2)
 - [ ] 71-03-PLAN.md — HIL SLA action config + 60s escalation scheduler (wave 1)
 - [ ] 71-04-PLAN.md — HIL dashboard live countdown + SLA traffic-light (wave 2)
@@ -561,5 +561,5 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|----------|---------------|--------|-----------|
 | 70 | v4.0 | 5/5 | Complete   | 2026-05-21 |
-| 71 | v4.0 | 0/6 | Planned     | - |
+| 71 | v4.0 | 1/6 | In Progress|  |
 | 72 | v4.0 | 0/0 | Not started | - |

@@ -4,16 +4,16 @@ milestone: v4.0
 milestone_name: Orchestration Depth + Intelligence Uplift
 current_phase: 71
 current_phase_name: Recall + HIL SLA + Voice
-current_plan: planning
-status: planning
-stopped_at: Phase 70 complete — 12/12 UAT tests pass; advancing to Phase 71 planning
-last_updated: "2026-05-21T08:10:00Z"
+current_plan: 71-01 next
+status: verifying
+stopped_at: Phase 70 executing; Plans 03 and 05 still pending
+last_updated: "2026-05-21T15:12:05.082Z"
 last_activity: 2026-05-21
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 11
+  completed_plans: 6
   percent: 33
 ---
 
@@ -24,22 +24,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 **Core value:** Any agent framework plugs into Memroos — and every agent, knowledge system, and skill becomes visible, connected, and self-improving.
-**Current focus:** Phase 70 — Foundation + Engine Core
+**Current focus:** Phase 71 — Recall + HIL SLA + Voice
 
 ## Current Position
 
-Current Phase: 70
-Current Phase Name: Foundation + Engine Core
-Current Plan: 70-03 next
+Current Phase: 71
+Current Phase Name: Recall + HIL SLA + Voice
+Current Plan: 71-01 next
 Total Phases: 3
-Total Plans in Phase: 5
-Progress: [██████████] 100%
+Total Plans in Phase: 6
+Progress: [          ] 0%
 Status: Phase complete — ready for verification
 
-Phase: 70 — Foundation + Engine Core (executing)
-Plan: 04 complete (MemoryAdapter interface + registry + concrete shim adapters)
-Status: Wave 2/3 in progress — Plans 01, 02, 04 complete; Plans 03 and 05 pending
-Next action: execute 70-03 (multi-hop retry + declarative rollback), then 70-05 (auth-guarded TS HIL edit route/client/UI)
+Phase: 71 — Recall + HIL SLA + Voice (planned)
+Plan: planning complete (71-CONTEXT.md, 71-VALIDATION.md, 71-01..06-PLAN.md)
+Wave 1 (parallel): 71-01 recall foundation, 71-03 HIL SLA engine, 71-05 voice Daily bot
+Wave 2 (parallel): 71-02 recall endpoint+job, 71-04 HIL dashboard, 71-06 voice consent UI
+Next action: execute Phase 71 — start with Wave 1 (71-01, 71-03, 71-05)
 Last activity: 2026-05-21
 
 ## Roadmap Summary (v4.0)
@@ -170,7 +171,7 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-21T14:38:33.953Z
+Last session: 2026-05-21T15:12:05.076Z
 Stopped at: Phase 70 executing; Plans 03 and 05 still pending
 Resume file: None
 Next action: execute Phase 70 Plan 03, then Phase 70 Plan 05; do not route to Phase 71 until Phase 70 summaries and validation are current

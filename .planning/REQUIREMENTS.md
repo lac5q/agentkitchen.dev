@@ -35,8 +35,8 @@
 
 ### LLM-Powered Recall Scoring
 
-- [ ] **RECALL-01**: Recall endpoint supports `mode=semantic|bm25|hybrid`; hybrid merges Ollama `nomic-embed-text` + BM25 via RRF; BM25 remains default; this applies to message recall in `conversations.db` and does not replace qmd BM25 or mem0/Qdrant vector memory
-- [ ] **RECALL-02**: Embeddings precomputed at ingest via background job (50 messages/cycle, 5-min interval); degrades gracefully with `degraded: true` on embedding outage
+- [x] **RECALL-01**: Recall endpoint supports `mode=semantic|bm25|hybrid`; hybrid merges Ollama `nomic-embed-text` + BM25 via RRF; BM25 remains default; this applies to message recall in `conversations.db` and does not replace qmd BM25 or mem0/Qdrant vector memory
+- [x] **RECALL-02**: Embeddings precomputed at ingest via background job (50 messages/cycle, 5-min interval); degrades gracefully with `degraded: true` on embedding outage
 
 ### Cross-Project Recall
 
