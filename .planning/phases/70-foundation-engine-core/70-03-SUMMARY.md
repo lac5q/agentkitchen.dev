@@ -11,9 +11,13 @@ dependency_graph:
     - OrchestrationState with hops/currentHopIndex/rollbackPolicy/rollbackReason (ORCH-08)
     - RetryPolicy-governed dispatch node with ORCHESTRATION_RETRY_LIMIT env var (ORCH-08)
     - Declarative compensation_pending lineage rows at dispatch time (ORCH-09)
-    - _run_rollback_compensation() executing compensation declaratively in reverse (ORCH-09)
+    - engine._run_rollback_compensation() executing compensation declaratively in reverse (ORCH-09, engine-side only)
     - rollback_reason TEXT + rolled_back_at TEXT additive migration (ORCH-10)
     - orchestration_runs.status="rolled_back" with granular rollback_reason (ORCH-10)
+  deferred:
+    - rollback_compensation LangGraph graph node (planned; implemented in engine layer instead)
+    - Multi-hop chain topology in graph.py (graph remains single-hop START→route_policy→[approval|dispatch]→END)
+    - Per-hop attempt tracking in detail_json["attempts_per_hop"] (RESEARCH.md Pitfall 3 — not implemented)
   affects:
     - services/orchestration/graph.py
     - services/orchestration/engine.py
@@ -25,7 +29,7 @@ tech_stack:
     - LangGraph 1.2 RetryPolicy on dispatch node (retry_policy= parameter, not deprecated retry=)
     - Declarative saga compensation via orchestration_lineage hop_type rows (no Python closures)
     - Additive ALTER TABLE migration for rollback columns (forward-only, idempotent)
-    - Safe-default compensation_skipped for agents lacking requiredCapability="compensate"
+    - Safe-default compensation_skipped for all agents (no A2A compensate dispatch attempted)
 key_files:
   created: []
   modified:
@@ -36,7 +40,9 @@ key_files:
 decisions:
   - "Use retry_policy= parameter (not deprecated retry=) per LangGraph 1.2 API to avoid deprecation warnings"
   - "Fix test_dispatch_retry_policy to use _compiled() as context manager — test had bug using context manager object directly as compiled graph"
-  - "compensation_skipped is safe default for all agents (no agent registry to check capability) per RESEARCH.md Anti-Patterns"
+  - "compensation_skipped hardcoded for all agents — no A2A compensate dispatch attempted; agent registry to check requiredCapability='compensate' not yet built"
+  - "rollback_compensation node deferred — implemented as engine._run_rollback_compensation() instead; graph topology expansion is follow-on work"
+  - "per-hop attempts_per_hop in detail_json deferred — orchestration_runs.attempts remains single counter; Pitfall 3 mitigation not implemented"
   - "rollback_reason format: 'failed at hop N, compensated hops 1..N-1' — derivable from lineage"
   - "append_lineage() now returns lastrowid (int) to enable forward_hop_id pairing — backward-compatible since previous callers discarded the return value"
   - "test_routes_by_declared_capability_and_persists_lineage updated to include compensation_pending in expected sequence — this test was written before ORCH-09 was implemented"
@@ -49,7 +55,7 @@ metrics:
 
 # Phase 70 Plan 03: Multi-hop retry + declarative rollback Python orchestration service Summary
 
-Multi-hop RetryPolicy on LangGraph dispatch node, declarative compensation_pending lineage rows at each dispatch, and rolled_back run status with granular rollback_reason after retry exhaustion.
+RetryPolicy on LangGraph dispatch node, declarative compensation_pending lineage rows at each dispatch, and rolled_back run status with granular rollback_reason after retry exhaustion. Graph topology expansion to true multi-hop and the rollback_compensation LangGraph node were deferred.
 
 ## What Was Done
 
@@ -102,10 +108,10 @@ Registered dispatch node with `retry_policy=RetryPolicy(max_attempts=_RETRY_LIMI
 
 2. `update_run_rollback(run_id, rollback_reason)`: dedicated method that sets `status='rolled_back'`, `rollback_reason`, and `rolled_back_at` in a single UPDATE.
 
-3. `_run_rollback_compensation(run_id, run, attempts)`: new private method that:
+3. `_run_rollback_compensation(run_id, run, attempts)`: new private method in `OrchestrationEngine` that:
    - Writes `rollback_started` row with `hops_to_compensate` list and `trigger="retry_exhausted"`
    - Reads all `compensation_pending` rows in reverse order
-   - For each: writes `compensation_skipped` (safe default — agents without `requiredCapability="compensate"` are skipped per RESEARCH.md Anti-Patterns, T-70-09)
+   - For each: writes `compensation_skipped` (unconditional — see Known Stubs)
    - Writes `rollback_complete` row with `final_status="rolled_back"`
    - Calls `update_run_rollback` with rollback_reason = `"failed at hop N, compensated hops 1..N-1"`
 
@@ -167,6 +173,32 @@ Full suite: 14 passed, 0 failed
 - **Files modified:** `services/orchestration/engine.py`
 - **Commit:** 8396ba3
 
+### Plan Scope Not Fully Delivered
+
+The three ORCH Wave 0 RED tests pass. However, three artifacts specified in the plan's `must_haves` and `<objective>` were not implemented:
+
+**Deviation A: No rollback_compensation LangGraph graph node**
+
+- **Planned:** plan artifact for `graph.py` specifies "Multi-hop topology with RetryPolicy on dispatch + rollback_compensation node". The `must_haves.key_links` entry reads `from: "rollback_compensation node" to: "orchestration_runs.status='rolled_back'"`.
+- **Delivered:** Rollback logic lives in `engine._run_rollback_compensation()`, called from `record_task_failure`. The LangGraph graph has no `rollback_compensation` node; the graph topology is still `START → route_policy → [approval|dispatch] → END`.
+- **Impact:** The retry budget exhaustion path is correctly wired end-to-end and all ORCH-10 tests pass. However, compensation does not flow through the LangGraph state machine — it bypasses the graph entirely and runs in the engine layer. This means LangGraph checkpoint state does not reflect rollback in-flight.
+- **Reason:** The plan's Wave 0 RED tests (written in 70-01) test the engine's lineage DB output, not the graph node topology. The tests passed without the graph node, revealing a gap between the test contract and the full plan specification.
+- **Deferred to:** `deferred-items.md`
+
+**Deviation B: Graph remains single-hop; multi-hop topology expansion not done**
+
+- **Planned:** `<objective>` says "Expand the single-hop orchestration graph into a multi-hop chain." Task 1 `<done>` criteria says "dispatch node has a configurable RetryPolicy; OrchestrationState has the four new fields; per-hop attempts live in detail_json['attempts_per_hop']."
+- **Delivered:** `OrchestrationState` has the four new fields and dispatch advances `currentHopIndex`. The graph topology is unchanged — still single-hop. A caller can set `hops` and `currentHopIndex` on the input state, but the graph has no routing that iterates over multiple hops.
+- **Impact:** ORCH-08 RetryPolicy is implemented (each dispatch attempt is retried). True multi-hop chaining where a graph automatically advances through N agents is not supported.
+- **Deferred to:** `deferred-items.md`
+
+**Deviation C: Per-hop attempt counts not stored in detail_json["attempts_per_hop"]**
+
+- **Planned:** RESEARCH.md Pitfall 3 explicitly says per-hop retry counts must live in `orchestration_lineage.detail_json["attempts_per_hop"]`, NOT in `orchestration_runs.attempts`. Task 1 `<done>` criteria: "per-hop attempts live in detail_json['attempts_per_hop']".
+- **Delivered:** `orchestration_runs.attempts` is still the sole retry counter. `detail_json["attempts_per_hop"]` is not written anywhere.
+- **Impact:** Pitfall 3 mitigation is incomplete — a multi-hop scenario with N hops could conflate attempt counts across hops. Not a correctness issue for the current single-hop topology, but a future correctness risk when multi-hop is implemented.
+- **Deferred to:** `deferred-items.md`
+
 ## Threat Dispositions
 
 | Threat | Status |
@@ -174,11 +206,17 @@ Full suite: 14 passed, 0 failed
 | T-70-06: Compensation logic persistence — Python closures destroyed on restart | MITIGATED — All compensation is stored as declarative orchestration_lineage rows; _run_rollback_compensation reads from DB, not memory |
 | T-70-07: Rollback accountability | MITIGATED — rollback_started/complete rows + per-hop compensation_skipped rows + orchestration_runs.rollback_reason/rolled_back_at |
 | T-70-08: Unbounded retries | MITIGATED — RetryPolicy max_attempts bounded by ORCHESTRATION_RETRY_LIMIT; exhaustion deterministically triggers _run_rollback_compensation |
-| T-70-09: Remote agent without compensate capability | ACCEPTED — compensation_skipped is safe default; no A2A v1 rollback verb assumed |
+| T-70-09: Remote agent without compensate capability | ACCEPTED — compensation_skipped is hardcoded safe default; no A2A compensate dispatch attempted (see Known Stubs) |
 
 ## Known Stubs
 
-None — all three ORCH requirements are fully implemented end-to-end. The `compensation_skipped` default is the documented safe behavior per RESEARCH.md Anti-Patterns (not a stub — it's the correct A2A v1 behavior since agents without `requiredCapability="compensate"` cannot receive rollback tasks).
+**Stub 1: compensation always writes compensation_skipped (no A2A compensate dispatch attempted)**
+
+- **File:** `services/orchestration/engine.py`, `_run_rollback_compensation()`
+- **Behavior:** For every `compensation_pending` row, the code unconditionally writes a `compensation_skipped` row. No A2A task with `requiredCapability="compensate"` is dispatched.
+- **Plan spec:** Task 2 `<behavior>` says "Each compensation dispatches an A2A task with requiredCapability='compensate'; agents without that capability yield a compensation_skipped row." The plan specifies that A2A dispatch is attempted first; skipping is the fallback.
+- **Why stubbed:** No agent registry or A2A transport layer is available at this plan's scope to check `requiredCapability`. The Wave 0 RED test (`test_compensation_row`) only checks that a `compensation_pending` row is written at dispatch time — it does not test A2A compensate dispatch.
+- **Resolution:** A future plan must implement actual A2A compensate dispatch in `_run_rollback_compensation` once the A2A transport layer is wired into the orchestration service.
 
 ## Threat Flags
 
@@ -194,3 +232,4 @@ No new network endpoints, auth paths, or schema changes beyond what was planned.
 - Commit 8396ba3: present in git log ✓
 - Commit 6c11263: present in git log ✓
 - Full suite: 14 passed, 0 failed ✓
+- Known deviations documented: rollback_compensation node deferred, multi-hop topology deferred, attempts_per_hop deferred ✓
