@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v4.0
 milestone_name: Orchestration Depth + Intelligence Uplift
-current_phase: 70
-current_phase_name: Foundation + Engine Core
-current_plan: 70-03 next
-status: verifying
-stopped_at: Phase 70 executing; Plans 03 and 05 still pending
-last_updated: "2026-05-21T14:38:33.961Z"
+current_phase: 71
+current_phase_name: Recall + HIL SLA + Voice
+current_plan: planning
+status: planning
+stopped_at: Phase 70 complete — 12/12 UAT tests pass; advancing to Phase 71 planning
+last_updated: "2026-05-21T08:10:00Z"
 last_activity: 2026-05-21
 progress:
   total_phases: 3
