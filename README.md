@@ -10,6 +10,8 @@
 
 <p align="center">
   <a href="https://memroos.com">memroos.com</a> ·
+  <a href="#launch-quickstart">Launch Quickstart</a> ·
+  <a href="#who-this-is-for">Who This Is For</a> ·
   <a href="#quickstart">Quickstart</a> ·
   <a href="#video-demo">Video Demo</a> ·
   <a href="#screenshots">Screenshots</a> ·
@@ -28,6 +30,22 @@
 </p>
 
 ---
+
+## Launch Quickstart
+
+Try the memory loop in 5 minutes:
+
+```bash
+git clone https://github.com/lac5q/memroos.git
+cd memroos
+npm install
+./setup.sh --wizard
+./setup.sh
+```
+
+Then open `http://localhost:3000`, search retained memory, inspect Knowledge source health, register or dispatch an agent, and review the runtime context pack that gets assembled before work starts.
+
+If you are evaluating the launch build, start with the v0.9.0 release, watch the demo, then open a workflow feedback issue with the first place your agents lose context.
 
 ## What MemroOS Is
 
@@ -100,6 +118,15 @@ Native AI companies are moving from one-off prompt demos to agent workflows that
 
 MemroOS is built for that layer.
 
+## Who This Is For
+
+- **AI-native founders and operators** who run agents across product, sales, engineering, support, and internal operations.
+- **Agent framework users** working with Claude Code, Codex, Google ADK, LangGraph, CrewAI, AutoGen, Hermes, OpenClaw, or custom runtimes that need retained context beside the framework.
+- **Product and engineering leaders** who want source-backed runtime context packs before dispatch and proof trails after execution.
+- **Self-hosted and local-first builders** who want memory, knowledge, orchestration, skills, agents, usage, and governance in one inspectable repo.
+
+MemroOS is not another agent framework. It is the context plane before dispatch and the proof trail after execution.
+
 ## Primary Use Cases
 
 ### Product
@@ -114,7 +141,7 @@ Retain CRM notes, call takeaways, buyer preferences, competitor mentions, and ac
 
 Retain architecture decisions, incidents, deploy fixes, repo patterns, and code review outcomes. Retrieve them into debug plans, migrations, reviews, onboarding, and runbooks.
 
-## What You Can Do In 5 Minutes
+## What To Try First
 
 After setup, you can:
 
