@@ -48,9 +48,9 @@ const NAV_ITEMS = [
   {
     href: "/cookbooks",
     label: "Skills",
-    description: "Cookbooks · lifecycle",
+    description: "Cookbooks · registry · lifecycle",
     icon: Sparkles,
-    match: ["/cookbooks"],
+    match: ["/cookbooks", "/skills"],
   },
   {
     href: "/agents",

@@ -773,6 +773,53 @@ export function useDevToolsStatus() {
   });
 }
 
+export interface SkillRegistryItem {
+  id: number;
+  name: string;
+  description: string | null;
+  owner: string | null;
+  source_harness: string;
+  risk_tier: string;
+  dispatch_status: "enabled" | "incomplete" | "disabled";
+  version: string | null;
+  completeness_pct: number;
+  missing_fields: string[];
+  missing_fields_json: string | null;
+  verification_checks_list: string[];
+  verification_checks: string | null;
+  imported_by: string;
+  imported_at: string;
+}
+
+export interface SkillRegistryResponse {
+  ok: boolean;
+  items: SkillRegistryItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export function useSkillRegistry(opts?: {
+  offset?: number;
+  limit?: number;
+  source_harness?: string;
+  dispatch_status?: string;
+}) {
+  const { offset = 0, limit = 20, source_harness, dispatch_status } = opts ?? {};
+  const params = new URLSearchParams();
+  params.set("offset", String(offset));
+  params.set("limit", String(limit));
+  if (source_harness) params.set("source_harness", source_harness);
+  if (dispatch_status) params.set("dispatch_status", dispatch_status);
+
+  return useQuery({
+    queryKey: ["skill-registry", offset, limit, source_harness, dispatch_status],
+    queryFn: () =>
+      fetchJSON<SkillRegistryResponse>(`/api/skills/import?${params.toString()}`),
+    staleTime: 30_000,
+  });
+}
+
 export function useActivity() {
   return useQuery({
     queryKey: ["activity"],

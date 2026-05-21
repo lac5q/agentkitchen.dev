@@ -130,12 +130,9 @@ export async function POST(request: Request) {
  * GET /api/skills/import
  * Lists governed skill registry entries with pagination.
  * Supports ?source_harness=, ?dispatch_status=, ?limit=, ?offset= filters.
+ * Read-only — no operator auth required.
  */
 export async function GET(request: Request) {
-  if (!authorizeRegistryWrite(request)) {
-    return registryWriteUnauthorizedResponse();
-  }
-
   const url = new URL(request.url);
   const source_harness = url.searchParams.get("source_harness");
   const dispatch_status = url.searchParams.get("dispatch_status");
@@ -164,7 +161,7 @@ export async function GET(request: Request) {
     .prepare(
       `SELECT id, name, description, owner, source_harness, risk_tier,
               dispatch_status, version, completeness_pct, missing_fields_json,
-              imported_by, imported_at
+              verification_checks, imported_by, imported_at
        FROM skill_registry
        ${where}
        ORDER BY imported_at DESC
@@ -183,6 +180,15 @@ export async function GET(request: Request) {
     missing_fields: (() => {
       try {
         return JSON.parse(String(r["missing_fields_json"] ?? "[]"));
+      } catch {
+        return [];
+      }
+    })(),
+    verification_checks_list: (() => {
+      try {
+        const raw = r["verification_checks"];
+        if (!raw) return [];
+        return JSON.parse(String(raw));
       } catch {
         return [];
       }
