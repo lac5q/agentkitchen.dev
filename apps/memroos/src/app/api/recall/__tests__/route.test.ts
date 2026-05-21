@@ -157,6 +157,102 @@ describe('POST /api/recall/ingest', () => {
   });
 });
 
+// ─── Phase 72: Cross-project recall API contract (RECALL-03, RECALL-04) ──────
+//
+// Contract decisions:
+//   - Default (no crossProject param): backward compat, no change in behavior
+//   - crossProject=true + allowed_project_ids=a,b: only those projects returned
+//   - crossProject=true with no allowed_project_ids: 400 error (invalid request)
+//   - crossProject=true with empty allowed_project_ids=: 400 error
+//   - Response includes recall_scope: "single" | "cross" field
+//   - Each result includes source_project annotation (RECALL-04)
+//   - Degraded fallback (embedding provider down) still returns HTTP 200 with degraded:true
+
+describe('GET /api/recall -- cross-project contract (RECALL-03, RECALL-04)', () => {
+  it('default recall (no crossProject) returns recall_scope: single', async () => {
+    vi.resetModules();
+    const { GET } = await import('../route');
+    const req = new Request('http://localhost/api/recall?q=testquery');
+    const res = await GET(req as unknown as import('next/server').NextRequest);
+    const body = await res.json();
+    expect(res.status).toBe(200);
+    expect(body.recall_scope).toBe('single');
+  });
+
+  it('crossProject=true without allowed_project_ids returns 400 (RECALL-03 unauthorized)', async () => {
+    vi.resetModules();
+    const { GET } = await import('../route');
+    const req = new Request('http://localhost/api/recall?q=test&crossProject=true');
+    const res = await GET(req as unknown as import('next/server').NextRequest);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body).toHaveProperty('error');
+  });
+
+  it('crossProject=true with empty allowed_project_ids returns 400 (RECALL-03 empty allowlist)', async () => {
+    vi.resetModules();
+    const { GET } = await import('../route');
+    const req = new Request('http://localhost/api/recall?q=test&crossProject=true&allowed_project_ids=');
+    const res = await GET(req as unknown as import('next/server').NextRequest);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body).toHaveProperty('error');
+  });
+
+  it('crossProject=true with allowed_project_ids returns recall_scope: cross and 200 (RECALL-03)', async () => {
+    vi.resetModules();
+    const { GET } = await import('../route');
+    const req = new Request('http://localhost/api/recall?q=testquery&crossProject=true&allowed_project_ids=project-alpha,project-beta');
+    const res = await GET(req as unknown as import('next/server').NextRequest);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.recall_scope).toBe('cross');
+    expect(body.allowed_project_ids).toEqual(['project-alpha', 'project-beta']);
+  });
+
+  it('cross-project results include source_project on each row (RECALL-04)', async () => {
+    // Insert a message for a specific project
+    const { getDb } = await import('@/lib/db');
+    const db = getDb();
+    db.prepare(
+      "INSERT INTO messages(session_id, project, agent_id, role, content, timestamp) VALUES(?,?,?,?,?,?)"
+    ).run('sess-xp1', 'project-cross-src', 'agent', 'user', 'cross project recall annotation test unique', '2024-01-01T00:00:00Z');
+
+    vi.resetModules();
+    const { GET } = await import('../route');
+    const req = new Request(
+      'http://localhost/api/recall?q=cross+project+recall+annotation&crossProject=true&allowed_project_ids=project-cross-src'
+    );
+    const res = await GET(req as unknown as import('next/server').NextRequest);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    // Each result must have source_project annotation
+    for (const row of body.results) {
+      expect(row).toHaveProperty('source_project');
+    }
+  });
+
+  it('cross-project degraded fallback returns HTTP 200 with degraded:true (D-05)', async () => {
+    // Mock embedText to return degraded
+    vi.resetModules();
+    vi.mock('@/lib/embeddings/provider', async (importOriginal) => {
+      const original = await importOriginal<typeof import('@/lib/embeddings/provider')>();
+      return {
+        ...original,
+        embedText: vi.fn().mockResolvedValue({ degraded: true, embedding: [] }),
+      };
+    });
+    const { GET } = await import('../route');
+    const req = new Request(
+      'http://localhost/api/recall?q=degradedtest&mode=semantic&crossProject=true&allowed_project_ids=project-alpha'
+    );
+    const res = await GET(req as unknown as import('next/server').NextRequest);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.degraded).toBe(true);
+  });
+});
+
 // ─── recall_log INSERT (ANA-04) ───────────────────────────────────────────────
 
 describe('GET /api/recall -- recall_log insert', () => {
