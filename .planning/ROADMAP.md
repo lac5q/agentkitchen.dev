@@ -316,7 +316,12 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 
 ### Future Milestone Priority
 
-1. Plan the next milestone after v3.1 Phase 69 completion.
+1. Plan v4.1 candidate: Harness Control Plane + Knowledge Graph Intelligence.
+   - Research intake: `Code as Agent Harness` (arXiv:2605.18747, 2026-05-18) argues future agent systems need executable, inspectable, stateful, governed harnesses.
+   - Research intake: Graphify (`safishamsi/graphify`) shows a practical query-first repo/docs/PDF/image knowledge graph with confidence-tagged edges, wiki/report exports, and commit/search hooks.
+   - Research intake: Graphite-style stacked review patterns suggest agent work should move as small, ordered, independently reviewable changes with stack-aware risk and merge gates.
+   - Research intake: production-agent checklist patterns (direnv/secrets manager, LLM gateway, eval-pinned commits, LLM-call proxy tracing, Inspect evals, `lessons.md`) map to MemroOS runtime guardrails and evidence capture.
+   - Integration call: LiteLLM should be an optional model-gateway adapter first, with direct provider calls retained as fallback; MemroOS owns task evidence, policy, replay, and NOC observability.
 
 ### Later Ideas
 
@@ -329,6 +334,19 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 - Library freshness indicator (QMD index recency vs file mtime)
 - LLM-powered recall scoring upgrade (embedding over BM25)
 - Cross-project recall (similar-task recommendations across repos)
+- Harness Control Plane: task-level Plan-Execute-Verify timeline showing context assembled, tools exposed, permissions granted, actions taken, verification run, and memory updated
+- Evidence bundles on agent outputs: sources used, memories consumed, tools/commands run, checks passed, unverified assumptions, residual risks, and rollback/replay artifacts
+- Shared harness state substrate: authoritative task state with read/write sets, assumptions, version dependencies, verifier obligations, conflict policy, and belief-drift detection for stale context
+- Governed skill contracts: each promoted skill carries preconditions, allowed tools, risk tier, verification checks, evidence examples, owner, rollback behavior, and dispatch status
+- Evolution Agent: telemetry-driven proposals for harness improvements such as context packing, tool schemas, validators, retry limits, permission gates, and workflow topology, promoted only after regression evidence
+- Knowledge Graph Intelligence: Graphify-style graph reports for code, docs, PDFs, diagrams, and transcripts with `EXTRACTED`/`INFERRED`/`AMBIGUOUS` confidence tags, god-node detection, surprising connections, query/path/explain commands, wiki export, and freshness hooks
+- PR and workflow graph risk: use graph communities and dependency paths to show likely merge conflicts, impacted concepts, stale graph regions, and cross-agent coordination risk before dispatch or review
+- Stacked agent work units: break large agent tasks into ordered, dependent, independently reviewable slices with stack-aware verification, promotion gates, and rollback invalidation when an earlier slice fails
+- Model gateway observability: integrate LiteLLM as the first optional `ModelGatewayAdapter`, while retaining direct-provider fallback; record provider/model route, prompt/template version, cache hit/miss, fallback path, token/cost budget, latency, and denial reason for every LLM call in the task evidence bundle
+- Secret-scope health: verify agent runtime secrets are folder/project scoped, loaded from an approved secret manager path, and never persisted in plain `.env` or audit artifacts
+- Eval-pinned promotion commits: when an eval suite passes, capture model version, prompt/harness version, pass rate, dataset seed, and commit/release pointer for incident-grade rollback
+- Agent lessons ledger: maintain a repo-level `lessons.md`/lessons table for weird behavior, edge cases, config changes, incident notes, and promoted skills, then surface it in context packs and graph freshness checks
+- Third-party eval adapter: evaluate whether Inspect-style eval packs should plug into the existing eval engine for safety behaviors such as deception, tool misuse, manipulation, and policy-boundary violations
 
 Run `$gsd-new-milestone` to start the next milestone workflow.
 
@@ -484,7 +502,13 @@ downstream features.
   4. The A2A task status for a failed chain reads granularly: "failed at hop N, compensated hops 1..N-1"
   5. mem0/Qdrant/Neo4j are wrapped as concrete `MemoryAdapter`s exposing only `search()`/`write()`/`health()`; a new backend registers via the registry without modifying existing adapter code
 **Research flag**: yes — `--research-phase` when planning (ORCH-08..10 saga compensation requires auditing all existing A2A chains for which need compensating actions retrofitted)
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 70-01-PLAN.md — Foundation prerequisites: WAL pragma + langgraph pin + Wave 0 RED test scaffolds
+- [ ] 70-02-PLAN.md — HIL edit-and-continue: Python orchestration service (edit endpoint + audit)
+- [ ] 70-03-PLAN.md — Multi-hop retry + declarative rollback: Python orchestration service
+- [ ] 70-04-PLAN.md — MemoryAdapter interface + registry + concrete shim adapters (TypeScript)
+- [ ] 70-05-PLAN.md — HIL edit-and-continue: TypeScript route, client, and edit UI
 **UI hint**: yes
 
 ### Phase 71: Recall + HIL SLA + Voice
@@ -527,7 +551,6 @@ downstream features.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|----------|---------------|--------|-----------|
-| 70 | v4.0 | 0/0 | Not started | - |
+| 70 | v4.0 | 0/5 | Planned | - |
 | 71 | v4.0 | 0/0 | Not started | - |
 | 72 | v4.0 | 0/0 | Not started | - |
-
