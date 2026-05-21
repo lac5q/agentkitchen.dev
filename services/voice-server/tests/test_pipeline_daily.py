@@ -34,19 +34,20 @@ class TestBuildDailyPipeline:
         pipeline = build_daily_pipeline(FAKE_ROOM_URL, FAKE_TOKEN, FAKE_SESSION_ID)
         # The first element should be the mock returned by DailyTransport.input()
         first_el = pipeline.elements[0]
-        # Check that it was produced by a DailyTransport instance
         assert first_el is not None
-        # Its name should indicate daily transport input
-        assert "daily_transport" in str(first_el).lower() or first_el.name == "daily_transport.input()"
+        # repr() of MagicMock includes the name set in _FakeDailyTransport.input()
+        assert "daily_transport" in repr(first_el).lower(), (
+            f"First element must be DailyTransport.input(); got {repr(first_el)}"
+        )
 
     def test_pipeline_has_no_audio_output(self, in_memory_db, monkeypatch):
         """Listener-only: no transport.output() audio element (D-11)."""
         monkeypatch.setenv("SQLITE_DB_PATH", in_memory_db)
         pipeline = build_daily_pipeline(FAKE_ROOM_URL, FAKE_TOKEN, FAKE_SESSION_ID)
-        # transport.output() mock has name "daily_transport.output()"
-        output_names = [getattr(el, "name", "") for el in pipeline.elements]
-        assert not any("output" in n for n in output_names), (
-            "Listener pipeline must not contain transport.output() (D-11)"
+        # repr() includes the mock name set in _FakeDailyTransport.output()
+        reprs = [repr(el) for el in pipeline.elements]
+        assert not any("output" in r for r in reprs), (
+            f"Listener pipeline must not contain transport.output() (D-11); elements={reprs}"
         )
 
     def test_room_url_not_on_returned_pipeline(self, in_memory_db, monkeypatch):
@@ -86,8 +87,9 @@ class TestBuildDailyPipeline:
         """Pipeline includes a TranscriptProcessor element for speech-to-text routing."""
         monkeypatch.setenv("SQLITE_DB_PATH", in_memory_db)
         pipeline = build_daily_pipeline(FAKE_ROOM_URL, FAKE_TOKEN, FAKE_SESSION_ID)
-        # TranscriptProcessor.user() mock name contains "transcript_proc"
-        names = [getattr(el, "name", "") for el in pipeline.elements]
-        assert any("transcript" in n.lower() for n in names), (
-            "Pipeline must include a TranscriptProcessor user() element"
+        # MagicMock.__str__ returns the mock name (e.g. "transcript_proc.user()")
+        # Use repr/str to get the descriptive name set in conftest._FakeTranscriptProc.user()
+        reprs = [repr(el) for el in pipeline.elements]
+        assert any("transcript" in r.lower() for r in reprs), (
+            f"Pipeline must include a TranscriptProcessor user() element; elements={reprs}"
         )
