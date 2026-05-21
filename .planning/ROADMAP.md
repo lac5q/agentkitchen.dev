@@ -533,7 +533,7 @@ that unblock all downstream features.
 
 - [x] **Phase 70: Foundation + Engine Core** — WAL fix + HIL edit-and-continue + multi-hop retry/rollback + memory adapter interface (completed 2026-05-21)
 - [x] **Phase 71: Recall + HIL SLA + Voice** — LLM semantic recall + SLA escalation timers + Daily.co meeting bot as a governed memory-ingestion channel (completed 2026-05-21)
-- [ ] **Phase 72: Cross-Project Recall + Behavioral W-lift + UI + Skills** — cross-project recall, true behavioral W-lift, flow trigger/freshness UI, cross-harness skills registry, evidence bundles, governed skill contracts
+- [x] **Phase 72: Cross-Project Recall + Behavioral W-lift + UI + Skills** — cross-project recall, true behavioral W-lift, flow trigger/freshness UI, cross-harness skills registry, evidence bundles, governed skill contracts (completed 2026-05-21)
 
 ### Phase 70: Foundation + Engine Core
 **Goal**: Operators can edit a paused orchestration task's state before resuming, multi-agent chains recover from mid-chain failure via per-hop retry and declarative rollback, and memory backends are swappable behind a stable adapter interface.
@@ -608,4 +608,4 @@ Plans:
 |-------|----------|---------------|--------|-----------|
 | 70 | v4.0 | 5/5 | Complete   | 2026-05-21 |
 | 71 | v4.0 | 6/6 | Complete | 2026-05-21 |
-| 72 | v4.0 | 5/6 | In Progress|  |
+| 72 | v4.0 | 6/6 | Complete   | 2026-05-21 |

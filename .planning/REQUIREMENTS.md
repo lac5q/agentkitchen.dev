@@ -58,7 +58,7 @@
 
 - [x] **SKILL-01**: `skill_registry` table stores normalized skill definitions imported from Claude/OpenAI/Gemini harnesses (SKILL.md format) with governed contract fields: preconditions, allowed tools, risk tier, verification checks, owner, rollback behavior, and dispatch status
 - [x] **SKILL-02**: Operator can import a SKILL.md file and have it normalized and stored in the registry
-- [ ] **SKILL-03**: A2A dispatcher looks up the skill registry before falling back to per-agent instructions
+- [x] **SKILL-03**: A2A dispatcher looks up the skill registry before falling back to per-agent instructions
 - [x] **SKILL-04**: Skills UI shows all registered skills, their source harness, dispatch status, and contract completeness
 
 ---

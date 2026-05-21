@@ -6,15 +6,15 @@ current_phase: 72
 current_phase_name: cross-project-recall-behavioral-w-lift-ui-skills
 current_plan: 6
 status: executing
-stopped_at: "Phase 72 Plan 05 complete: all 3 tasks done (registry parser + import API + Skills UI). Ready for Plan 06."
-last_updated: "2026-05-21T21:04:10Z"
+stopped_at: "Phase 72 Plan 06 complete. All 3 tasks done: skill-lookup module (TDD), dispatcher integration, evidence integration. Phase 72 fully complete."
+last_updated: "2026-05-21T21:16:32.614Z"
 last_activity: 2026-05-21
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 17
-  completed_plans: 14
-  percent: 67
+  completed_plans: 17
+  percent: 100
 ---
 
 # State: Memroos
@@ -30,14 +30,14 @@ See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 Current Phase: 72
 Current Phase Name: cross-project-recall-behavioral-w-lift-ui-skills
-Current Plan: 5
+Current Plan: 6
 Total Phases: 3
 Total Plans in Phase: 6
-Progress: [█████████░] 88%
+Progress: [██████████] 100%
 Status: Ready to execute
 
 Phase: 72 (cross-project-recall-behavioral-w-lift-ui-skills) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Wave 1 (complete): 71-01 recall foundation, 71-03 HIL SLA engine, 71-05 voice Daily bot
 Wave 2 (complete): 71-02 recall endpoint+job, 71-04 HIL dashboard, 71-06 voice consent UI
 Deployment closeout: merged to `main` at c2ff997, pushed to origin, rebuilt, restarted `com.memroos` launchd service on port 3002, and verified `https://memroos.epiloguecapital.com/login` returned HTTP 200.
@@ -73,6 +73,13 @@ Last activity: 2026-05-21
 - Treat voice as an ingestion surface for memory, not a standalone product pillar.
 - Frame `qmd update` UI work as context freshness and source evidence, not as a search-admin feature.
 - Phase 72 should make evidence bundles and governed skill contracts explicit in acceptance criteria because they explain what memory was consumed, what tools ran, which checks passed, and what can be replayed or rolled back.
+
+### Decisions (Phase 72 Plan 06)
+
+- **Skill dispatch lookup key is skill_name:** Optional string in dispatch request body — no new mapping table needed; dispatchers pass skill_name when they want governed execution
+- **SQL WHERE enforces enabled+complete at DB layer:** fail-closed is not a JS post-filter; `dispatch_status='enabled' AND completeness_pct=100` is in the SQL query so no future code path can bypass it
+- **Evidence never includes untrusted body text:** SkillContractSummary exposes only id/name/source_harness/risk_tier/dispatch_status/completeness_pct — raw_body, preconditions, allowed_tools, verification_checks excluded from all evidence paths
+- **Fallback path preserved:** no skill_name → null result → existing adapter dispatch proceeds unchanged; no governance overhead on non-governed tasks
 
 ### Decisions (Phase 72 Plan 05)
 
@@ -142,6 +149,7 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 | Phase 72 P02 | 15m | 3 tasks | 7 files |
 | Phase 72 P04 | 40m | 3 tasks | 6 files |
 | Phase 72 P05 | 36m | 3 tasks | 7 files |
+| Phase 72 P06 | 12m | 3 tasks | 4 files |
 
 ### Blockers/Concerns (verified)
 
@@ -191,7 +199,7 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-21T21:04:10Z
+Last session: 2026-05-21T21:16:28.155Z
 Stopped at: Phase 72 Plan 05 complete. All 3 tasks done: registry parser (TDD), import API, Skills UI.
 Resume file: None
 Next action: Execute Phase 72 Plan 06
