@@ -15,7 +15,7 @@ provides:
   - POST /api/dispatch: skill_name param → registry check before adapter dispatch
   - 403 SKILL_GOVERNANCE_DENIED: disabled/incomplete/review/not-found contracts fail closed with audit log
   - evidence.skill_governance merged into every DispatchResult (selected skill or denial reason)
-  - 12 tests covering all lookup paths, security (no raw_body leak), and evidence shape
+  - 14 tests covering all lookup paths, security (no raw_body leak), evidence shape, and multi-harness non-determinism
 
 affects:
   - apps/memroos/src/lib/dispatch/types.ts (DispatchTask.skill_name added, SkillGovernanceEvidence type)
@@ -74,13 +74,14 @@ completed: 2026-05-21T21:20:00Z
 - Approved skill hit or fallback → adapter dispatch proceeds, evidence merged into result
 - `DispatchTask` extended with `skill_name?: string`
 - `SkillGovernanceEvidence` type added to `types.ts`
-- All 34 dispatch tests pass; `npm run build` succeeds
+- All 36 dispatch tests pass; `npm run build` succeeds
 
 ## Task Commits
 
 1. **Task 1 RED: Skill dispatch tests** — `01c3148`
 2. **Task 1 GREEN: Implement skill-lookup.ts** — `2cc78c9`
 3. **Task 2: Dispatcher registry lookup integration** — `5b44fcb`
+4. **Fix: Move SQL filter into WHERE clause + multi-harness tests** — `86675cf`
 
 *Note: Task 3 evidence integration was executed as part of Task 2's implementation — the `buildSkillEvidence` function and route response merging were implemented in a single atomic commit. No separate Task 3 commit was needed as all evidence shape requirements were satisfied in the `skill-lookup.ts` + route integration commit.*
 
@@ -89,6 +90,18 @@ completed: 2026-05-21T21:20:00Z
 ### Task Boundary (Non-Material)
 
 Tasks 2 and 3 were collapsed into one commit. The plan separated "dispatcher registry lookup" (Task 2) from "evidence integration" (Task 3), but the evidence builder (`buildSkillEvidence`) is a pure function tightly coupled to the lookup result type — splitting them into separate commits would have required implementing a stub evidence function and replacing it, adding noise with no value. Both Task 2 and Task 3 verify steps pass from the same commit.
+
+### [Rule 1 - Bug] SQL fail-closed filter was in JS, not SQL WHERE clause
+
+**Found during:** Post-implementation review (self-check / advisor review)
+**Issue:** Initial `lookupSkillContract` used `WHERE name = ? LIMIT 1` then checked `dispatch_status` in TypeScript. With `UNIQUE(name, source_harness)` the same skill name can appear in multiple harnesses with different statuses. The `LIMIT 1` without `ORDER BY` was non-deterministic — SQLite could return a disabled row even when an enabled row existed.
+**Fix:** Split into two queries: (1) `WHERE name=? AND dispatch_status='enabled' AND completeness_pct=100 ORDER BY imported_at DESC LIMIT 1` for the hit path, (2) `WHERE name=? ORDER BY imported_at DESC LIMIT 1` for denial info when step 1 returns nothing. Added 2 multi-harness tests.
+**Files modified:** `apps/memroos/src/lib/dispatch/skill-lookup.ts`, `apps/memroos/src/lib/dispatch/__tests__/skill-dispatch.test.ts`
+**Commit:** `86675cf`
+
+### CLAUDE.md GitNexus Impact Analysis Skipped
+
+CLAUDE.md requires `gitnexus_impact` before editing any symbol and `gitnexus_detect_changes` before committing. The dispatch route POST handler (high blast radius) was modified without running these tools. GitNexus was not available as an MCP tool in this execution context. This is logged as a deviation; the change is purely additive (new optional `skill_name` field, new pre-flight check returning 403 on governance denial) and does not alter existing dispatch paths when `skill_name` is absent.
 
 ## Known Stubs
 
@@ -103,11 +116,12 @@ None — all evidence fields are real (DB values), no placeholders.
 ## Self-Check: PASSED
 
 - `apps/memroos/src/lib/dispatch/skill-lookup.ts` — FOUND
-- `apps/memroos/src/lib/dispatch/__tests__/skill-dispatch.test.ts` — FOUND
+- `apps/memroos/src/lib/dispatch/__tests__/skill-dispatch.test.ts` — FOUND (14 tests)
 - `apps/memroos/src/lib/dispatch/types.ts` — FOUND (DispatchTask.skill_name + SkillGovernanceEvidence added)
 - `apps/memroos/src/app/api/dispatch/route.ts` — FOUND (skill check integrated)
 - Commit `01c3148` (RED tests) — FOUND
 - Commit `2cc78c9` (GREEN impl) — FOUND
 - Commit `5b44fcb` (dispatcher integration) — FOUND
-- All 34 dispatch tests pass: VERIFIED
+- Commit `86675cf` (SQL fix + multi-harness tests) — FOUND
+- All 36 dispatch tests pass: VERIFIED
 - `npm run build` passes: VERIFIED
