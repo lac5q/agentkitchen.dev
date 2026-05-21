@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#050816"/><stop offset="1" stop-color="#111827"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="20" stdDeviation="22" flood-color="#000" flood-opacity="0.35"/></filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M2,2 L10,6 L2,10" fill="none" stroke="#94A3B8" stroke-width="2"/></marker>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <g opacity="0.22" stroke="#1E293B" stroke-width="1">
+    <path d="M0 80H1600M0 160H1600M0 240H1600M0 320H1600M0 400H1600M0 480H1600M0 560H1600M0 640H1600M0 720H1600M0 800H1600"/>
+    <path d="M80 0V900M160 0V900M240 0V900M320 0V900M400 0V900M480 0V900M560 0V900M640 0V900M720 0V900M800 0V900M880 0V900M960 0V900M1040 0V900M1120 0V900M1200 0V900M1280 0V900M1360 0V900M1440 0V900M1520 0V900"/>
+  </g>
+  <text x="80" y="92" fill="#FAFAF7" font-family="Arial, sans-serif" font-weight="700" font-size="54">MemroOS architecture</text>
+  <text x="82" y="140" fill="#CBD5E1" font-family="Arial, sans-serif" font-size="26">Context plane before dispatch. Proof trail after execution.</text>
+  <g stroke="#94A3B8" stroke-width="3" fill="none" marker-end="url(#arrow)">
+    <path d="M360 330 C470 330 510 330 610 330"/><path d="M360 480 C470 480 510 480 610 480"/>
+    <path d="M920 330 C1010 330 1040 330 1130 330"/><path d="M920 480 C1010 480 1040 480 1130 480"/>
+    <path d="M775 545 C775 610 775 640 775 690"/>
+  </g>
+  <g filter="url(#shadow)" font-family="Arial, sans-serif">
+    <g><rect x="90" y="250" width="270" height="120" rx="22" fill="#0F172A" stroke="#22D3EE" stroke-width="3"/><text x="130" y="308" fill="#FAFAF7" font-weight="700" font-size="28">Agent runtimes</text><text x="130" y="346" fill="#CBD5E1" font-size="20">Hermes, Codex, ADK</text></g>
+    <g><rect x="90" y="425" width="270" height="120" rx="22" fill="#0F172A" stroke="#22D3EE" stroke-width="3"/><text x="130" y="483" fill="#FAFAF7" font-weight="700" font-size="28">Operators</text><text x="130" y="521" fill="#CBD5E1" font-size="20">Pause, approve, review</text></g>
+    <g><rect x="610" y="250" width="310" height="295" rx="28" fill="#111827" stroke="#A8392C" stroke-width="4"/><text x="666" y="322" fill="#FAFAF7" font-weight="700" font-size="34">MemroOS</text><text x="666" y="366" fill="#CBD5E1" font-size="22">Memory search</text><text x="666" y="406" fill="#CBD5E1" font-size="22">Knowledge health</text><text x="666" y="446" fill="#CBD5E1" font-size="22">Agent registry</text><text x="666" y="486" fill="#CBD5E1" font-size="22">Workflow ledger</text></g>
+    <g><rect x="1130" y="250" width="330" height="120" rx="22" fill="#0F172A" stroke="#34D399" stroke-width="3"/><text x="1170" y="308" fill="#FAFAF7" font-weight="700" font-size="28">Dispatch paths</text><text x="1170" y="346" fill="#CBD5E1" font-size="20">A2A routes and tools</text></g>
+    <g><rect x="1130" y="425" width="330" height="120" rx="22" fill="#0F172A" stroke="#A78BFA" stroke-width="3"/><text x="1170" y="483" fill="#FAFAF7" font-weight="700" font-size="28">Evidence store</text><text x="1170" y="521" fill="#CBD5E1" font-size="20">Sources, outcomes, audit</text></g>
+    <g><rect x="610" y="690" width="330" height="100" rx="22" fill="#0F172A" stroke="#FBBF24" stroke-width="3"/><text x="652" y="748" fill="#FAFAF7" font-weight="700" font-size="28">Local-first app</text><text x="652" y="778" fill="#CBD5E1" font-size="18">Run, inspect, and extend</text></g>
+  </g>
+  <text x="80" y="840" fill="#CBD5E1" font-family="Arial, sans-serif" font-size="24">memroos.com</text>
+  <text x="1240" y="840" fill="#CBD5E1" font-family="Arial, sans-serif" font-size="24">github.com/lac5q/memroos</text>
+</svg>
