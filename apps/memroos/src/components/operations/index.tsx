@@ -1,19 +1,84 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { NOC, NOC_FONT_BODY } from "@/lib/noc-theme";
 import { NocHeader } from "./noc-header";
 import { PulseStrip } from "./pulse-strip";
-import { EfficiencySignals } from "./efficiency-signals";
-import { MemoryConsumption } from "./memory-consumption";
-import { MemoryNotDigested } from "./memory-not-digested";
-import { AgentWorkload } from "./agent-workload";
-import { ModelUtility } from "./model-utility";
-import { ActivityHeatmap } from "./activity-heatmap";
-import { SkillsLifecycle } from "./skills-lifecycle";
-import { BehaviorSignals } from "./behavior-signals";
-import { EngagementConsole } from "./engagement-console";
-import { GovernanceStrip } from "./governance-strip";
-import { Savings, Waste } from "./savings-waste";
+
+function NocPanelSkeleton({ height = 220 }: { height?: number }) {
+  return (
+    <div
+      style={{
+        minHeight: height,
+        background: NOC.paper,
+        border: `1px solid ${NOC.rule}`,
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          height: 42,
+          borderBottom: `1px solid ${NOC.rule}`,
+          background: NOC.fog,
+        }}
+      />
+      <div style={{ padding: 14, display: "grid", gap: 10 }}>
+        <div style={{ height: 14, width: "48%", background: NOC.rule }} />
+        <div style={{ height: 40, background: NOC.rule }} />
+        <div style={{ height: 40, background: NOC.rule }} />
+      </div>
+    </div>
+  );
+}
+
+const EfficiencySignals = dynamic(
+  () => import("./efficiency-signals").then((mod) => mod.EfficiencySignals),
+  { loading: () => <div style={{ padding: "0 28px 14px" }}><NocPanelSkeleton height={190} /></div> }
+);
+const MemoryConsumption = dynamic(
+  () => import("./memory-consumption").then((mod) => mod.MemoryConsumption),
+  { loading: () => <NocPanelSkeleton height={320} /> }
+);
+const MemoryNotDigested = dynamic(
+  () => import("./memory-not-digested").then((mod) => mod.MemoryNotDigested),
+  { loading: () => <NocPanelSkeleton height={320} /> }
+);
+const AgentWorkload = dynamic(
+  () => import("./agent-workload").then((mod) => mod.AgentWorkload),
+  { loading: () => <NocPanelSkeleton /> }
+);
+const ModelUtility = dynamic(
+  () => import("./model-utility").then((mod) => mod.ModelUtility),
+  { loading: () => <NocPanelSkeleton /> }
+);
+const ActivityHeatmap = dynamic(
+  () => import("./activity-heatmap").then((mod) => mod.ActivityHeatmap),
+  { loading: () => <NocPanelSkeleton /> }
+);
+const SkillsLifecycle = dynamic(
+  () => import("./skills-lifecycle").then((mod) => mod.SkillsLifecycle),
+  { loading: () => <div style={{ padding: "0 28px 14px" }}><NocPanelSkeleton height={260} /></div> }
+);
+const BehaviorSignals = dynamic(
+  () => import("./behavior-signals").then((mod) => mod.BehaviorSignals),
+  { loading: () => <NocPanelSkeleton height={260} /> }
+);
+const EngagementConsole = dynamic(
+  () => import("./engagement-console").then((mod) => mod.EngagementConsole),
+  { loading: () => <NocPanelSkeleton height={260} /> }
+);
+const GovernanceStrip = dynamic(
+  () => import("./governance-strip").then((mod) => mod.GovernanceStrip),
+  { loading: () => <NocPanelSkeleton /> }
+);
+const Savings = dynamic(
+  () => import("./savings-waste").then((mod) => mod.Savings),
+  { loading: () => <NocPanelSkeleton /> }
+);
+const Waste = dynamic(
+  () => import("./savings-waste").then((mod) => mod.Waste),
+  { loading: () => <NocPanelSkeleton /> }
+);
 
 export function OperationsNoc() {
   return (
