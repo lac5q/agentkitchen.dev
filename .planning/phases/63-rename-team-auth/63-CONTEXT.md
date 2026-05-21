@@ -231,8 +231,8 @@ Backlog status: promoted to `.planning/REQUIREMENTS.md` as `AUTH-FOLLOWUP-01..03
 - Docker compose service key rename from `memroos` to `memroos` (evaluate in Phase 66 if needed; breaking change for operators with existing compose overrides)
 </deferred>
 
-<open_questions>
-## Open Questions — Resolved
+<resolved_questions>
+## Resolved Questions
 
 1. **Rename in one commit or staged?** — One commit. See Decision 1.
 2. **Rename `apps/memroos/` directory?** — No. See Decision 1 rationale.
@@ -242,4 +242,4 @@ Backlog status: promoted to `.planning/REQUIREMENTS.md` as `AUTH-FOLLOWUP-01..03
 6. **Invite flow: email or link?** — Invite link for v1. See Decision 5.
 7. **`authorizeRegistryWrite` replaced or extended?** — Extended (kept). See Decision 6.
 8. **`bcrypt` dependency?** — `bcryptjs` (pure JS). Verify against current deps before adding.
-</open_questions>
+</resolved_questions>
