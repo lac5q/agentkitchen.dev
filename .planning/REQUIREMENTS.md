@@ -11,8 +11,8 @@
 - [x] **HIL-01**: Operator can modify declared task state fields via a dedicated edit UI before resuming a paused LangGraph thread (Python endpoint complete in 70-02; TS route/client/UI pending 70-05)
 - [x] **HIL-02**: System validates edited field values against `OrchestrationState` schema before accepting the update (Python validation complete in 70-02; TS proxy validation pending 70-05)
 - [x] **HIL-03**: Audit log records who edited a HIL task, which fields changed, and before/after values (Python lineage row complete in 70-02; authenticated operator identity through TS proxy pending 70-05)
-- [ ] **HIL-04**: Each HIL interrupt type has a configurable SLA deadline stored as an ISO timestamp
-- [ ] **HIL-05**: Background scheduler proactively checks for expired HIL tasks every 60s and triggers escalation actions (notify, auto-resolve, or abandon)
+- [x] **HIL-04**: Each HIL interrupt type has a configurable SLA deadline stored as an ISO timestamp
+- [x] **HIL-05**: Background scheduler proactively checks for expired HIL tasks every 60s and triggers escalation actions (notify, auto-resolve, or abandon)
 - [ ] **HIL-06**: Operator can view pending HIL items with countdown timers and SLA traffic-light status in the dashboard
 
 ### Orchestration: Multi-Hop Retry + Rollback
