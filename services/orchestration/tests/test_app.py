@@ -119,6 +119,11 @@ class OrchestrationAppTest(unittest.TestCase):
             [200],
             f"Expected 200 for valid edit after implementation; got {valid_edit.status_code}",
         )
+        # Response contract verification (Plan 05 depends on this shape)
+        body = valid_edit.json()
+        self.assertTrue(body.get("ok"), "Response must include ok=true")
+        self.assertIn("editedFields", body, "Response must include editedFields list")
+        self.assertIn("taskSummary", body["editedFields"], "Edited field must appear in editedFields")
 
         unknown_key_edit = self.client.patch(
             f"/hil/{hil_id}/edit",
