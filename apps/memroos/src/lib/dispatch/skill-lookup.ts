@@ -84,12 +84,44 @@ export function lookupSkillContract(
 
   const name = skillName.trim();
 
-  // First: check if any contract exists for this name (any status)
+  // Step 1: attempt an enabled+complete lookup in SQL.
+  // The fail-closed filter lives in WHERE — not in JS — so no disabled row
+  // can slip through, even when multiple harnesses share the same skill name.
+  // (skill_registry has UNIQUE(name, source_harness); same name may appear in
+  //  multiple harnesses with different statuses.)
+  const enabledRow = db
+    .prepare<[string], SkillRow>(
+      `SELECT id, name, source_harness, risk_tier, dispatch_status, completeness_pct
+         FROM skill_registry
+        WHERE name = ?
+          AND dispatch_status = 'enabled'
+          AND completeness_pct = 100
+        ORDER BY imported_at DESC
+        LIMIT 1`
+    )
+    .get(name);
+
+  if (enabledRow) {
+    // A valid, enabled, complete contract found — return safe summary only
+    const summary: SkillContractSummary = {
+      id: enabledRow.id,
+      name: enabledRow.name,
+      source_harness: enabledRow.source_harness,
+      risk_tier: enabledRow.risk_tier,
+      dispatch_status: enabledRow.dispatch_status,
+      completeness_pct: enabledRow.completeness_pct,
+    };
+    return { kind: "hit", skill: summary };
+  }
+
+  // Step 2: no enabled+complete row. Check whether any contract exists at all
+  // so we can produce an informative denial (vs. not-found).
   const anyRow = db
     .prepare<[string], SkillRow>(
       `SELECT id, name, source_harness, risk_tier, dispatch_status, completeness_pct
          FROM skill_registry
         WHERE name = ?
+        ORDER BY imported_at DESC
         LIMIT 1`
     )
     .get(name);
@@ -103,36 +135,21 @@ export function lookupSkillContract(
     };
   }
 
-  // Second: check if the found contract is enabled+complete
-  // Fail closed: only dispatch_status='enabled' AND completeness_pct=100 passes
-  if (anyRow.dispatch_status !== "enabled" || anyRow.completeness_pct < 100) {
-    const statusLabel =
-      anyRow.dispatch_status === "disabled"
-        ? "disabled"
-        : anyRow.dispatch_status === "incomplete"
-          ? "incomplete"
-          : anyRow.dispatch_status === "review"
-            ? "under review"
-            : anyRow.dispatch_status;
-    return {
-      kind: "denied",
-      skill_name: name,
-      reason: `Skill contract is ${statusLabel} and cannot be used for governed dispatch`,
-      dispatch_status: anyRow.dispatch_status,
-    };
-  }
-
-  // Return safe summary only — no untrusted body text
-  const summary: SkillContractSummary = {
-    id: anyRow.id,
-    name: anyRow.name,
-    source_harness: anyRow.source_harness,
-    risk_tier: anyRow.risk_tier,
+  // Contract exists but is not enabled+complete — deny with informative reason
+  const statusLabel =
+    anyRow.dispatch_status === "disabled"
+      ? "disabled"
+      : anyRow.dispatch_status === "incomplete"
+        ? "incomplete"
+        : anyRow.dispatch_status === "review"
+          ? "under review"
+          : anyRow.dispatch_status;
+  return {
+    kind: "denied",
+    skill_name: name,
+    reason: `Skill contract is ${statusLabel} and cannot be used for governed dispatch`,
     dispatch_status: anyRow.dispatch_status,
-    completeness_pct: anyRow.completeness_pct,
   };
-
-  return { kind: "hit", skill: summary };
 }
 
 // ---------------------------------------------------------------------------

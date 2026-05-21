@@ -249,6 +249,33 @@ describe("lookupSkillContract", () => {
     const denied = lookupSkillContract(db, "dual-skill-disabled");
     expect(denied!.kind).toBe("denied");
   });
+
+  it("multi-harness: same skill name enabled in one harness, disabled in another — returns the enabled hit (not non-deterministic)", async () => {
+    const { lookupSkillContract } = await getSkillLookup();
+    // Same name 'shared-skill' exists in two harnesses with different statuses
+    // UNIQUE(name, source_harness) allows this
+    insertSkill(db, { name: "shared-skill", source_harness: "openai", dispatch_status: "disabled", completeness_pct: 100 });
+    insertSkill(db, { name: "shared-skill", source_harness: "claude", dispatch_status: "enabled", completeness_pct: 100 });
+
+    const result = lookupSkillContract(db, "shared-skill");
+    // Must find the enabled hit, not non-deterministically return the disabled one
+    expect(result).not.toBeNull();
+    expect(result!.kind).toBe("hit");
+    if (result!.kind !== "hit") throw new Error("narrow");
+    expect(result!.skill.source_harness).toBe("claude");
+    expect(result!.skill.dispatch_status).toBe("enabled");
+  });
+
+  it("multi-harness: same skill name disabled in all harnesses — returns denial (not a hit)", async () => {
+    const { lookupSkillContract } = await getSkillLookup();
+    insertSkill(db, { name: "all-disabled", source_harness: "openai", dispatch_status: "disabled", completeness_pct: 100 });
+    insertSkill(db, { name: "all-disabled", source_harness: "claude", dispatch_status: "disabled", completeness_pct: 100 });
+
+    const result = lookupSkillContract(db, "all-disabled");
+    expect(result!.kind).toBe("denied");
+    if (result!.kind !== "denied") throw new Error("narrow");
+    expect(result!.reason).toMatch(/disabled/i);
+  });
 });
 
 describe("buildSkillEvidence", () => {
