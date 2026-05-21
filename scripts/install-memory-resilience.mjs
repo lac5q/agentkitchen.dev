@@ -25,6 +25,7 @@ const jobs = [
       MEMORY_HEALTHCHECK_ONLY: "1",
       MEMORY_INDEX_DAYS: "2",
       QMD_MAX_PENDING_EMBEDDINGS: "10000",
+      MEM0_WRITE_TIMEOUT_SECONDS: "45",
     },
   },
   {

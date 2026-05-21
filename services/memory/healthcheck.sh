@@ -353,7 +353,8 @@ fi
 
 # ── Check 3: Embeddings (Mem0 add round-trip) ────────────────────────────────
 log "Checking embedding pipeline (Mem0 /memory/add round-trip)..."
-EMBED_RESP=$(curl -s --max-time 20 -X POST "$MEM0_URL/memory/add" \
+MEM0_WRITE_TIMEOUT_SECONDS="${MEM0_WRITE_TIMEOUT_SECONDS:-45}"
+EMBED_RESP=$(curl -s --max-time "$MEM0_WRITE_TIMEOUT_SECONDS" -X POST "$MEM0_URL/memory/add" \
   -H "Content-Type: application/json" \
   -d '{"agent_id":"healthcheck","text":"healthcheck ping test"}' \
   2>/dev/null)
@@ -383,7 +384,10 @@ elif echo "$EMBED_OK" | grep -q "^error:"; then
 - Error: ${EMBED_OK#error:}
 - Check Ollama is running and local models are pulled: \`qwen2.5:3b\`, \`nomic-embed-text\`"
 else
-  log "Embeddings: unexpected response ($EMBED_OK) — not alerting"
+  alert "embeddings_fail" "Embedding pipeline returned *unexpected/no response*
+- Result: ${EMBED_OK}
+- Timeout: ${MEM0_WRITE_TIMEOUT_SECONDS}s
+- Check \`tail -50 $MEM0_LOG_DIR/mem0-server.log\`"
 fi
 
 if [ "${MEMORY_HEALTHCHECK_ONLY:-0}" = "1" ]; then

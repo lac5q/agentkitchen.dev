@@ -280,6 +280,44 @@ def test_health_degrades_when_memory_queue_has_pending_saves(monkeypatch, tmp_pa
     assert health.queue["queued"] == 1
 
 
+def test_health_degrades_when_mem0_runtime_is_unavailable(monkeypatch, tmp_path):
+    module = load_mem0_server(monkeypatch, "mem0_server_runtime_health_under_test")
+
+    class FakeQdrantClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def get_collections(self):
+            return []
+
+    monkeypatch.setattr(module, "QDRANT_AVAILABLE", True)
+    monkeypatch.setattr(module, "QdrantClient", FakeQdrantClient)
+    monkeypatch.setattr(module, "QUEUE_DB_PATH", tmp_path / "queue.db")
+    monkeypatch.setattr(module, "check_disk_space", lambda: {"critical": False})
+    monkeypatch.setattr(module, "check_sqlite_db", lambda: {"status": "healthy"})
+    monkeypatch.setattr(
+        module,
+        "check_mem0_runtime",
+        lambda: {"status": "unavailable", "error": "No module named 'mem0'"},
+    )
+    monkeypatch.setattr(
+        module,
+        "load_config",
+        lambda: {
+            "vector_store": {
+                "provider": "qdrant",
+                "config": {"url": "http://qdrant.test", "collection_name": "agent_memory_local"},
+            }
+        },
+    )
+
+    health = module.health()
+
+    assert health.status == "degraded"
+    assert health.vector_store == "connected"
+    assert health.memory_runtime["status"] == "unavailable"
+
+
 def test_lifespan_starts_queue_replay_worker(monkeypatch):
     module = load_mem0_server(monkeypatch, "mem0_server_lifespan_under_test")
     created = []

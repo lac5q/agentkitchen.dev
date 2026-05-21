@@ -85,11 +85,15 @@ async function _checkVectorHealthDirect(): Promise<MemoryTierHealth> {
     const details: string[] = [];
     const queued = typeof body.queue?.queued === "number" ? body.queue.queued : 0;
     const vectorStore = typeof body.vector_store === "string" ? body.vector_store : "unknown";
+    const runtime = body.memory_runtime as { status?: string; error?: string } | undefined;
 
     if (body.status === "degraded") details.push("mem0 reports degraded");
     if (queued > 0) details.push(`${queued} queued memory saves`);
-    if (vectorStore !== "connected" && vectorStore !== "unknown") {
+    if (vectorStore !== "connected") {
       details.push(`vector store ${vectorStore}`);
+    }
+    if (runtime?.status && runtime.status !== "available") {
+      details.push(`runtime ${runtime.status}${runtime.error ? `: ${runtime.error}` : ""}`);
     }
 
     return {

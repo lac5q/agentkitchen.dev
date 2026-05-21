@@ -340,6 +340,7 @@ class DeleteResponse(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     vector_store: str
+    memory_runtime: Optional[dict] = None
     disk: Optional[dict] = None
     sqlite: Optional[dict] = None
     queue: Optional[dict] = None
@@ -363,6 +364,15 @@ class FailureLogResponse(BaseModel):
     oldest: Optional[str] = None  # local time of oldest
     newest: Optional[str] = None  # local time of newest
     time_range: Optional[str] = None  # "Mar 28 07:17 — Mar 28 12:23"
+
+
+def check_mem0_runtime() -> dict:
+    """Verify the mem0 package import path before declaring the service healthy."""
+    try:
+        from mem0 import Memory  # noqa: F401
+        return {"status": "available"}
+    except Exception as exc:
+        return {"status": "unavailable", "error": str(exc)}
 
 
 # ---------------------------------------------------------------------------
@@ -510,11 +520,12 @@ def delete_memory(memory_id: str):
 
 @app.get("/health", response_model=HealthResponse)
 def health():
-    """Health check — verifies vector store, disk, SQLite, and queued writes."""
+    """Health check — verifies mem0 runtime, vector store, disk, SQLite, and queued writes."""
     cfg = load_config()
     vector_provider = cfg.get("vector_store", {}).get("provider", "unknown")
     vector_cfg = cfg.get("vector_store", {}).get("config", {})
 
+    runtime_status = check_mem0_runtime()
     vector_status = "unknown"
     if vector_provider == "qdrant" and QDRANT_AVAILABLE:
         try:
@@ -562,16 +573,21 @@ def health():
     if sqlite_status.get("status") != "healthy":
         log_failure("sqlite_unhealthy", sqlite_status)
 
+    if runtime_status.get("status") != "available":
+        log_failure("mem0_runtime_unavailable", runtime_status)
+
     queued_count = queue_status.get("queued")
     queue_ok = queued_count in (0, None) and queue_status.get("status") != "error"
     is_ok = (
-        (vector_status == "connected" or vector_status == "unknown")
+        runtime_status.get("status") == "available"
+        and vector_status == "connected"
         and not disk_status.get("critical")
         and queue_ok
     )
     return HealthResponse(
         status="ok" if is_ok else "degraded",
         vector_store=vector_status,
+        memory_runtime=runtime_status,
         disk=disk_status,
         sqlite=sqlite_status,
         queue=queue_status,

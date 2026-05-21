@@ -28,8 +28,33 @@ elif [ -f "${KNOWLEDGE_VENV:-$HOME/github/knowledge/.venv}/bin/activate" ]; then
     source "${KNOWLEDGE_VENV:-$HOME/github/knowledge/.venv}/bin/activate"
 fi
 
+PYTHON_BIN="${PYTHON_BIN:-$(command -v python3 || command -v python)}"
+
+if ! "$PYTHON_BIN" - <<'PY' >> "$LOG_FILE" 2>&1
+import importlib
+import sys
+
+missing = []
+for module in ("fastapi", "uvicorn", "yaml", "qdrant_client", "httpx", "mem0"):
+    try:
+        importlib.import_module(module)
+    except Exception as exc:
+        missing.append(f"{module}: {exc}")
+
+if missing:
+    print("Mem0 service dependency check failed:")
+    for item in missing:
+        print(f"- {item}")
+    sys.exit(1)
+PY
+then
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: memory service dependencies missing." | tee -a "$LOG_FILE"
+    echo "Run: cd \"$SCRIPT_DIR/../..\" && .venv/bin/python3 -m pip install -r services/memory/requirements.txt" | tee -a "$LOG_FILE"
+    exit 1
+fi
+
 # Start uvicorn (will run in foreground)
-exec uvicorn mem0-server:app \
+exec "$PYTHON_BIN" -m uvicorn mem0-server:app \
     --host 0.0.0.0 \
     --port 3201 \
     --log-level info \
