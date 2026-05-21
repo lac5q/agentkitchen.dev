@@ -1,7 +1,7 @@
 name: Workflow feedback
 description: Share where your agent workflow loses context or proof.
 title: "[Workflow feedback]: "
-labels: ["feedback"]
+labels: ["feedback", "needs-triage"]
 body:
   - type: textarea
     id: workflow
