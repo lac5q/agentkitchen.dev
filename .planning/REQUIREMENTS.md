@@ -29,9 +29,9 @@
 
 ### Voice Meeting Bot
 
-- [ ] **VOICE-06**: Pipecat meeting bot pipeline joins Daily.co rooms via `DailyTransport` (room URL + token from env/API)
-- [ ] **VOICE-07**: Real-time transcript per speaker written to `messages` table; meeting highlights surfaced to `hive_actions`
-- [ ] **VOICE-08**: Meeting URL and join tokens never logged to `audit_log`; recording consent UI shown before joining
+- [x] **VOICE-06**: Pipecat meeting bot pipeline joins Daily.co rooms via `DailyTransport` (room URL + token from env/API)
+- [x] **VOICE-07**: Real-time transcript per speaker written to `messages` table; meeting highlights surfaced to `hive_actions`
+- [x] **VOICE-08**: Meeting URL and join tokens never logged to `audit_log`; recording consent UI shown before joining
 
 ### LLM-Powered Recall Scoring
 

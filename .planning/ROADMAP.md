@@ -534,7 +534,7 @@ Plans:
 - [ ] 71-02-PLAN.md — Semantic/hybrid recall endpoint + background embedding job (wave 2)
 - [ ] 71-03-PLAN.md — HIL SLA action config + 60s escalation scheduler (wave 1)
 - [ ] 71-04-PLAN.md — HIL dashboard live countdown + SLA traffic-light (wave 2)
-- [ ] 71-05-PLAN.md — Daily.co meeting bot: DailyTransport pipeline + per-speaker transcripts (wave 1)
+- [x] 71-05-PLAN.md — Daily.co meeting bot: DailyTransport pipeline + per-speaker transcripts (wave 1)
 - [ ] 71-06-PLAN.md — Recording-consent gate + meeting join UI (wave 2)
 **UI hint**: yes
 
@@ -561,5 +561,5 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|----------|---------------|--------|-----------|
 | 70 | v4.0 | 5/5 | Complete   | 2026-05-21 |
-| 71 | v4.0 | 1/6 | In Progress|  |
+| 71 | v4.0 | 2/6 | In Progress|  |
 | 72 | v4.0 | 0/0 | Not started | - |
