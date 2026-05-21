@@ -5,8 +5,8 @@ from __future__ import annotations
 import os
 from typing import Any, Optional
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import FastAPI, Header, HTTPException
+from pydantic import BaseModel, ConfigDict, Field
 
 try:
     from .engine import OrchestrationEngine, OrchestrationStore
@@ -44,6 +44,24 @@ class ResolveHilRequest(BaseModel):
     actor: Optional[str] = None
 
 
+class HilEditRequest(BaseModel):
+    """Schema-validated edit payload for PATCH /hil/{id}/edit.
+
+    Fields mirror the editable subset of OrchestrationState.
+    Immutable fields (runId) and system-managed fields (status, approvalDecision)
+    are excluded. unknown keys are rejected with HTTP 422 (extra="forbid").
+
+    Security: T-70-02 — unknown keys rejected before update_state is called.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    taskSummary: Optional[str] = None
+    requiredCapability: Optional[str] = None
+    selectedAgentId: Optional[str] = None
+    requiresApproval: Optional[bool] = None
+
+
 class TaskFailureRequest(BaseModel):
     error: Optional[str] = None
 
@@ -78,6 +96,73 @@ def resolve_hil(decision_id: str, request: ResolveHilRequest) -> dict[str, Any]:
         return engine.resolve_hil(decision_id, request.decision, request.actor)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    finally:
+        engine.store.close()
+
+
+@app.patch("/hil/{decision_id}/edit")
+def edit_hil(
+    decision_id: str,
+    request: HilEditRequest,
+    x_operator_id: Optional[str] = Header(default=None, alias="x-operator-id"),
+) -> dict[str, Any]:
+    """Patch a paused HIL thread's state fields before resuming.
+
+    Validates the edit payload against HilEditRequest (extra keys → 422).
+    Accepts edits only when the run status is "waiting_for_approval" (status CAS,
+    T-70-05 mitigation). On success, writes a state_edit lineage row and returns
+    {ok: true, editedFields: [...]}.
+
+    Security note: The Python service port is internal; the TS proxy (Plan 05) adds
+    authorizeRegistryWrite. This endpoint is consistent with existing /hil/{id}/resolve
+    which also has no Python-level auth guard.
+    """
+    engine = get_engine()
+    try:
+        hil_decision = engine.store.get_hil_decision(decision_id)
+        if hil_decision is None:
+            raise HTTPException(status_code=404, detail=f"Unknown HIL decision: {decision_id}")
+
+        run_id = hil_decision["runId"]
+        correlation_id = hil_decision["correlationId"]
+
+        # Status CAS: accept edit only when run is waiting for approval (T-70-05)
+        run = engine.store.get_run(run_id)
+        if run is None:
+            raise HTTPException(status_code=404, detail=f"Unknown orchestration run: {run_id}")
+        if run["status"] != "waiting_for_approval":
+            raise HTTPException(
+                status_code=409,
+                detail=f"Cannot edit run '{run_id}' in status '{run['status']}' — must be 'waiting_for_approval'",
+            )
+
+        # Build the patch dict from non-None editable fields
+        patch = {k: v for k, v in request.model_dump().items() if v is not None}
+
+        # Actor identity from x-operator-id header; falls back to "operator"
+        actor = x_operator_id or "operator"
+
+        # Patch the LangGraph checkpoint (edit without resuming)
+        before: dict[str, Any] = {}
+        if engine.graph_runtime and patch:
+            edit_result = engine.graph_runtime.edit_and_checkpoint(run_id, patch)
+            before = edit_result.get("before", {})
+
+        # Write state_edit audit lineage row (HIL-03)
+        if patch:
+            engine.record_state_edit(
+                run_id=run_id,
+                correlation_id=correlation_id,
+                actor=actor,
+                patch=patch,
+                before=before,
+            )
+
+        return {"ok": True, "editedFields": list(patch.keys())}
+    except HTTPException:
+        raise
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     finally:

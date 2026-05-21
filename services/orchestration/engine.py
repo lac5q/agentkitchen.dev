@@ -231,6 +231,14 @@ class OrchestrationStore:
         ).fetchall()
         return [camelize_hil(row) for row in rows]
 
+    def get_hil_decision(self, decision_id: str) -> dict[str, Any] | None:
+        """Return a HIL decision row by ID without mutating state."""
+        row = self.conn.execute(
+            "SELECT * FROM orchestration_hil_decisions WHERE id = ?",
+            (decision_id,),
+        ).fetchone()
+        return camelize_hil(row) if row else None
+
     def resolve_hil_decision(self, decision_id: str, *, decision: str, actor: str | None) -> dict[str, Any]:
         row = self.conn.execute(
             "SELECT * FROM orchestration_hil_decisions WHERE id = ?",
@@ -372,6 +380,34 @@ class OrchestrationEngine:
         if self.graph_runtime:
             graph_state = self.graph_runtime.resume(resolved["runId"], decision)
         return {"ok": True, **resolved, "status": resolved["status"], "resumed": resumed, "graphState": graph_state}
+
+    def record_state_edit(
+        self,
+        *,
+        run_id: str,
+        correlation_id: str,
+        actor: str | None,
+        patch: dict[str, Any],
+        before: dict[str, Any] | None = None,
+    ) -> None:
+        """Write a state_edit lineage row recording actor, before, and after values.
+
+        The before dict is optional — callers that have access to the graph runtime
+        should pass edit_and_checkpoint()'s "before" value. Engine-only callers
+        (e.g. tests without a graph runtime) may omit it.
+
+        Requirement: HIL-03 / Pattern 3 in RESEARCH.md
+        """
+        self.store.append_lineage(
+            correlation_id=correlation_id,
+            run_id=run_id,
+            hop_type="state_edit",
+            detail={
+                "actor": actor,
+                "before": before if before is not None else {},
+                "after": patch,
+            },
+        )
 
     def record_task_failure(self, run_id: str, error: str | None = None) -> dict[str, Any]:
         run = self.store.get_run(run_id)
