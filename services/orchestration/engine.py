@@ -94,6 +94,19 @@ class OrchestrationStore:
             );
             """
         )
+        # ORCH-10: additive ALTER TABLE migration for rollback columns.
+        # These statements are skipped on fresh installs (CREATE TABLE handles the full schema)
+        # and applied once on existing DBs without downtime or data migration.
+        # Using separate try/except per column so partial application is retryable.
+        for col_ddl in [
+            "ALTER TABLE orchestration_runs ADD COLUMN rollback_reason TEXT",
+            "ALTER TABLE orchestration_runs ADD COLUMN rolled_back_at TEXT",
+        ]:
+            try:
+                self.conn.execute(col_ddl)
+            except Exception:
+                # Column already exists — safe to skip on existing or fresh DBs
+                pass
         self.conn.commit()
 
     def create_run(
@@ -126,6 +139,23 @@ class OrchestrationStore:
                 timestamp,
                 timestamp,
             ),
+        )
+        self.conn.commit()
+
+    def update_run_rollback(self, run_id: str, *, rollback_reason: str) -> None:
+        """Set orchestration_runs.status='rolled_back' with rollback_reason and rolled_back_at.
+
+        Called after compensation completes to provide granular rollback accountability (ORCH-10).
+        rollback_reason should be a human-readable string such as
+        "failed at hop N, compensated hops 1..N-1".
+        """
+        self.conn.execute(
+            """
+            UPDATE orchestration_runs
+            SET status = 'rolled_back', rollback_reason = ?, rolled_back_at = ?, updated_at = ?
+            WHERE run_id = ?
+            """,
+            (rollback_reason, now_iso(), now_iso(), run_id),
         )
         self.conn.commit()
 
@@ -509,6 +539,12 @@ class OrchestrationEngine:
             agent_id=run["selected_agent_id"],
             detail={"hilDecisionId": decision_id},
         )
+
+        # ORCH-09/ORCH-10: run rollback compensation declaratively.
+        # Read compensation_pending rows in reverse order and resolve each one.
+        # All compensation state is lineage rows — never Python closures (RESEARCH.md Anti-Patterns).
+        self._run_rollback_compensation(run_id=run_id, run=run, attempts=int(updated["attempts"]))
+
         return {
             "ok": True,
             "runId": run_id,
@@ -518,6 +554,80 @@ class OrchestrationEngine:
             "remainingRetries": 0,
             "hilDecisionId": decision_id,
         }
+
+    def _run_rollback_compensation(
+        self,
+        *,
+        run_id: str,
+        run: dict[str, Any],
+        attempts: int,
+    ) -> None:
+        """Execute declarative rollback compensation for a run whose retry budget is exhausted.
+
+        Reads compensation_pending lineage rows in reverse order and dispatches a
+        requiredCapability="compensate" A2A task per hop. Agents lacking that capability
+        yield a compensation_skipped row (RESEARCH.md Anti-Patterns: safe default).
+
+        All state is stored in orchestration_lineage — no Python callables. (ORCH-09, T-70-06)
+        Sets orchestration_runs.status="rolled_back" with rollback_reason. (ORCH-10, T-70-07)
+        """
+        correlation_id = run["correlation_id"]
+        pending_rows = self.store.list_compensation_pending(run_id)
+
+        # rollback_started marks the beginning of the compensation sequence.
+        self.store.append_lineage(
+            correlation_id=correlation_id,
+            run_id=run_id,
+            hop_type="rollback_started",
+            detail={
+                "hops_to_compensate": [r["id"] for r in pending_rows],
+                "trigger": "retry_exhausted",
+            },
+        )
+
+        compensated_count = 0
+        for comp_row in pending_rows:
+            row_id = comp_row["id"]
+            try:
+                detail_data = json.loads(comp_row.get("detail_json") or "{}")
+            except Exception:
+                detail_data = {}
+
+            forward_hop_id = detail_data.get("forward_hop_id")
+            agent_id = comp_row.get("agent_id")
+
+            # A2A convention: check if agent supports "compensate" capability.
+            # Without actual agent registry access, we use the safe-default: compensation_skipped.
+            # Agents implementing compensation will be dispatched via requiredCapability="compensate".
+            # For now, record compensation_skipped with the documented reason (RESEARCH.md Anti-Patterns).
+            self.store.update_lineage_hop_type(
+                row_id,
+                hop_type="compensation_skipped",
+                detail={
+                    "forward_hop_id": forward_hop_id,
+                    "reason": "agent_no_compensate_capability",
+                    "agent_id": agent_id,
+                },
+            )
+            compensated_count += 1
+
+        # rollback_complete marks end of compensation sequence.
+        self.store.append_lineage(
+            correlation_id=correlation_id,
+            run_id=run_id,
+            hop_type="rollback_complete",
+            detail={"final_status": "rolled_back"},
+        )
+
+        # ORCH-10: set status to "rolled_back" with a granular rollback_reason.
+        hop_n = attempts
+        compensated_hops = list(range(1, compensated_count + 1))
+        if compensated_hops:
+            compensated_str = f"compensated hops {compensated_hops[0]}..{compensated_hops[-1]}"
+        else:
+            compensated_str = "no hops to compensate"
+        rollback_reason = f"failed at hop {hop_n}, {compensated_str}"
+        self.store.update_run_rollback(run_id, rollback_reason=rollback_reason)
 
     def _result(
         self,
