@@ -45,7 +45,7 @@ npm install
 
 Then open `http://localhost:3000`, search retained memory, inspect Knowledge source health, register or dispatch an agent, and review the runtime context pack that gets assembled before work starts.
 
-If you are evaluating the launch build, start with the v0.9.0 release, watch the demo, then open a workflow feedback issue with the first place your agents lose context.
+If you are evaluating the launch build, start with the v0.9.0 release, watch the demo, then open a workflow feedback issue with the first place your agents lose context. Maintainers can process launch feedback with the [workflow feedback intake guide](docs/workflow-feedback-intake.md).
 
 ## What MemroOS Is
 
@@ -597,6 +597,7 @@ memroos/
 - [LangGraph integration](docs/integrations/langgraph.md)
 - [MemroOS MCP server](docs/integrations/mcp.md)
 - [CrewAI and AutoGen integration](docs/integrations/crewai-autogen.md)
+- [Workflow feedback intake](docs/workflow-feedback-intake.md)
 
 ## Roadmap
 
