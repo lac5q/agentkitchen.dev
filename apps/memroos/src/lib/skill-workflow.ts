@@ -138,6 +138,9 @@ export async function updateSkillReviewState(input: UpdateSkillReviewInput) {
     next.stage = "general";
     next.approvedAt = now;
   } else if (input.action === "promote-enterprise") {
+    if (previous?.stage !== "general" || previous?.status !== "approved") {
+      throw new Error("Skill must be approved at general stage before promoting to enterprise");
+    }
     next.status = "enterprise-ready";
     next.stage = "enterprise";
     next.approvedAt = now;
