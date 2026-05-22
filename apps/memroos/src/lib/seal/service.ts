@@ -167,7 +167,9 @@ export class SealService {
       baselineW: draft.baselineW,
       detail: { proposalType: draft.proposalType, traceId: draft.traceId, runId: draft.runId },
     }, this.db);
-    return this.getProposal(id) as SealProposal;
+    const proposal = this.getProposal(id);
+    if (!proposal) throw new Error(`Failed to read back created proposal: ${id}`);
+    return proposal;
   }
 
   listProposals(filter: { status?: ProposalStatus } = {}): SealProposal[] {
