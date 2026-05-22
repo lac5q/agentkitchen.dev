@@ -56,6 +56,30 @@ const mockAgents = [
     updatedAt: "2026-05-11T00:00:00Z",
     deregisteredAt: null,
   },
+  {
+    id: "paperclip",
+    name: "Paperclip",
+    role: "Paperclip orchestrator",
+    platform: "codex",
+    protocol: "local",
+    status: "idle",
+    lastHeartbeat: null,
+    currentTask: null,
+    lessonsCount: 0,
+    todayMemoryCount: 0,
+    location: "local",
+    isRemote: false,
+    latencyMs: null,
+    capabilities: [],
+    metadata: { source: "pmo-agents" },
+    host: null,
+    port: null,
+    healthEndpoint: null,
+    tunnelUrl: null,
+    createdAt: "2026-05-11T00:00:00Z",
+    updatedAt: "2026-05-11T00:00:00Z",
+    deregisteredAt: null,
+  },
 ];
 
 vi.mock("@/lib/api-client", () => ({
@@ -102,10 +126,12 @@ describe("AgentEngagementConsole", () => {
 
     expect(screen.getAllByText("Claude Sonnet Engineer").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Codex CLI").length).toBeGreaterThan(0);
-    expect(screen.getByText("1 active / 2 registered")).toBeInTheDocument();
+    expect(screen.getByText("1 active / 3 registered")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Paperclip support agents/i })).toBeInTheDocument();
+    expect(screen.queryByText("Paperclip orchestrator")).not.toBeInTheDocument();
   });
 
-  it("runs diagnostics for active agents", async () => {
+  it("runs diagnostics for primary agents without testing hidden Paperclip agents", async () => {
     vi.mocked(fetch).mockResolvedValueOnce({
       json: async () => ({
         results: [{
@@ -120,10 +146,12 @@ describe("AgentEngagementConsole", () => {
     } as Response);
 
     render(<AgentEngagementConsole />);
-    fireEvent.click(screen.getByRole("button", { name: /test agents/i }));
+    fireEvent.click(screen.getByRole("button", { name: /test primary agents/i }));
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith("/api/engagement/test", expect.objectContaining({ method: "POST" }));
+      const [, init] = vi.mocked(fetch).mock.calls[0];
+      expect(String(init?.body)).not.toContain("paperclip");
       expect(screen.getByText(/chat: ready/)).toBeInTheDocument();
     });
   });

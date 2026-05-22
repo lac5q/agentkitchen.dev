@@ -65,24 +65,26 @@ describe('runConsolidation', () => {
     seedMessage('c1');
     process.env.ANTHROPIC_API_KEY = 'test-key';
     const { runConsolidation } = await import('@/lib/memory-consolidation');
-    await runConsolidation();
+    const result = await runConsolidation();
 
     const row = testDb
       .prepare('SELECT COUNT(*) AS cnt FROM messages WHERE consolidated = 0')
       .get() as { cnt: number };
     expect(row.cnt).toBe(0);
+    expect(result.status).toBe('completed');
   });
 
   it('creates a row in memory_consolidation_runs with status=completed', async () => {
     seedMessage('c2');
     process.env.ANTHROPIC_API_KEY = 'test-key';
     const { runConsolidation } = await import('@/lib/memory-consolidation');
-    await runConsolidation();
+    const result = await runConsolidation();
 
     const run = testDb
       .prepare("SELECT status FROM memory_consolidation_runs ORDER BY id DESC LIMIT 1")
       .get() as { status: string } | undefined;
     expect(run?.status).toBe('completed');
+    expect(result).toMatchObject({ status: 'completed' });
   });
 
   it('writes parsed meta-insights to memory_meta_insights', async () => {
@@ -90,26 +92,28 @@ describe('runConsolidation', () => {
     testDb.exec('UPDATE messages SET consolidated = 0');
     process.env.ANTHROPIC_API_KEY = 'test-key';
     const { runConsolidation } = await import('@/lib/memory-consolidation');
-    await runConsolidation();
+    const result = await runConsolidation();
 
     const insight = testDb
       .prepare('SELECT insight_type, content FROM memory_meta_insights LIMIT 1')
       .get() as { insight_type: string; content: string } | undefined;
     expect(insight?.insight_type).toBe('pattern');
     expect(insight?.content).toBe('Test pattern insight');
+    expect(result).toMatchObject({ status: 'completed', insightsWritten: 1 });
   });
 
   it('skips already-consolidated messages (WHERE consolidated=0)', async () => {
     testDb.exec('UPDATE messages SET consolidated = 1');
     process.env.ANTHROPIC_API_KEY = 'test-key';
     const { runConsolidation } = await import('@/lib/memory-consolidation');
-    await runConsolidation();
+    const result = await runConsolidation();
 
     const run = testDb
       .prepare('SELECT batch_size, status FROM memory_consolidation_runs ORDER BY id DESC LIMIT 1')
       .get() as { batch_size: number; status: string } | undefined;
     expect(run?.batch_size).toBe(0);
     expect(run?.status).toBe('completed');
+    expect(result).toMatchObject({ status: 'completed', batchSize: 0, insightsWritten: 0 });
   });
 
   it('handles LLM JSON parse failure gracefully (returns empty insights)', async () => {
@@ -120,13 +124,14 @@ describe('runConsolidation', () => {
     testDb.exec('UPDATE messages SET consolidated = 0');
     process.env.ANTHROPIC_API_KEY = 'test-key';
     const { runConsolidation } = await import('@/lib/memory-consolidation');
-    await runConsolidation();
+    const result = await runConsolidation();
 
     const run = testDb
       .prepare('SELECT insights_written, status FROM memory_consolidation_runs ORDER BY id DESC LIMIT 1')
       .get() as { insights_written: number; status: string } | undefined;
     expect(run?.insights_written).toBe(0);
     expect(run?.status).toBe('completed');
+    expect(result).toMatchObject({ status: 'completed', insightsWritten: 0 });
   });
 
   it('logs warning and exits when ANTHROPIC_API_KEY is missing', async () => {
@@ -135,13 +140,29 @@ describe('runConsolidation', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     const { runConsolidation } = await import('@/lib/memory-consolidation');
-    await runConsolidation();
+    const result = await runConsolidation();
 
     expect(warnSpy).toHaveBeenCalledWith(
       expect.stringContaining('ANTHROPIC_API_KEY')
     );
+    expect(result).toMatchObject({ status: 'disabled' });
     warnSpy.mockRestore();
     if (savedKey) process.env.ANTHROPIC_API_KEY = savedKey;
+  });
+
+  it('skips provider calls during rate-limit backoff', async () => {
+    seedMessage('rl1');
+    testDb.prepare(
+      "INSERT INTO memory_consolidation_runs(started_at, status, error_message) VALUES(strftime('%Y-%m-%dT%H:%M:%SZ','now'), 'failed', ?)"
+    ).run('429 usage limit exceeded');
+    process.env.ANTHROPIC_API_KEY = 'test-key';
+
+    const { runConsolidation } = await import('@/lib/memory-consolidation');
+    const result = await runConsolidation();
+
+    expect(result.status).toBe('skipped');
+    expect(result.reason).toBe('provider_rate_limited');
+    expect(mockCreate).not.toHaveBeenCalled();
   });
 });
 

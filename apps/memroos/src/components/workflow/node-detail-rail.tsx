@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import Link from "next/link";
 import { NOC, NOC_FONT_BODY, NOC_FONT_MONO } from "@/lib/noc-theme";
 
 interface NodeDetail {
@@ -19,9 +20,9 @@ const NODE_DETAILS: Record<string, NodeDetail> = {
   },
   memory: {
     title: "Memory store",
-    sub: "Semantic + episodic + graph · 12,847 records",
-    stats: [["Hit rate", "87.4%"], ["Stale fetches", "463"], ["Cold reads", "1,240"]],
-    notes: "Stale fetches up 62% WoW — investigate retrieval cap (currently 8 calls/run).",
+    sub: "Semantic + episodic + graph · live inventory on Memory page",
+    stats: [["Recall telemetry", "missing"], ["Access counts", "not wired"], ["Consolidation", "see Memory"]],
+    notes: "Workflow map avoids synthetic hit-rate, stale-fetch, and cold-read claims until recall/access telemetry is instrumented.",
   },
   skills: {
     title: "Skills",
@@ -67,12 +68,33 @@ const BOTTLENECKS = [
   { label: "Outcomes → memory", value: "avg 1.8s ✓",  color: NOC.success },
 ];
 
+const NODE_ROUTES: Record<string, string> = {
+  memroos: "/",
+  memory: "/notebooks",
+  skills: "/skills",
+  knowledge: "/library",
+  gateway: "/agents",
+  outcomes: "/business-ops",
+  sophia: "/dispatch",
+  maria: "/dispatch",
+  alba: "/dispatch",
+  lucia: "/dispatch",
+  gwen: "/dispatch",
+  cto: "/dispatch",
+  telegram: "/flow",
+  email: "/flow",
+  slack: "/flow",
+  gong: "/flow",
+  repo: "/library",
+};
+
 interface NodeDetailRailProps {
   nodeId: string | null;
 }
 
 export function NodeDetailRail({ nodeId }: NodeDetailRailProps) {
   const detail = (nodeId ? NODE_DETAILS[nodeId] : null) ?? NODE_DETAILS.memroos;
+  const route = (nodeId && NODE_ROUTES[nodeId]) || "/";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -110,8 +132,9 @@ export function NodeDetailRail({ nodeId }: NodeDetailRailProps) {
         )}
 
         <div style={{ marginTop: 10, display: "flex", gap: 6 }}>
-          <button style={pillBtn(NOC.paper, NOC.ink, NOC.ruleStrong)}>Open page</button>
-          <button style={pillBtn(NOC.ink, NOC.cream, NOC.ink)}>Engage</button>
+          <Link href={route} style={{ ...pillBtn(NOC.paper, NOC.ink, NOC.ruleStrong), textDecoration: "none" }}>
+            Open page
+          </Link>
         </div>
       </div>
 
@@ -138,11 +161,12 @@ export function NodeDetailRail({ nodeId }: NodeDetailRailProps) {
           Add a pre-summarizer between <strong>Memory</strong> and chatty routes (Sophia, Lucia). Projected: ingest token share{" "}
           <strong>62% → 44%</strong>.
         </div>
-        <button
+        <Link
+          href="/apo"
           style={{ ...pillBtn(NOC.terraDeep, NOC.cream, NOC.terraDeep, "4px 10px", 11), marginTop: 8 }}
         >
           Apply via APO
-        </button>
+        </Link>
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { NOC, NOC_FONT_MONO } from "@/lib/noc-theme";
-import { PillBtn } from "./noc-primitives";
 
 const QUICK_LINKS = [
   { label: "Ledger", href: "/ledger" },
@@ -12,17 +12,53 @@ const QUICK_LINKS = [
 ];
 
 export function NocHeader() {
+  const [windowLabel, setWindowLabel] = useState("24h");
+  const [workspace, setWorkspace] = useState("all");
+  function exportReport() {
+    const payload = {
+      surface: "operations-noc",
+      window: windowLabel,
+      workspace,
+      generatedAt: new Date().toISOString(),
+      note: "NOC export contains current UI filter context. Live panel payload export is tracked by NOC-14.",
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `memroos-noc-${windowLabel}-${workspace}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  const controlStyle = {
+    alignItems: "center",
+    background: NOC.paper,
+    border: `1px solid ${NOC.ruleStrong}`,
+    color: NOC.ink,
+    display: "inline-flex",
+    fontFamily: NOC_FONT_MONO,
+    fontSize: 11,
+    fontWeight: 700,
+    letterSpacing: "0.04em",
+    minHeight: 30,
+    padding: "4px 9px",
+    textDecoration: "none",
+    textTransform: "uppercase" as const,
+  };
+
   return (
     <div
       style={{
         padding: "20px 28px 14px",
         display: "flex",
-        alignItems: "flex-end",
+        alignItems: "flex-start",
+        flexWrap: "wrap",
         gap: 18,
         background: NOC.cream,
       }}
     >
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: "1 1 520px", minWidth: 320 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span
             style={{
@@ -36,10 +72,10 @@ export function NocHeader() {
               color: NOC.terra, textTransform: "uppercase",
             }}
           >
-            Operations · telemetry preview
+            Operations · live telemetry
           </div>
           <span style={{ fontSize: 11, color: NOC.soft, fontFamily: NOC_FONT_MONO }}>
-            live wiring pending
+            explicit gaps shown
           </span>
         </div>
         <h1
@@ -51,10 +87,10 @@ export function NocHeader() {
           Agent NOC
         </h1>
         <div style={{ fontSize: 13.5, color: NOC.muted, maxWidth: 760 }}>
-          Run the agent fleet like infrastructure. Sample-backed panels are labeled at the page level until NOC-01..11 wire live telemetry; missing streams render explicit gaps instead of fabricated numbers.
+          Run the agent fleet like infrastructure. Panels use live local sources where available; missing streams render explicit gaps instead of fabricated numbers.
         </div>
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "flex-end", flexShrink: 0 }}>
+      <div style={{ display: "flex", flex: "1 1 420px", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
         {QUICK_LINKS.map((link) => (
           <Link
             key={link.href}
@@ -78,9 +114,54 @@ export function NocHeader() {
             {link.label}
           </Link>
         ))}
-        <PillBtn>Last 24h ▾</PillBtn>
-        <PillBtn>All workspaces ▾</PillBtn>
-        <PillBtn variant="solid">Export report</PillBtn>
+        <label style={{ ...controlStyle, gap: 6 }}>
+          <span>Date</span>
+          <select
+            aria-label="NOC date range"
+            value={windowLabel}
+            onChange={(event) => setWindowLabel(event.target.value)}
+            style={{
+              background: "transparent",
+              border: 0,
+              color: NOC.ink,
+              fontFamily: NOC_FONT_MONO,
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: "uppercase",
+            }}
+          >
+            <option value="24h">Last 24h</option>
+            <option value="7d">Last 7d</option>
+            <option value="30d">Last 30d</option>
+          </select>
+        </label>
+        <label style={{ ...controlStyle, gap: 6 }}>
+          <span>Workspace</span>
+          <select
+            aria-label="NOC workspace"
+            value={workspace}
+            onChange={(event) => setWorkspace(event.target.value)}
+            style={{
+              background: "transparent",
+              border: 0,
+              color: NOC.ink,
+              fontFamily: NOC_FONT_MONO,
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: "uppercase",
+            }}
+          >
+            <option value="all">All</option>
+            <option value="local">Local</option>
+            <option value="remote">Remote</option>
+          </select>
+        </label>
+        <button
+          onClick={exportReport}
+          style={{ ...controlStyle, background: NOC.ink, color: NOC.cream, borderColor: NOC.ink }}
+        >
+          Export report
+        </button>
       </div>
     </div>
   );

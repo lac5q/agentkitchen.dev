@@ -1,10 +1,49 @@
 "use client";
 
+import { useMemo } from "react";
+
+import { useSealProposals, useSkills } from "@/lib/api-client";
 import { NOC, NOC_FONT_MONO } from "@/lib/noc-theme";
-import { MOCK_SKILLS } from "@/lib/noc-mock-data";
 import { Mono, PillBtn } from "./noc-primitives";
 
 export function SkillsLifecycle() {
+  const skills = useSkills();
+  const seal = useSealProposals("pending");
+  const columns = useMemo(() => {
+    const details = skills.data?.skillDetails ?? [];
+    return [
+      {
+        stage: "Emerging",
+        sub: "agent-limited skills and coverage gaps",
+        color: NOC.info,
+        items: details.filter((skill) => skill.stage === "agent-limited").slice(0, 3),
+      },
+      {
+        stage: "Live",
+        sub: "general skills approved for reuse",
+        color: NOC.success,
+        items: details.filter((skill) => skill.stage === "general").slice(0, 3),
+      },
+      {
+        stage: "Drifting",
+        sub: "coverage gaps or needs-source health",
+        color: NOC.warn,
+        items: details.filter((skill) => skill.health !== "ready").slice(0, 3),
+      },
+      {
+        stage: "Enterprise",
+        sub: "enterprise-ready or approved candidates",
+        color: NOC.terra,
+        items: details.filter((skill) => skill.stage === "enterprise" || skill.reviewStatus === "enterprise-ready").slice(0, 3),
+      },
+    ];
+  }, [skills.data?.skillDetails]);
+  const total = skills.data?.totalSkills ?? 0;
+  const promoted = skills.data?.skillDetails.filter((skill) => skill.approvedAt).length ?? 0;
+  const dormant = skills.data?.coverageGaps.length ?? 0;
+  const drifting = skills.data?.skillDetails.filter((skill) => skill.health !== "ready").length ?? 0;
+  const pendingSeal = seal.data?.proposals.length ?? 0;
+
   return (
     <div style={{ padding: "0 28px 14px" }}>
       <div style={{ background: NOC.paper, border: `1px solid ${NOC.rule}` }}>
@@ -20,17 +59,17 @@ export function SkillsLifecycle() {
         >
           <div style={{ fontWeight: 600, fontSize: 13, color: NOC.ink }}>Skills lifecycle</div>
           <span style={{ fontSize: 11.5, color: NOC.soft }}>
-            96 total · 14 promoted 30d · 11 dormant · 3 drifting
+            {skills.isError ? "failed to load /api/skills" : `${total} total · ${promoted} approved · ${dormant} coverage gaps · ${drifting} drifting`}
           </span>
           <div style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
-            <PillBtn>SEAL proposals · 4</PillBtn>
-            <PillBtn variant="solid">Promote candidate</PillBtn>
+            <PillBtn href="/seal">SEAL proposals · {pendingSeal}</PillBtn>
+            <PillBtn href="/skills" variant="solid">Promote candidate</PillBtn>
           </div>
         </div>
 
         {/* 4 columns */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)" }}>
-          {MOCK_SKILLS.map((col, i) => (
+          {columns.map((col, i) => (
             <div
               key={col.stage}
               style={{
@@ -59,14 +98,19 @@ export function SkillsLifecycle() {
                 <div style={{ fontSize: 12.5, fontWeight: 600, color: NOC.ink }}>
                   {col.stage}
                 </div>
-                <Mono color={NOC.soft} size={11}>{col.count}</Mono>
+                <Mono color={NOC.soft} size={11}>{col.items.length}</Mono>
               </div>
 
               {/* Items */}
               <div style={{ minHeight: 200 }}>
+                {col.items.length === 0 && (
+                  <div style={{ padding: "10px 14px", fontSize: 12, color: NOC.soft }}>
+                    No live records in this stage.
+                  </div>
+                )}
                 {col.items.map((it, j) => (
                   <div
-                    key={j}
+                    key={it.name}
                     style={{
                       padding: "10px 14px",
                       borderBottom:
@@ -76,7 +120,7 @@ export function SkillsLifecycle() {
                     }}
                   >
                     <div style={{ fontSize: 12.5, color: NOC.ink, marginBottom: 3 }}>
-                      {it.name}
+                      {it.title || it.name}
                     </div>
                     <div
                       style={{
@@ -85,9 +129,9 @@ export function SkillsLifecycle() {
                         fontFamily: NOC_FONT_MONO,
                       }}
                     >
-                      {it.meta}
+                      {it.reviewStatus} · {it.health}
                     </div>
-                    {it.dup && (
+                    {it.health !== "ready" && (
                       <div
                         style={{
                           fontSize: 10.5,
@@ -95,7 +139,7 @@ export function SkillsLifecycle() {
                           marginTop: 3,
                         }}
                       >
-                        ⚠ also created by 2 agents as a new skill
+                        {it.path}
                       </div>
                     )}
                   </div>

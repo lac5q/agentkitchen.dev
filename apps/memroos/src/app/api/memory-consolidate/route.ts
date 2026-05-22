@@ -6,15 +6,16 @@ export const dynamic = 'force-dynamic';
 
 export async function POST() {
   try {
-    await runConsolidation();
+    const run = await runConsolidation();
     const db = getDb();
     writeAuditLog(db, {
       actor: 'system',
       action: 'consolidation_run',
       target: 'consolidation',
-      severity: 'info',
+      severity: run.status === 'failed' ? 'medium' : 'info',
+      detail: JSON.stringify(run),
     });
-    return Response.json({ ok: true, timestamp: new Date().toISOString() });
+    return Response.json({ ok: run.status !== 'failed', run, timestamp: new Date().toISOString() });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return Response.json({ error: message }, { status: 500 });

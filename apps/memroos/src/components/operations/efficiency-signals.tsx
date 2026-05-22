@@ -72,7 +72,7 @@ export function EfficiencySignals() {
             These metrics are blocked until trace-level instrumentation exists. No sample values are shown as live.
           </span>
           <div style={{ marginLeft: "auto" }}>
-            <PillBtn>Open telemetry plan</PillBtn>
+            <PillBtn href="/evals">Open telemetry plan</PillBtn>
           </div>
         </div>
 

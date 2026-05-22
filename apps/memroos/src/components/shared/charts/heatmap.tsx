@@ -8,12 +8,19 @@ interface HeatmapProps {
 }
 
 function Heatmap({ data, w = 280, h = 90 }: HeatmapProps) {
+  if (data.length === 0 || data[0]?.length === 0) return null;
   const cols = data[0].length;
   const rows = data.length;
   const cw = w / cols;
   const ch = h / rows;
   return (
-    <svg width={w} height={h} style={{ display: "block" }}>
+    <svg
+      width="100%"
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      preserveAspectRatio="none"
+      style={{ display: "block" }}
+    >
       {data.map((row, r) =>
         row.map((v, c) => (
           <rect

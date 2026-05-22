@@ -8,8 +8,17 @@ import { resolveFinanceTerminology } from "@/lib/finance-reconciliation/terminol
 import { Card, PageHeader } from "@/components/shared/ui";
 import { NOC } from "@/lib/noc-theme";
 
+const DATE_RANGES = [
+  { label: "Last 24 hours", value: "1", days: 1 },
+  { label: "Last 7 days", value: "7", days: 7 },
+  { label: "Last 30 days", value: "30", days: 30 },
+  { label: "Last 90 days", value: "90", days: 90 },
+] as const;
+
 export default function BusinessOpsPage() {
   const [selectedAgentId, setSelectedAgentId] = useState<string | undefined>(undefined);
+  const [rangeDays, setRangeDays] = useState<(typeof DATE_RANGES)[number]["value"]>("30");
+  const [rangeAnchorIso] = useState(() => new Date().toISOString());
   const { data: agentsData } = useAgents();
   const { data: evalConfigData } = useEvalConfig();
   const agents = agentsData?.agents ?? [];
@@ -17,6 +26,9 @@ export default function BusinessOpsPage() {
     ? resolveFinanceTerminology(evalConfigData.config)
     : { enabled: false, trace: "trace", eval: "eval", proposal: "proposal" };
   const title = terms.enabled ? "Finance Reconciliation" : "Business Ops";
+  const selectedRange = DATE_RANGES.find((range) => range.value === rangeDays) ?? DATE_RANGES[2];
+  const since = new Date(new Date(rangeAnchorIso).getTime() - selectedRange.days * 24 * 60 * 60 * 1000).toISOString();
+  const dateRange = { since };
 
   return (
     <div className="space-y-6">
@@ -48,11 +60,30 @@ export default function BusinessOpsPage() {
             </option>
           ))}
         </select>
+        <label className="text-sm font-semibold" style={{ color: NOC.ink }} htmlFor="date-range-select">
+          Date range
+        </label>
+        <select
+          id="date-range-select"
+          className="px-2 py-1.5 text-sm focus:outline-none"
+          style={{ background: NOC.paper, border: `1px solid ${NOC.ruleStrong}`, color: NOC.ink }}
+          value={rangeDays}
+          onChange={(e) => setRangeDays(e.target.value as typeof rangeDays)}
+        >
+          {DATE_RANGES.map((range) => (
+            <option key={range.value} value={range.value}>
+              {range.label}
+            </option>
+          ))}
+        </select>
+        <span className="text-xs" style={{ color: NOC.soft }}>
+          Timeline and adapter status use this window.
+        </span>
       </Card>
 
-      <KpiTimelinePanel agentId={selectedAgentId} />
+      <KpiTimelinePanel agentId={selectedAgentId} dateRange={dateRange} />
 
-      <AdapterStatusPanel />
+      <AdapterStatusPanel dateRange={dateRange} />
     </div>
   );
 }

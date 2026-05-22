@@ -201,7 +201,7 @@ export function parseTokenStats(): Record<string, unknown> | null {
   try {
     const output = execFileSync("rtk", ["gain"], {
       encoding: "utf-8",
-      timeout: 5000,
+      timeout: Number(process.env.RTK_STATS_TIMEOUT_MS ?? 1500),
     });
     return parseRtkOutput(output);
   } catch {

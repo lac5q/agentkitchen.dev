@@ -15,7 +15,7 @@ interface HBarsProps {
 }
 
 function HBars({ rows, color = NOC.ink, accent }: HBarsProps) {
-  const max = Math.max(...rows.map((r) => r.value));
+  const max = Math.max(1, ...rows.map((r) => r.value));
   return (
     <div
       style={{

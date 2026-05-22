@@ -1,11 +1,25 @@
 "use client";
 
+import { useAuditLog, useOrchestrationHil, useSecurityReport } from "@/lib/api-client";
 import { NOC } from "@/lib/noc-theme";
-import { MOCK_GOVERNANCE } from "@/lib/noc-mock-data";
 import { NocCard, NocPanelHeader, Eyebrow, Mono } from "./noc-primitives";
 
 export function GovernanceStrip() {
-  const d = MOCK_GOVERNANCE;
+  const security = useSecurityReport(20);
+  const hil = useOrchestrationHil();
+  const audit = useAuditLog(20);
+  const stats = [
+    { label: "Blocked attempts", value: String(security.data?.summary.blockedAttempts ?? 0), sub: "security report", color: NOC.success },
+    { label: "HIL approvals", value: String(hil.data?.decisions.length ?? 0), sub: hil.isError ? "source failed" : "pending source", color: NOC.warn },
+    { label: "Security events", value: String(security.data?.summary.securityEvents ?? 0), sub: "loaded window", color: NOC.muted },
+    { label: "Audit lines", value: String(audit.data?.entries.length ?? 0), sub: "recent", color: NOC.ink },
+  ];
+  const events = audit.data?.entries.slice(0, 4).map((entry) => ({
+    time: new Date(entry.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    type: entry.action,
+    detail: `${entry.actor} · ${entry.target}`,
+  })) ?? [];
+
   return (
     <NocCard>
       <NocPanelHeader
@@ -19,7 +33,7 @@ export function GovernanceStrip() {
           gap: 10,
         }}
       >
-        {d.stats.map(({ label, value, sub, color }) => (
+        {stats.map(({ label, value, sub, color }) => (
           <div
             key={label}
             style={{ borderLeft: `2px solid ${color}`, paddingLeft: 10 }}
@@ -48,7 +62,11 @@ export function GovernanceStrip() {
             fontSize: 12,
           }}
         >
-          {d.events.map((e, i) => (
+          {security.isError || hil.isError || audit.isError ? (
+            <div style={{ color: NOC.terra }}>A governance source failed to load.</div>
+          ) : events.length === 0 ? (
+            <div style={{ color: NOC.soft }}>No recent audit events returned by /api/audit-log.</div>
+          ) : events.map((e, i) => (
             <div
               key={i}
               style={{

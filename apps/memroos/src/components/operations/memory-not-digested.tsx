@@ -1,22 +1,79 @@
 "use client";
 
+import Link from "next/link";
+
+import { useMemoryStats, useMemoryTierHealth } from "@/lib/api-client";
 import { NOC, NOC_FONT_MONO } from "@/lib/noc-theme";
-import { MOCK_UNDIGESTED } from "@/lib/noc-mock-data";
-import { NocPanelHeader, Mono, PillBtn } from "./noc-primitives";
+import { NocPanelHeader, Mono } from "./noc-primitives";
 
 export function MemoryNotDigested() {
+  const memory = useMemoryStats();
+  const health = useMemoryTierHealth();
+  const sources = memory.data?.sources ?? [];
+  const lastRun = memory.data?.lastRun;
+  const pending = memory.data?.pendingUnconsolidated ?? 0;
+  const lastRunFailed = lastRun?.status === "failed";
+  const lastRunError = lastRun?.error_message?.replace(/\s+/g, " ").slice(0, 120);
+  const tierFailures = health.data?.tiers.filter((tier) => tier.status !== "up") ?? [];
+  const rows = [
+    ...(lastRunFailed
+      ? [
+          {
+            name: "Consolidation blocked",
+            meta: lastRunError ?? `failed at ${lastRun.started_at}`,
+            value: memory.data?.recentFailures24h ?? 1,
+            href: "/library",
+            tone: NOC.terra,
+          },
+        ]
+      : []),
+    {
+      name: "Pending unconsolidated messages",
+      meta: lastRun
+        ? `last run ${lastRun.status} · batch ${lastRun.batch_size}`
+        : "no consolidation run recorded",
+      value: pending,
+      href: "/notebooks",
+      tone: pending > 0 ? NOC.warn : NOC.success,
+    },
+    ...tierFailures.map((tier) => ({
+      name: `${tier.tier} backend ${tier.status}`,
+      meta: tier.detail ?? tier.backend,
+      value: tier.count ?? 0,
+      href: "/notebooks",
+      tone: NOC.terra,
+    })),
+    ...sources.slice(0, Math.max(0, 6 - tierFailures.length)).map((source) => ({
+      name: source.agent_id,
+      meta: "ingested message source",
+      value: source.cnt,
+      href: `/notebooks?q=${encodeURIComponent(source.agent_id)}`,
+      tone: NOC.soft,
+    })),
+  ];
+
   return (
     <div style={{ background: NOC.paper, border: `1px solid ${NOC.rule}` }}>
       <div style={{ padding: 16 }}>
         <NocPanelHeader
-          title="Memory not being digested"
-          hint="High salience, never (or rarely) read in last 30d. Dig in or decay."
-          right={<Mono color={NOC.soft} size={11}>312 total</Mono>}
+          title="Memory digestion"
+          hint="Live consolidation state, memory backend health, and source inventory."
+          right={<Mono color={NOC.soft} size={11}>{memory.isError ? "failed" : `${sources.length} sources`}</Mono>}
         />
       </div>
-      {MOCK_UNDIGESTED.map((m, i) => (
+      {memory.isError && (
+        <div style={{ padding: "11px 16px", borderTop: `1px solid ${NOC.rule}`, color: NOC.terra, fontSize: 12 }}>
+          Failed to load /api/memory-stats.
+        </div>
+      )}
+      {!memory.isError && rows.length === 0 && (
+        <div style={{ padding: "11px 16px", borderTop: `1px solid ${NOC.rule}`, color: NOC.soft, fontSize: 12 }}>
+          No memory rows found. New memories will stay at zero until messages are ingested and consolidation runs.
+        </div>
+      )}
+      {rows.map((m) => (
         <div
-          key={i}
+          key={m.name}
           style={{
             padding: "11px 16px",
             borderTop: `1px solid ${NOC.rule}`,
@@ -29,18 +86,6 @@ export function MemoryNotDigested() {
           <div>
             <div style={{ fontSize: 13, color: NOC.ink, marginBottom: 2 }}>
               {m.name}
-              {m.flag && (
-                <span
-                  style={{
-                    marginLeft: 4,
-                    fontSize: 10,
-                    color: NOC.terra,
-                    fontWeight: 700,
-                  }}
-                >
-                  ★
-                </span>
-              )}
             </div>
             <div
               style={{
@@ -49,13 +94,15 @@ export function MemoryNotDigested() {
                 fontFamily: NOC_FONT_MONO,
               }}
             >
-              {m.type} · sal {m.salience} · idle {m.age}
+              {m.meta}
             </div>
           </div>
-          <Mono color={m.reads === 0 ? NOC.terra : NOC.soft} size={13}>
-            {m.reads}
+          <Mono color={m.tone} size={13}>
+            {m.value}
           </Mono>
-          <PillBtn>Investigate</PillBtn>
+          <Link href={m.href} style={{ border: `1px solid ${NOC.ruleStrong}`, padding: "6px 8px", textTransform: "uppercase", fontSize: 11, color: NOC.ink, textDecoration: "none", textAlign: "center", fontWeight: 700 }}>
+            Investigate
+          </Link>
         </div>
       ))}
     </div>

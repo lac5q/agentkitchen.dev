@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { KangarooMark } from "./brand-mark";
 import { NOC } from "@/lib/noc-theme";
 import type { HealthStatus } from "@/types";
@@ -30,8 +31,17 @@ function useClock() {
 
 export function TopBar({ services, onMenuClick }: TopBarProps) {
   const clock = useClock();
+  const router = useRouter();
+  const [query, setQuery] = useState("");
   const degraded = services.filter((s) => s.status !== "up").length;
   const healthy = degraded === 0;
+
+  function submitSearch(event?: FormEvent<HTMLFormElement>) {
+    event?.preventDefault();
+    const trimmed = query.trim();
+    if (!trimmed) return;
+    router.push(`/notebooks?q=${encodeURIComponent(trimmed)}`);
+  }
 
   return (
     <header
@@ -66,7 +76,8 @@ export function TopBar({ services, onMenuClick }: TopBarProps) {
       <KangarooMark className="h-8 w-8 shrink-0 lg:hidden" />
 
       {/* Global search */}
-      <div
+      <form
+        onSubmit={submitSearch}
         className="flex min-w-0 flex-1 items-center gap-2 border px-3 py-1.5 sm:max-w-[460px]"
         style={{ borderColor: NOC.rule, background: NOC.paper, color: NOC.soft }}
       >
@@ -82,13 +93,28 @@ export function TopBar({ services, onMenuClick }: TopBarProps) {
           <circle cx="7" cy="7" r="4.5" />
           <path d="M10.5 10.5L14 14" />
         </svg>
-        <span className="truncate text-[13px]">
-          Search memory, knowledge, agents…
-        </span>
-        <span className="ml-auto hidden border px-1.5 font-mono text-[11px] sm:inline" style={{ borderColor: NOC.rule }}>
+        <input
+          aria-label="Search memory, knowledge, agents"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+              event.currentTarget.focus();
+            }
+          }}
+          placeholder="Search memory, knowledge, agents..."
+          className="min-w-0 flex-1 bg-transparent text-[13px] text-slate-900 outline-none placeholder:text-stone-500"
+        />
+        <button
+          type="submit"
+          disabled={!query.trim()}
+          className="ml-auto hidden border px-1.5 font-mono text-[11px] transition disabled:opacity-50 sm:inline"
+          style={{ borderColor: NOC.rule }}
+          aria-label="Submit global search"
+        >
           ⌘ K
-        </span>
-      </div>
+        </button>
+      </form>
 
       {/* Right cluster: health · clock · avatar */}
       <div className="flex shrink-0 items-center gap-2.5 text-[12px]" style={{ color: NOC.muted }}>

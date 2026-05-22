@@ -5,7 +5,6 @@ import { useHealth, useAgents, useKnowledge, useMemory, useActivity, useSkills, 
 import { ReactFlowCanvas } from "@/components/flow/react-flow-canvas";
 import { ActivityFeed } from "@/components/flow/activity-feed";
 import { NodeDetailPanel } from "@/components/flow/node-detail-panel";
-import { OrchestrationHilPanel } from "@/components/orchestration/orchestration-hil-panel";
 import { VoicePanel } from "@/components/voice/VoicePanel";
 import { TopologyCanvas } from "@/components/workflow/topology-canvas";
 import { NodeDetailRail } from "@/components/workflow/node-detail-rail";
@@ -138,8 +137,6 @@ export default function FlowPage() {
       )}
 
       <VoicePanel />
-
-      <OrchestrationHilPanel />
 
       <div style={{ background: NOC.paper, border: `1px solid ${NOC.rule}`, borderRadius: 8, padding: "12px 16px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>

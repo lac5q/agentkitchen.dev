@@ -32,7 +32,7 @@ describe("Sidebar", () => {
     expect(screen.getByText("Memory")).toBeTruthy();
     expect(screen.getByText("Memory · Knowledge · Notebooks")).toBeTruthy();
     expect(screen.getByText("Skills")).toBeTruthy();
-    expect(screen.getByText("Cookbooks · lifecycle")).toBeTruthy();
+    expect(screen.getByText("Cookbooks · registry · lifecycle")).toBeTruthy();
   });
 
   it("routes governance to the consolidated governance group", () => {

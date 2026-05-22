@@ -1,4 +1,5 @@
 import { AgentEngagementConsole } from "@/components/engagement/agent-engagement-console";
+import { OrchestrationHilPanel } from "@/components/orchestration/orchestration-hil-panel";
 import { PageHeader } from "@/components/shared/ui";
 
 export default function DispatchPage() {
@@ -10,6 +11,7 @@ export default function DispatchPage() {
         hint="Task-first agent engagement with inspectable context, standups, chat, and delivery checks."
       />
       <AgentEngagementConsole />
+      <OrchestrationHilPanel />
     </div>
   );
 }

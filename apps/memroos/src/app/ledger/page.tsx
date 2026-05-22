@@ -21,10 +21,19 @@ function formatNum(n: number): string {
 
 const TABS = ["Savings Breakdown", "Model Mix"] as const;
 type Tab = (typeof TABS)[number];
+const LEDGER_RANGES = [
+  { label: "Last 24 hours", value: "1", days: 1 },
+  { label: "Last 7 days", value: "7", days: 7 },
+  { label: "Last 30 days", value: "30", days: 30 },
+] as const;
 
 export default function LedgerPage() {
-  const { data } = useTokenStats();
-  const { data: modelData } = useModelUsage();
+  const [rangeDays, setRangeDays] = useState<(typeof LEDGER_RANGES)[number]["value"]>("7");
+  const [rangeAnchorIso] = useState(() => new Date().toISOString());
+  const selectedRange = LEDGER_RANGES.find((range) => range.value === rangeDays) ?? LEDGER_RANGES[1];
+  const since = new Date(new Date(rangeAnchorIso).getTime() - selectedRange.days * 24 * 60 * 60 * 1000).toISOString();
+  const { data, isLoading: tokenLoading, error: tokenError } = useTokenStats();
+  const { data: modelData, isLoading: modelLoading, error: modelError } = useModelUsage(since);
   const [activeTab, setActiveTab] = useState<Tab>("Savings Breakdown");
 
   const stats = data?.stats ?? {};
@@ -47,7 +56,9 @@ export default function LedgerPage() {
 
   const savingsData = breakdown.slice(0, 8).map((b) => ({
     command: b.command.replace("rtk ", "").slice(0, 20),
-    tokensUsed: Math.round((b.tokensSaved / (b.savingsPercent / 100)) - b.tokensSaved),
+    tokensUsed: b.savingsPercent > 0
+      ? Math.max(0, Math.round((b.tokensSaved / (b.savingsPercent / 100)) - b.tokensSaved))
+      : 0,
     tokensSaved: b.tokensSaved,
   }));
 
@@ -65,6 +76,39 @@ export default function LedgerPage() {
         title="Ledger"
         hint="Token savings, model mix, routing quality, and cost analytics across retained work."
       />
+
+      <Card className="flex flex-wrap items-center gap-3" pad="sm">
+        <label className="text-sm font-semibold" style={{ color: NOC.ink }} htmlFor="ledger-date-range">
+          Date range
+        </label>
+        <select
+          id="ledger-date-range"
+          className="px-2 py-1.5 text-sm focus:outline-none"
+          style={{ background: NOC.paper, border: `1px solid ${NOC.ruleStrong}`, color: NOC.ink }}
+          value={rangeDays}
+          onChange={(event) => setRangeDays(event.target.value as typeof rangeDays)}
+        >
+          {LEDGER_RANGES.map((range) => (
+            <option key={range.value} value={range.value}>
+              {range.label}
+            </option>
+          ))}
+        </select>
+        <span className="text-xs" style={{ color: NOC.soft }}>
+          Model mix and trend panels use this window where the source supports it. RTK token savings are cumulative until RTK exposes ranged stats.
+        </span>
+      </Card>
+
+      {(tokenLoading || modelLoading || tokenError || modelError) && (
+        <Card pad="sm">
+          <div className="text-sm font-semibold" style={{ color: NOC.ink }}>Ledger source status</div>
+          <div className="mt-1 text-xs" style={{ color: tokenError || modelError ? NOC.terra : NOC.soft }}>
+            {tokenLoading || modelLoading ? "Loading RTK token stats and Claude model usage..." : null}
+            {tokenError ? `RTK token stats failed: ${tokenError instanceof Error ? tokenError.message : "unknown error"}. ` : null}
+            {modelError ? `Model usage failed: ${modelError instanceof Error ? modelError.message : "unknown error"}.` : null}
+          </div>
+        </Card>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

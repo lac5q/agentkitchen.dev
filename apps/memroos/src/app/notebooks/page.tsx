@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useMemory, useMultiMemorySearch } from "@/lib/api-client";
 import type { MemoryEntry } from "@/types";
 import { MemoryList } from "@/components/notebooks/memory-list";
@@ -44,10 +45,13 @@ function StatCard({
 
 export default function NotebooksPage() {
   const { data, isLoading } = useMemory("claude");
+  const searchParams = useSearchParams();
+  const urlSearchQuery = searchParams.get("q")?.trim() ?? "";
   const [activeTab, setActiveTab] = useState<FilterTab>("All");
   const [selected, setSelected] = useState<MemoryEntry | null>(null);
-  const [searchInput, setSearchInput] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchInput, setSearchInput] = useState(urlSearchQuery);
+  const [submittedSearchQuery, setSubmittedSearchQuery] = useState("");
+  const searchQuery = submittedSearchQuery || urlSearchQuery;
   const search = useMultiMemorySearch(searchQuery, 8);
 
   const allEntries: MemoryEntry[] = data?.claude ?? [];
@@ -56,6 +60,7 @@ export default function NotebooksPage() {
   const addedToday = allEntries.filter((e) => e.date?.startsWith(today)).length;
   const feedbackCount = allEntries.filter((e) => e.type === "feedback").length;
   const projectCount = allEntries.filter((e) => e.type === "project").length;
+  const newestEntryDate = allEntries[0]?.date?.slice(0, 10) ?? "none";
 
   const filtered =
     activeTab === "All"
@@ -77,9 +82,12 @@ export default function NotebooksPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         eyebrow="Memory"
-        title={<>Memory <InfoTip text="Claude's persistent memory store. Entries are written by Claude Code agents using the mem0 memory skill and stored as structured JSONL files. Browse, filter, and inspect individual memory entries here." /></>}
-        hint="Retained agent context, activity heatmap, and source inspection."
+        title={<>Memory <InfoTip text="This list is the local Claude file-backed episodic memory archive from ~/.claude/projects. Use Multi-Memory Search below for vector, graph, and episodic retrieval together." /></>}
+        hint="File-backed episodic archive, multi-tier search, and source inspection."
       />
+      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        Showing local Claude file memories. Newest file-backed entry: <span className="font-semibold">{newestEntryDate}</span>. Search uses vector, graph, and episodic tiers together.
+      </div>
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard
@@ -141,7 +149,7 @@ export default function NotebooksPage() {
           className="flex flex-col gap-3 sm:flex-row"
           onSubmit={(event) => {
             event.preventDefault();
-            setSearchQuery(searchInput.trim());
+            setSubmittedSearchQuery(searchInput.trim());
           }}
         >
           <input
@@ -168,7 +176,7 @@ export default function NotebooksPage() {
           <div className="mt-4">
             {search.isError ? (
               <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-                Memory search failed. Check the memory services and try again.
+                Memory search failed. Check `/api/memory/multi-search` and the memory tier health details.
               </div>
             ) : search.data && search.data.results.length === 0 ? (
               <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-6 text-center text-sm text-stone-500">

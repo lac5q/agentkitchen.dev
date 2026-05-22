@@ -1,16 +1,27 @@
 "use client";
 
 import { NOC, NOC_FONT_MONO } from "@/lib/noc-theme";
-import { MOCK_MODELS } from "@/lib/noc-mock-data";
+import { useModelUsage } from "@/lib/api-client";
 import { NocCard, NocPanelHeader, Mono, PillBtn } from "./noc-primitives";
 
+function formatTokens(value: number): string {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}m`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
+  return String(value);
+}
+
 export function ModelUtility() {
+  const { data, isLoading, isError } = useModelUsage();
+  const models = data?.usage.models.slice(0, 5) ?? [];
+  const totalTokens =
+    (data?.usage.total.inputTokens ?? 0) + (data?.usage.total.outputTokens ?? 0);
+
   return (
     <NocCard>
       <NocPanelHeader
         title="Model utility"
-        hint="Routing telemetry: tasks · cost · quality."
-        right={<PillBtn>Re-route</PillBtn>}
+        hint="Live Claude usage ledger. Quality routing needs model-routing telemetry."
+        right={<PillBtn href="/ledger">Re-route</PillBtn>}
       />
       {/* Column headers */}
       <div
@@ -27,102 +38,93 @@ export function ModelUtility() {
         }}
       >
         <div>Model</div>
-        <div>Tasks</div>
-        <div>Cost</div>
-        <div>Quality</div>
-        <div>Best for</div>
+        <div>Requests</div>
+        <div>Tokens</div>
+        <div>Share</div>
+        <div>Status</div>
       </div>
 
-      {MOCK_MODELS.map((m, i) => (
-        <div
-          key={i}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "120px 70px 80px 90px 1fr",
-            padding: "10px 0",
-            fontSize: 12.5,
-            alignItems: "center",
-            borderBottom: `1px solid ${NOC.rule}`,
-          }}
-        >
-          {/* Model name + flag */}
+      {isLoading && (
+        <div style={{ padding: "18px 0", fontSize: 12, color: NOC.soft }}>
+          Loading model usage...
+        </div>
+      )}
+
+      {isError && (
+        <div style={{ padding: "18px 0", fontSize: 12, color: NOC.terra }}>
+          Failed to load `/api/model-usage`; routing quality is unavailable.
+        </div>
+      )}
+
+      {!isLoading && !isError && models.length === 0 && (
+        <div style={{ padding: "18px 0", fontSize: 12, color: NOC.soft, lineHeight: 1.5 }}>
+          No Claude usage records found. Cost and quality recommendations are withheld until model telemetry exists.
+        </div>
+      )}
+
+      {models.map((m, i) => {
+        const share = totalTokens > 0 ? m.totalTokens / totalTokens : 0;
+        return (
           <div
+            key={m.id}
             style={{
-              fontFamily: NOC_FONT_MONO,
-              color: NOC.ink,
-              display: "flex",
+              display: "grid",
+              gridTemplateColumns: "120px 70px 80px 90px 1fr",
+              padding: "10px 0",
+              fontSize: 12.5,
               alignItems: "center",
-              gap: 6,
-              fontSize: 11,
+              borderBottom: `1px solid ${NOC.rule}`,
             }}
           >
-            {m.model}
-            {m.flag === "top" && (
-              <span
-                style={{
-                  fontSize: 9, padding: "1px 4px",
-                  background: NOC.successBg, color: NOC.success,
-                  fontWeight: 700, letterSpacing: "0.08em",
-                }}
-              >
-                TOP
-              </span>
-            )}
-            {m.flag === "value" && (
-              <span
-                style={{
-                  fontSize: 9, padding: "1px 4px",
-                  background: NOC.peach, color: NOC.terraDeep,
-                  fontWeight: 700, letterSpacing: "0.08em",
-                }}
-              >
-                VALUE
-              </span>
-            )}
-            {m.flag === "drift" && (
-              <span
-                style={{
-                  fontSize: 9, padding: "1px 4px",
-                  background: NOC.warnBg, color: NOC.warn,
-                  fontWeight: 700, letterSpacing: "0.08em",
-                }}
-              >
-                DRIFT
-              </span>
-            )}
-          </div>
-
-          <Mono size={12}>{m.tasks}</Mono>
-          <Mono size={12} color={NOC.muted}>{m.cost}</Mono>
-
-          {/* Quality bar */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <div style={{ height: 4, width: 36, background: NOC.fog }}>
-              <div
-                style={{
-                  width: `${m.quality * 100}%`,
-                  height: "100%",
-                  background:
-                    m.quality >= 0.85
-                      ? NOC.success
-                      : m.quality >= 0.7
-                      ? NOC.ink
-                      : NOC.warn,
-                }}
-              />
+            {/* Model name + flag */}
+            <div
+              style={{
+                fontFamily: NOC_FONT_MONO,
+                color: NOC.ink,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: 11,
+              }}
+            >
+              {m.name}
+              {i === 0 && (
+                <span
+                  style={{
+                    fontSize: 9, padding: "1px 4px",
+                    background: NOC.successBg, color: NOC.success,
+                    fontWeight: 700, letterSpacing: "0.08em",
+                  }}
+                >
+                  TOP
+                </span>
+              )}
             </div>
-            <Mono size={11}>{m.quality.toFixed(2)}</Mono>
-          </div>
 
-          <div style={{ fontSize: 11.5, color: NOC.soft }}>{m.bestFor}</div>
-        </div>
-      ))}
+            <Mono size={12}>{m.requests}</Mono>
+            <Mono size={12} color={NOC.muted}>{formatTokens(m.totalTokens)}</Mono>
+
+            {/* Usage share bar */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ height: 4, width: 36, background: NOC.fog }}>
+                <div
+                  style={{
+                    width: `${Math.max(4, share * 100)}%`,
+                    height: "100%",
+                    background: share >= 0.5 ? NOC.success : NOC.ink,
+                  }}
+                />
+              </div>
+              <Mono size={11}>{Math.round(share * 100)}%</Mono>
+            </div>
+
+            <div style={{ fontSize: 11.5, color: NOC.soft }}>quality source pending</div>
+          </div>
+        );
+      })}
 
       <div style={{ marginTop: 8, fontSize: 11.5, color: NOC.soft, lineHeight: 1.5 }}>
-        Recommendation: shift{" "}
-        <span style={{ fontFamily: NOC_FONT_MONO, fontSize: 11 }}>gemini-flash</span>{" "}
-        sub-tasks →{" "}
-        <span style={{ fontFamily: NOC_FONT_MONO, fontSize: 11 }}>haiku-4-5</span>. Saves ~$0.09/run with no quality drop.
+        Source: <span style={{ fontFamily: NOC_FONT_MONO, fontSize: 11 }}>/api/model-usage</span>. Re-route opens the ledger until quality telemetry is available.
       </div>
     </NocCard>
   );

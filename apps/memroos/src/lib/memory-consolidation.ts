@@ -4,6 +4,16 @@ import { getDb } from './db';
 let _started = false;
 
 const ALLOWED_INSIGHT_TYPES = new Set(['pattern', 'contradiction', 'summary']);
+const PROVIDER_BACKOFF_MINUTES = Number(process.env.CONSOLIDATION_PROVIDER_BACKOFF_MINUTES ?? 60);
+
+export interface ConsolidationRunResult {
+  status: 'disabled' | 'skipped' | 'completed' | 'failed';
+  runId?: number;
+  reason?: string;
+  backoffUntil?: string;
+  batchSize?: number;
+  insightsWritten?: number;
+}
 
 const CONSOLIDATION_PROMPT = `You are analyzing a batch of agent conversation memory fragments.
 Extract key insights from these messages and return a JSON array of insight objects.
@@ -22,13 +32,22 @@ Messages:
  *
  * Security: T-23-03, T-23-05, T-23-06
  */
-export async function runConsolidation(): Promise<void> {
+export async function runConsolidation(): Promise<ConsolidationRunResult> {
   if (!process.env.ANTHROPIC_API_KEY) {
     console.warn('[consolidation] ANTHROPIC_API_KEY not set -- consolidation disabled');
-    return;
+    return { status: 'disabled', reason: 'ANTHROPIC_API_KEY not set' };
   }
 
   const db = getDb();
+  const backoff = currentProviderBackoff(db);
+  if (backoff) {
+    console.warn(`[consolidation] provider rate limited -- skipping until ${backoff.backoffUntil}`);
+    return {
+      status: 'skipped',
+      reason: 'provider_rate_limited',
+      backoffUntil: backoff.backoffUntil,
+    };
+  }
 
   // Create run record
   const runId = db
@@ -45,7 +64,7 @@ export async function runConsolidation(): Promise<void> {
       db.prepare(
         "UPDATE memory_consolidation_runs SET status='completed', batch_size=0, insights_written=0, completed_at=strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE id=?"
       ).run(runId);
-      return;
+      return { status: 'completed', runId, batchSize: 0, insightsWritten: 0 };
     }
 
     // Build prompt from batch
@@ -107,13 +126,35 @@ export async function runConsolidation(): Promise<void> {
     db.prepare(
       "UPDATE memory_consolidation_runs SET status='completed', batch_size=?, insights_written=?, completed_at=strftime('%Y-%m-%dT%H:%M:%SZ','now') WHERE id=?"
     ).run(batch.length, insights.length, runId);
+    return { status: 'completed', runId, batchSize: batch.length, insightsWritten: insights.length };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('[consolidation] Run failed:', message);
     db.prepare(
       "UPDATE memory_consolidation_runs SET status='failed', error_message=? WHERE id=?"
     ).run(message, runId);
+    return { status: 'failed', runId, reason: message };
   }
+}
+
+function currentProviderBackoff(db: ReturnType<typeof getDb>): { backoffUntil: string } | null {
+  if (!Number.isFinite(PROVIDER_BACKOFF_MINUTES) || PROVIDER_BACKOFF_MINUTES <= 0) return null;
+  const row = db
+    .prepare(
+      "SELECT started_at, error_message FROM memory_consolidation_runs WHERE status='failed' ORDER BY id DESC LIMIT 1"
+    )
+    .get() as { started_at: string; error_message: string | null } | undefined;
+  if (!row?.error_message || !isProviderRateLimit(row.error_message)) return null;
+
+  const startedAt = new Date(row.started_at).getTime();
+  if (!Number.isFinite(startedAt)) return null;
+  const backoffUntilMs = startedAt + PROVIDER_BACKOFF_MINUTES * 60_000;
+  if (Date.now() >= backoffUntilMs) return null;
+  return { backoffUntil: new Date(backoffUntilMs).toISOString() };
+}
+
+function isProviderRateLimit(message: string): boolean {
+  return /(^|\b)(429|rate[_ -]?limit|usage limit exceeded)(\b|$)/i.test(message);
 }
 
 /**

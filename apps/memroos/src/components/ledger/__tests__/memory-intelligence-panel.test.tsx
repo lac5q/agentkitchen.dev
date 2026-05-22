@@ -29,6 +29,7 @@ describe("MemoryIntelligencePanel", () => {
         tierStats: [],
         consolidationModel: "test-model",
         sources: [],
+        recentFailures24h: 0,
         timestamp: "2026-05-05T00:00:00.000Z",
       },
       isLoading: false,

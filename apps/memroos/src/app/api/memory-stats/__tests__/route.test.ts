@@ -52,6 +52,9 @@ describe('GET /api/memory-stats', () => {
     expect(body.pendingUnconsolidated).toBe(1);
     expect(body).toHaveProperty('tierStats');
     expect(Array.isArray(body.tierStats)).toBe(true);
+    expect(body.lastRun).toHaveProperty('started_at');
+    expect(body.lastRun).toHaveProperty('error_message');
+    expect(body).toHaveProperty('recentFailures24h');
     expect(body).toHaveProperty('timestamp');
   });
 
@@ -81,5 +84,19 @@ describe('GET /api/memory-stats', () => {
     const res2 = await GET2(req2 as unknown as import('next/server').NextRequest);
     const body2 = await res2.json();
     expect(body2.pendingUnconsolidated).toBe(0);
+  });
+
+  it('returns recent failure count and latest error message', async () => {
+    testDb.prepare(
+      "INSERT INTO memory_consolidation_runs(started_at, batch_size, insights_written, status, error_message) VALUES(strftime('%Y-%m-%dT%H:%M:%SZ','now'), 0, 0, 'failed', ?)"
+    ).run('429 usage limit exceeded');
+
+    const { GET } = await import('../route');
+    const res = await GET(new Request('http://localhost/api/memory-stats') as unknown as import('next/server').NextRequest);
+    const body = await res.json();
+
+    expect(body.lastRun.status).toBe('failed');
+    expect(body.lastRun.error_message).toContain('429');
+    expect(body.recentFailures24h).toBe(1);
   });
 });

@@ -74,7 +74,7 @@ export function MemoryIntelligencePanel() {
   const lastRunValue = isLoading
     ? dash
     : lastRun
-    ? formatRelativeTime(lastRun.completed_at)
+    ? formatRelativeTime(lastRun.completed_at ?? lastRun.started_at)
     : dash;
 
   const insightsValue = isLoading
@@ -84,6 +84,7 @@ export function MemoryIntelligencePanel() {
     : dash;
 
   const statusValue = isLoading ? dash : lastRun ? lastRun.status : dash;
+  const lastRunError = lastRun?.error_message?.replace(/\s+/g, " ").slice(0, 180);
 
   const statusColor =
     lastRun?.status === "completed"
@@ -176,6 +177,15 @@ export function MemoryIntelligencePanel() {
               valueColor={statusColor}
             />
           </div>
+
+          {lastRun?.status === "failed" && (
+            <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+              Consolidation is failing. {lastRunError ? `Latest error: ${lastRunError}` : "No error message was recorded."}
+              {typeof data?.recentFailures24h === "number" && data.recentFailures24h > 1
+                ? ` ${data.recentFailures24h} failures recorded in the last 24h.`
+                : ""}
+            </div>
+          )}
 
           {/* Ingested sources */}
           {healthTiers.length > 0 && (

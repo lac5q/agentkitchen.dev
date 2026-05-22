@@ -21,6 +21,7 @@ import type { RegisteredAgent } from "@/types";
 
 type Mode = "chat" | "room";
 type ChatMessage = { role: "user" | "assistant" | "system"; content: string; agentId?: string };
+type AgentGroup = "primary" | "directory" | "paperclip";
 type SpeechRecognitionResultLike = ArrayLike<{ transcript?: string }>;
 type SpeechRecognitionEventLike = {
   results: ArrayLike<SpeechRecognitionResultLike>;
@@ -75,9 +76,69 @@ const STATUS_ORDER: Record<RegisteredAgent["status"], number> = {
   error: 3,
 };
 
+const COMMON_AGENT_IDS = [
+  "alba",
+  "sophia",
+  "maria",
+  "lucia",
+  "gwen",
+  "claude-sonnet-engineer",
+  "codex-cli-agent",
+  "gemini-senior-engineer",
+  "qwen-engineer",
+];
+
+const DEFAULT_MODEL_BY_PLATFORM: Partial<Record<RegisteredAgent["platform"], string>> = {
+  claude: "claude-sonnet-4-6",
+  codex: "claude-haiku-4-5",
+  chatgpt: "claude-haiku-4-5",
+  hermes: "claude-haiku-4-5",
+  openclaw: "claude-haiku-4-5",
+  gemini: "google/gemini-2.0-pro-exp",
+  qwen: "bailian/qwen3.5-plus",
+  opencode: "bailian/qwen3.5-plus",
+};
+
 function formatAgent(agent: RegisteredAgent): string {
   const platform = PLATFORM_LABELS[agent.platform] ?? agent.platform;
   return `${platform} - ${agent.name}`;
+}
+
+function metadataSource(agent: RegisteredAgent): string {
+  const source = agent.metadata?.source;
+  return typeof source === "string" ? source : "";
+}
+
+function isPaperclipAgent(agent: RegisteredAgent): boolean {
+  const haystack = `${agent.id} ${agent.name} ${agent.role} ${metadataSource(agent)}`.toLowerCase();
+  return haystack.includes("paperclip");
+}
+
+function isPrimaryAgent(agent: RegisteredAgent): boolean {
+  return agent.status === "active" || COMMON_AGENT_IDS.includes(agent.id);
+}
+
+function agentGroup(agent: RegisteredAgent): AgentGroup {
+  if (isPaperclipAgent(agent)) return "paperclip";
+  if (isPrimaryAgent(agent)) return "primary";
+  return "directory";
+}
+
+function defaultModelLabel(agent: RegisteredAgent): string {
+  const path = agent.metadata?.path;
+  if (typeof path === "string" && path.includes("/PMO/agents/")) return "PMO default";
+  return DEFAULT_MODEL_BY_PLATFORM[agent.platform] ?? "registered default";
+}
+
+function sortAgents(a: RegisteredAgent, b: RegisteredAgent): number {
+  const commonDelta = COMMON_AGENT_IDS.indexOf(a.id) - COMMON_AGENT_IDS.indexOf(b.id);
+  if (COMMON_AGENT_IDS.includes(a.id) || COMMON_AGENT_IDS.includes(b.id)) {
+    if (!COMMON_AGENT_IDS.includes(a.id)) return 1;
+    if (!COMMON_AGENT_IDS.includes(b.id)) return -1;
+    return commonDelta;
+  }
+  const statusDelta = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
+  return statusDelta || a.name.localeCompare(b.name);
 }
 
 function parseChatError(raw: string): string {
@@ -151,14 +212,13 @@ export function AgentEngagementConsole() {
   const { data: agentsData, isLoading: agentsLoading } = useAgents();
   const { data: delegationsData } = useDelegations(8);
   const agents = useMemo(() => (agentsData?.agents ?? []) as RegisteredAgent[], [agentsData?.agents]);
-  const activeAgents = useMemo(() => agents.filter((agent) => agent.status === "active"), [agents]);
+  const primaryAgents = useMemo(() => agents.filter((agent) => agentGroup(agent) === "primary").sort(sortAgents), [agents]);
+  const directoryAgents = useMemo(() => agents.filter((agent) => agentGroup(agent) === "directory").sort(sortAgents), [agents]);
+  const paperclipAgents = useMemo(() => agents.filter((agent) => agentGroup(agent) === "paperclip").sort(sortAgents), [agents]);
+  const activeAgents = useMemo(() => primaryAgents.filter((agent) => agent.status === "active"), [primaryAgents]);
   const roster = useMemo(
-    () =>
-      [...agents].sort((a, b) => {
-        const statusDelta = STATUS_ORDER[a.status] - STATUS_ORDER[b.status];
-        return statusDelta || a.name.localeCompare(b.name);
-      }),
-    [agents]
+    () => [...primaryAgents, ...directoryAgents, ...paperclipAgents],
+    [directoryAgents, paperclipAgents, primaryAgents]
   );
   const defaultRoomIds = activeAgents.length > 0 ? activeAgents.map((agent) => agent.id) : roster.map((agent) => agent.id);
   const defaultAgentId = activeAgents[0]?.id ?? roster[0]?.id ?? "";
@@ -177,6 +237,7 @@ export function AgentEngagementConsole() {
   const [speaking, setSpeaking] = useState(false);
   const [checks, setChecks] = useState<Record<string, AgentCheck>>({});
   const [testing, setTesting] = useState(false);
+  const [paperclipOpen, setPaperclipOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
@@ -397,6 +458,66 @@ export function AgentEngagementConsole() {
     }
   }
 
+  function renderAgentCard(agent: RegisteredAgent) {
+    const selected = selectedId === agent.id;
+    const participating = roomParticipantIds.includes(agent.id);
+    const check = checks[agent.id];
+    return (
+      <article
+        key={agent.id}
+        className={`rounded-md border p-3 transition ${
+          selected
+            ? "border-cyan-300 bg-cyan-50 shadow-[0_10px_30px_rgba(8,145,178,0.10)]"
+            : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
+        }`}
+      >
+        <button
+          type="button"
+          onClick={() => {
+            setSelectedAgentId(agent.id);
+          }}
+          className="flex w-full items-start justify-between gap-3 text-left"
+        >
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-semibold text-slate-950">{agent.name}</span>
+            <span className="mt-0.5 block truncate text-xs text-stone-500">{PLATFORM_LABELS[agent.platform] ?? agent.platform} - {agent.role}</span>
+            <span className="mt-1 block truncate text-[11px] text-stone-500">model: {check?.chat.runner ?? defaultModelLabel(agent)}</span>
+          </span>
+          <Pill value={agent.status} />
+        </button>
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <span className="text-xs text-stone-500">
+            {check ? `${check.dispatch.adapter} / ${check.chat.runner}` : "Not tested"}
+          </span>
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                void runAgentTests([agent.id]);
+              }}
+              disabled={testing}
+              className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-stone-600 disabled:opacity-50"
+            >
+              Test
+            </button>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                toggleParticipant(agent.id);
+              }}
+              className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-stone-600"
+            >
+              {participating ? <CheckCircle2 className="h-3.5 w-3.5 text-cyan-600" /> : <Circle className="h-3.5 w-3.5" />}
+              Room
+            </button>
+          </div>
+        </div>
+      </article>
+    );
+  }
+
   function startVoiceCapture() {
     const speechWindow = window as typeof window & {
       SpeechRecognition?: new () => SpeechRecognitionLike;
@@ -456,12 +577,12 @@ export function AgentEngagementConsole() {
           </div>
           <button
             type="button"
-            onClick={() => runAgentTests()}
+            onClick={() => runAgentTests(primaryAgents.map((agent) => agent.id))}
             disabled={testing || roster.length === 0}
             className="inline-flex items-center gap-2 rounded-md border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800 transition hover:bg-cyan-100 disabled:opacity-50"
           >
             {testing ? <RefreshCw className="h-4 w-4 animate-spin" /> : <TestTube2 className="h-4 w-4" />}
-            Test agents
+            Test primary agents
           </button>
         </div>
       </section>
@@ -471,57 +592,35 @@ export function AgentEngagementConsole() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center text-sm font-semibold text-slate-950">
               Agent roster
-              <InfoTip text="All registered agents are visible. Active agents are shown first and selected for the room by default." />
+              <InfoTip text="Primary working agents are shown first. Paperclip support agents are kept in their own section so they are not tested or added to the room unless selected." />
             </h2>
             <Pill value={`${activeAgents.length} active / ${roster.length} registered`} />
           </div>
           {agentsLoading && <p className="text-sm text-stone-500">Loading agents...</p>}
           <div className="max-h-[34rem] space-y-2 overflow-y-auto pr-1">
-            {roster.map((agent) => {
-              const selected = selectedId === agent.id;
-              const participating = roomParticipantIds.includes(agent.id);
-              const check = checks[agent.id];
-              return (
-                <article
-                  key={agent.id}
-                  className={`rounded-md border p-3 transition ${
-                    selected
-                      ? "border-cyan-300 bg-cyan-50 shadow-[0_10px_30px_rgba(8,145,178,0.10)]"
-                      : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
-                  }`}
+            <div className="space-y-2">
+              <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-500">Primary agents</p>
+              {primaryAgents.map(renderAgentCard)}
+            </div>
+            {directoryAgents.length > 0 && (
+              <div className="space-y-2 pt-2">
+                <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-500">Registered directory</p>
+                {directoryAgents.map(renderAgentCard)}
+              </div>
+            )}
+            {paperclipAgents.length > 0 && (
+              <div className="space-y-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setPaperclipOpen((open) => !open)}
+                  className="flex w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-stone-700"
                 >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedAgentId(agent.id);
-                    }}
-                    className="flex w-full items-start justify-between gap-3 text-left"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold text-slate-950">{agent.name}</span>
-                      <span className="mt-0.5 block truncate text-xs text-stone-500">{PLATFORM_LABELS[agent.platform] ?? agent.platform} - {agent.role}</span>
-                    </span>
-                    <Pill value={agent.status} />
-                  </button>
-                  <div className="mt-3 flex items-center justify-between gap-2">
-                    <span className="text-xs text-stone-500">
-                      {check ? `${check.dispatch.adapter} / ${check.chat.runner}` : "Not tested"}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        toggleParticipant(agent.id);
-                      }}
-                      className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-stone-600"
-                    >
-                      {participating ? <CheckCircle2 className="h-3.5 w-3.5 text-cyan-600" /> : <Circle className="h-3.5 w-3.5" />}
-                      Room
-                    </button>
-                  </div>
-                </article>
-              );
-            })}
+                  <span>Paperclip support agents</span>
+                  <span>{paperclipAgents.length} {paperclipOpen ? "shown" : "hidden"}</span>
+                </button>
+                {paperclipOpen && paperclipAgents.map(renderAgentCard)}
+              </div>
+            )}
           </div>
         </aside>
 

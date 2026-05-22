@@ -21,12 +21,14 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { Mock } from "vitest";
+import BetterSqlite3 from "better-sqlite3";
 import type Database from "better-sqlite3";
 
 // These imports will fail (Cannot find module) until recall.ts is implemented — RED
 import { RRF_K, semanticRecall, hybridRecall } from "../recall";
 import { upsertEmbedding } from "../store";
 import { getDb, closeDb } from "@/lib/db";
+import { initSchema } from "@/lib/db-schema";
 
 // Mock recallByKeyword so we can control the BM25 side in hybridRecall tests
 vi.mock("@/lib/db-ingest", () => ({
@@ -212,11 +214,12 @@ describe("semanticRecall — cross-project scope (RECALL-03, RECALL-04)", () => 
   const session = `xp-semantic-${Date.now()}`;
 
   beforeEach(() => {
-    db = getDb();
+    db = new BetterSqlite3(":memory:");
+    initSchema(db);
   });
 
   afterEach(() => {
-    closeDb();
+    db.close();
   });
 
   it("without allowedProjectIds returns all projects (backward compat, default single-project behavior)", () => {

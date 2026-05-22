@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { NOC, NOC_FONT_MONO } from "@/lib/noc-theme";
-import type { SignalSeverity } from "@/lib/noc-mock-data";
+
+export type SignalSeverity = "high" | "med" | "low" | "info";
 
 // Shared micro-components for the NOC screen.
 // All use inline styles with NOC token constants for dark-mode safety.
@@ -118,53 +120,45 @@ export function Legend({ color, label }: { color: string; label: string }) {
   );
 }
 
-export function SampleChip() {
-  return (
-    <span
-      style={{
-        fontSize: 9,
-        fontWeight: 700,
-        letterSpacing: "0.1em",
-        padding: "2px 6px",
-        background: NOC.warnBg,
-        color: NOC.warn,
-        border: `1px solid ${NOC.warnBg}`,
-        textTransform: "uppercase",
-        fontFamily: NOC_FONT_MONO,
-      }}
-    >
-      sample
-    </span>
-  );
-}
-
 export function PillBtn({
   children,
+  href,
   onClick,
   variant = "outline",
 }: {
   children: React.ReactNode;
+  href?: string;
   onClick?: () => void;
   variant?: "outline" | "solid";
 }) {
   const bg = variant === "solid" ? NOC.ink : NOC.paper;
   const fg = variant === "solid" ? NOC.cream : NOC.ink;
   const border = variant === "solid" ? NOC.ink : NOC.ruleStrong;
+  const style = {
+    background: bg,
+    color: fg,
+    border: `1px solid ${border}`,
+    padding: "4px 9px",
+    fontSize: 11,
+    fontWeight: 600,
+    letterSpacing: "0.04em",
+    textTransform: "uppercase" as const,
+    cursor: "pointer",
+    textDecoration: "none",
+    display: "inline-flex",
+    alignItems: "center",
+  };
+
+  if (href) {
+    return (
+      <Link href={href} style={style}>
+        {children}
+      </Link>
+    );
+  }
+
   return (
-    <button
-      onClick={onClick}
-      style={{
-        background: bg,
-        color: fg,
-        border: `1px solid ${border}`,
-        padding: "4px 9px",
-        fontSize: 11,
-        fontWeight: 600,
-        letterSpacing: "0.04em",
-        textTransform: "uppercase",
-        cursor: "pointer",
-      }}
-    >
+    <button onClick={onClick} style={style}>
       {children}
     </button>
   );

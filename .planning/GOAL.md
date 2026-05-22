@@ -175,3 +175,19 @@ The voice/chat/dispatch surface was still failing because provider chat could hi
 4. Add per-agent diagnostics for chat runner readiness, dispatch delivery mode, and voice/TTS prerequisites.
 5. Show provider and runner failures in operator-readable language.
 6. Verify the page on desktop and mobile with no console errors or horizontal overflow.
+
+## Immediate Goal: App-wide Operational Performance Audit
+
+Status: active 2026-05-21.
+
+Every operator page must answer: what happened, over what time window, whether the data is live or missing, and what action the operator can take next.
+
+The corrective pass must:
+
+1. Add date-range or time-window controls to every page that reports performance, usage, health, status, throughput, cost, quality, failures, or outcomes.
+2. Remove or clearly quarantine production mock data; fixture/demo values must never look like live operational signal.
+3. Show performance over time where the domain supports it, with empty/degraded states that name the missing source rather than rendering zeros silently.
+4. Make every visible NOC control functional: it must navigate to a real product surface, mutate local UI state, trigger a real API, or visibly explain the missing backend contract.
+5. Remove the embedded Engage console from the NOC home and leave engagement work on the dedicated dispatch/engagement surface.
+6. Explain adapter status, timeline load failures, ledger source availability, and slow-loading states in operator language.
+7. Audit every app route for these standards and write follow-up requirements for gaps that cannot be safely closed in the current implementation pass.

@@ -23,7 +23,7 @@ const NODES: Record<string, TopoNode> = {
   repo:     { x: 90,  y: 400, w: 130, h: 56,  t: "src",   label: "Repos · CI",             sub: "events · 247/d" },
   gateway:  { x: 300, y: 240, w: 140, h: 72,  t: "gate",  label: "Gateway",                sub: "Iris preflight · 0 blocks" },
   memroos:  { x: 510, y: 200, w: 200, h: 150, t: "core",  label: "MemroOS",                sub: "memory · skills · context packs" },
-  memory:   { x: 770, y: 140, w: 140, h: 56,  t: "store", label: "Memory",                 sub: "12.8k · hit 87.4%" },
+  memory:   { x: 770, y: 140, w: 140, h: 56,  t: "store", label: "Memory",                 sub: "live inventory · no hit-rate source" },
   skills:   { x: 770, y: 220, w: 140, h: 56,  t: "store", label: "Skills",                 sub: "96 live · 3 drifting" },
   knowledge:{ x: 770, y: 300, w: 140, h: 56,  t: "store", label: "Knowledge",              sub: "5,854 files" },
   sophia:   { x: 980, y: 80,  w: 130, h: 50,  t: "agent", label: "Sophia",                 sub: "marketing · busy" },

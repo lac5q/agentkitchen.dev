@@ -8,9 +8,21 @@ import crypto from 'crypto';
 // Use a unique temp DB for this test suite
 const TEST_DB_DIR = path.join(os.tmpdir(), `recall-route-test-${crypto.randomUUID()}`);
 const TEST_DB_PATH = path.join(TEST_DB_DIR, 'test-recall.db');
+const EMPTY_MEMORY_ROOT = path.join(TEST_DB_DIR, 'empty-memory-roots');
 
 // Set env vars before any imports
 process.env.SQLITE_DB_PATH = TEST_DB_PATH;
+
+vi.mock('@/lib/constants', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/constants')>();
+  return {
+    ...actual,
+    CLAUDE_MEMORY_PATH: path.join(EMPTY_MEMORY_ROOT, 'claude'),
+    QWEN_MEMORY_PATH: path.join(EMPTY_MEMORY_ROOT, 'qwen'),
+    HERMES_MEMORY_PATH: path.join(EMPTY_MEMORY_ROOT, 'hermes'),
+    CODEX_MEMORY_PATH: path.join(EMPTY_MEMORY_ROOT, 'codex'),
+  };
+});
 
 // Mock the db module so we use our temp DB
 vi.mock('@/lib/db', async () => {

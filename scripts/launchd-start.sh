@@ -58,5 +58,5 @@ fi
 printf '[%s] preflight: clean — exec next start on port %s\n' \
   "$(date '+%Y-%m-%dT%H:%M:%S%z')" "$PORT" >> "$LOG_DIR/launchd.log"
 
-cd "$REPO_DIR"
-exec "$NODE_BIN" "$REPO_DIR/node_modules/next/dist/bin/next" start "$REPO_DIR/apps/memroos" --port "$PORT"
+cd "$REPO_DIR/apps/memroos"
+exec "$NODE_BIN" "$REPO_DIR/node_modules/next/dist/bin/next" start --port "$PORT"

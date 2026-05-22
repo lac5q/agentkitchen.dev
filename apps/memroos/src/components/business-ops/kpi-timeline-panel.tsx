@@ -51,7 +51,7 @@ export function KpiTimelinePanel({ agentId, dateRange }: KpiTimelinePanelProps) 
   const [showL2, setShowL2] = useState(true);
   const [showL3, setShowL3] = useState(true);
 
-  const { data, isLoading, error } = useEvalHistory(50);
+  const { data, isLoading, error } = useEvalHistory(200);
 
   const points = useMemo<TimelinePoint[]>(() => {
     if (!data?.runs) return [];
@@ -82,8 +82,11 @@ export function KpiTimelinePanel({ agentId, dateRange }: KpiTimelinePanelProps) 
 
   if (error) {
     return (
-      <div className="flex h-64 items-center justify-center text-sm" style={{ color: NOC.terra }}>
-        Failed to load timeline data.
+      <div className="flex h-64 flex-col items-center justify-center gap-2 text-sm" style={{ color: NOC.terra }}>
+        <div>Failed to load timeline data.</div>
+        <div className="max-w-xl text-center text-xs" style={{ color: NOC.soft }}>
+          Source: /api/evals/history. Detail: {error instanceof Error ? error.message : "unknown error"}.
+        </div>
       </div>
     );
   }

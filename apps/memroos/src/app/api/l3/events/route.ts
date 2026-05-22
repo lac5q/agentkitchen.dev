@@ -47,6 +47,7 @@ export async function GET(req: NextRequest) {
   const correlationId = searchParams.get("correlationId");
   const agentId = searchParams.get("agentId");
   const since = searchParams.get("since");
+  const until = searchParams.get("until");
   const limit = Math.min(200, parseInt(searchParams.get("limit") ?? "50", 10));
 
   try {
@@ -65,6 +66,10 @@ export async function GET(req: NextRequest) {
     if (since) {
       conditions.push("polled_at >= ?");
       params.push(since);
+    }
+    if (until) {
+      conditions.push("polled_at <= ?");
+      params.push(until);
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";

@@ -23,10 +23,12 @@ const mockUseMemoryStats = vi.mocked(useMemoryStats);
 
 const SAMPLE_STATS = {
   lastRun: {
+    started_at: new Date(Date.now() - 6 * 60 * 1000).toISOString(),
     completed_at: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     batch_size: 50,
     insights_written: 12,
     status: "completed",
+    error_message: null,
   },
   pendingUnconsolidated: 7,
   tierStats: [
@@ -35,6 +37,9 @@ const SAMPLE_STATS = {
     { tier: "mid", count: 25, avg_score: 0.6 },
     { tier: "low", count: 8, avg_score: 0.3 },
   ],
+  consolidationModel: "test-model",
+  sources: [],
+  recentFailures24h: 0,
   timestamp: new Date().toISOString(),
 };
 

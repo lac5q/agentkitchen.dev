@@ -63,10 +63,6 @@ const BehaviorSignals = dynamic(
   () => import("./behavior-signals").then((mod) => mod.BehaviorSignals),
   { ssr: false, loading: () => <NocPanelSkeleton height={260} /> }
 );
-const EngagementConsole = dynamic(
-  () => import("./engagement-console").then((mod) => mod.EngagementConsole),
-  { ssr: false, loading: () => <NocPanelSkeleton height={260} /> }
-);
 const GovernanceStrip = dynamic(
   () => import("./governance-strip").then((mod) => mod.GovernanceStrip),
   { ssr: false, loading: () => <NocPanelSkeleton /> }
@@ -129,24 +125,13 @@ export function OperationsNoc() {
       {/* Row 4 — Skills lifecycle */}
       <SkillsLifecycle />
 
-      {/* Row 5 — Behavior signals + Engagement console */}
+      {/* Row 5 — Behavior signals */}
       <div
         style={{
           padding: "0 28px 14px",
-          display: "grid",
-          gridTemplateColumns: "minmax(0, 1.2fr) minmax(280px, 1fr)",
-          gap: 14,
         }}
       >
         <BehaviorSignals />
-        <div
-          style={{
-            background: NOC.paper,
-            border: `1px solid ${NOC.rule}`,
-          }}
-        >
-          <EngagementConsole />
-        </div>
       </div>
 
       {/* Row 6 — Governance + Savings + Waste */}

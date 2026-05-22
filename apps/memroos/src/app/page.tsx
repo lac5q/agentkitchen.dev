@@ -236,7 +236,7 @@ const featureGroups = [
     items: [
       "Model-routing telemetry",
       "LLM recommendation surfaces",
-      "Evaluation fixtures",
+      "Evaluation suites",
       "Quality reports",
       "Behavioral W-lift roadmap",
     ],
@@ -280,7 +280,7 @@ const completedRoadmap = [
   {
     phase: "Phases 46-49",
     label: "v2.2 LLM Optimization + Evaluation",
-    detail: "Model-routing telemetry, recommendations, eval fixtures, optimization dashboards, and quality reports.",
+    detail: "Model-routing telemetry, recommendations, evaluation suites, optimization dashboards, and quality reports.",
   },
   {
     phase: "Phases 50-52",

@@ -13,8 +13,12 @@ const KNOWN_ADAPTERS = [
   { name: "netsuite", category: "Finance", live: false },
 ] as const;
 
-export function AdapterStatusPanel() {
-  const { data, isLoading } = useBusinessOutcomeEvents({ limit: 500 });
+export function AdapterStatusPanel({ dateRange }: { dateRange?: { since: string; until?: string } }) {
+  const { data, isLoading, error } = useBusinessOutcomeEvents({
+    since: dateRange?.since,
+    until: dateRange?.until,
+    limit: 500,
+  });
 
   const eventsByAdapter = (data?.events ?? []).reduce<Record<string, { count: number; lastPolled: string }>>((acc, event: BusinessOutcomeEventRow) => {
     const adapter = event.adapter;
@@ -30,9 +34,18 @@ export function AdapterStatusPanel() {
 
   return (
     <div className="rounded-sm border p-4" style={{ borderColor: NOC.ruleStrong, background: NOC.paper }}>
-      <h3 className="mb-3 text-sm font-semibold" style={{ color: NOC.ink }}>Adapter Status</h3>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold" style={{ color: NOC.ink }}>Adapter Status</h3>
+        <span className="text-[11px]" style={{ color: NOC.soft }}>
+          {dateRange?.since ? `Since ${new Date(dateRange.since).toLocaleDateString()}` : "All available events"}
+        </span>
+      </div>
       {isLoading ? (
         <p className="text-xs" style={{ color: NOC.soft }}>Loading...</p>
+      ) : error ? (
+        <p className="text-xs" style={{ color: NOC.terra }}>
+          Failed to load adapter status from /api/l3/events: {error instanceof Error ? error.message : "unknown error"}.
+        </p>
       ) : (
         <table className="w-full text-xs">
           <thead>
@@ -59,7 +72,7 @@ export function AdapterStatusPanel() {
                         color: adapter.live ? NOC.success : NOC.warn,
                       }}
                     >
-                      {adapter.live ? "live" : "fixture"}
+                      {adapter.live ? "live" : "not wired"}
                     </span>
                   </td>
                   <td className="py-1.5 text-right" style={{ color: NOC.muted }}>

@@ -1,20 +1,42 @@
 "use client";
 
 import { HBars } from "@/components/shared/charts";
+import { useAgentPeers, useAgents, useHiveFeed } from "@/lib/api-client";
 import { NOC } from "@/lib/noc-theme";
-import { MOCK_AGENT_WORKLOAD } from "@/lib/noc-mock-data";
 import { NocCard, NocPanelHeader, Eyebrow, Mono } from "./noc-primitives";
 
 export function AgentWorkload() {
-  const d = MOCK_AGENT_WORKLOAD;
+  const agents = useAgents();
+  const hive = useHiveFeed(500);
+  const peers = useAgentPeers(1440);
+  const actions = hive.data?.actions ?? [];
+  const agentCounts = new Map<string, number>();
+  for (const action of actions) {
+    agentCounts.set(action.agent_id, (agentCounts.get(action.agent_id) ?? 0) + 1);
+  }
+  const rows = Array.from(agentCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 7)
+    .map(([agentId, value]) => ({ label: agentId, value, color: NOC.ink }));
+  const activeCount = agents.data?.agents.filter((a) => a.status === "active").length ?? peers.data?.peers.length ?? 0;
+  const top = rows[0];
+  const errorCount = actions.filter((a) => a.action_type === "error").length;
+
   return (
     <NocCard>
       <NocPanelHeader
         title="Agent workload · 24h"
-        hint="Tasks completed, with cost burned vs value."
-        right={<Mono color={NOC.soft} size={11}>7 active</Mono>}
+        hint="Live hive actions and active peer state from /api/hive and /api/agent-peers?window=1440."
+        right={<Mono color={NOC.soft} size={11}>{activeCount} active</Mono>}
       />
-      <HBars rows={d.rows} />
+      {hive.isError && <div style={{ fontSize: 12, color: NOC.terra }}>Failed to load /api/hive.</div>}
+      {!hive.isError && rows.length === 0 ? (
+        <div style={{ fontSize: 12, color: NOC.soft, lineHeight: 1.5 }}>
+          No hive actions were recorded in the loaded 24h window. This is why the workload panel has no afternoon/evening activity to plot.
+        </div>
+      ) : (
+        <HBars rows={rows} />
+      )}
       <div
         style={{
           marginTop: 14,
@@ -34,12 +56,12 @@ export function AgentWorkload() {
               marginTop: 4,
             }}
           >
-            <span style={{ fontSize: 12, color: NOC.ink }}>{d.earner.name}</span>
-            <Mono color={NOC.success} size={12}>{d.earner.value}</Mono>
+            <span style={{ fontSize: 12, color: NOC.ink }}>{top?.label ?? "None"}</span>
+            <Mono color={NOC.success} size={12}>{top ? `${top.value} actions` : "no source"}</Mono>
           </div>
         </div>
         <div>
-          <Eyebrow>Top waster</Eyebrow>
+          <Eyebrow>Failed work</Eyebrow>
           <div
             style={{
               display: "flex",
@@ -47,8 +69,8 @@ export function AgentWorkload() {
               marginTop: 4,
             }}
           >
-            <span style={{ fontSize: 12, color: NOC.ink }}>{d.waster.name}</span>
-            <Mono color={NOC.terra} size={12}>{d.waster.value}</Mono>
+            <span style={{ fontSize: 12, color: NOC.ink }}>/api/hive</span>
+            <Mono color={errorCount ? NOC.terra : NOC.success} size={12}>{errorCount} errors</Mono>
           </div>
         </div>
       </div>

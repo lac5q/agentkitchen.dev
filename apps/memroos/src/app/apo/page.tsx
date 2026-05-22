@@ -70,6 +70,20 @@ export default function ApoPage() {
       {/* Cycle Stats */}
       <CycleStatus stats={stats} />
 
+      {!isLoading && !error && stats.pendingProposals === 0 && stats.totalProposals > 0 && (
+        <div className="rounded-md border border-cyan-200 bg-cyan-50 px-4 py-3 text-sm text-cyan-900">
+          APO is generating proposals, but none are awaiting review right now. Latest run:{" "}
+          <span className="font-semibold">{stats.lastRun ? new Date(stats.lastRun).toLocaleString() : "unknown"}</span>;{" "}
+          {stats.archivedProposals} archived proposal{stats.archivedProposals === 1 ? "" : "s"} are available under Archived.
+        </div>
+      )}
+
+      {!isLoading && !error && stats.totalProposals === 0 && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          No APO proposal files were found at the configured proposal store. Check the cron log and `APO_PROPOSALS_PATH`.
+        </div>
+      )}
+
       {/* Tab Switcher */}
       <div className="flex items-center gap-1 pb-0" style={{ borderBottom: `1px solid ${NOC.rule}` }}>
         {TABS.map((t) => (

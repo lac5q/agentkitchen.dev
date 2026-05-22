@@ -1,0 +1,11 @@
+{
+  "agent-onboard": {
+    "stage": "general",
+    "status": "approved",
+    "notes": "",
+    "draftBody": "Skill: Agent Onboard Durable Work Principle — Two Ask Rule If you ask twice, the agent failed. First request is discovery. Second means it should already be a skill on cron. Every new agent MUST be taught this from day one: The Lifecycle 1. Prototype — do it manually 3 10 times, show output 2. Evaluate — get approval, revise 3. Codify — write SKILL.md or ext",
+    "updatedAt": "2026-05-22T07:16:56.604Z",
+    "updatedBy": "7be68d5f827b63e5be66",
+    "approvedAt": "2026-05-22T07:16:56.604Z"
+  }
+}
