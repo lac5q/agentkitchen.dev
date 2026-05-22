@@ -237,6 +237,7 @@ export function AgentEngagementConsole() {
   const [speaking, setSpeaking] = useState(false);
   const [checks, setChecks] = useState<Record<string, AgentCheck>>({});
   const [testing, setTesting] = useState(false);
+  const [testError, setTestError] = useState<string | null>(null);
   const [paperclipOpen, setPaperclipOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -444,6 +445,7 @@ export function AgentEngagementConsole() {
 
   async function runAgentTests(ids = roster.map((agent) => agent.id)) {
     setTesting(true);
+    setTestError(null);
     try {
       const res = await fetch("/api/engagement/test", {
         method: "POST",
@@ -453,6 +455,8 @@ export function AgentEngagementConsole() {
       const body = (await res.json()) as { results?: AgentCheck[] };
       const next = Object.fromEntries((body.results ?? []).map((check) => [check.agentId, check]));
       setChecks((current) => ({ ...current, ...next }));
+    } catch (err) {
+      setTestError(err instanceof Error ? err.message : "Agent test failed — network error");
     } finally {
       setTesting(false);
     }
@@ -585,6 +589,9 @@ export function AgentEngagementConsole() {
             Test primary agents
           </button>
         </div>
+        {testError ? (
+          <p className="mt-2 text-sm font-medium text-red-600">{testError}</p>
+        ) : null}
       </section>
 
       <div className="grid gap-5 xl:grid-cols-[320px_1fr]">
