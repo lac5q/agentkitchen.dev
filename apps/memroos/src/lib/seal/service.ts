@@ -223,8 +223,8 @@ export class SealService {
   async applyProposal(proposalId: string): Promise<ApplyResult> {
     const proposal = this.getProposal(proposalId);
     if (!proposal) throw new Error(`SEAL proposal not found: ${proposalId}`);
-    if (proposal.status !== "approved" && proposal.status !== "pending") {
-      throw new Error(`Cannot apply proposal in ${proposal.status} state`);
+    if (proposal.status !== "approved") {
+      throw new Error(`Cannot apply proposal in ${proposal.status} state — must be approved first`);
     }
 
     writeAuditEntry({
