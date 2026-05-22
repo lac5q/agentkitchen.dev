@@ -1,10 +1,20 @@
+import type { NextRequest } from 'next/server';
+
 import { runConsolidation } from '@/lib/memory-consolidation';
 import { getDb } from '@/lib/db';
 import { writeAuditLog } from '@/lib/audit';
+import { authenticateUser } from '@/lib/auth/session';
+import { requireRole } from '@/lib/auth/middleware-roles';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const session = await authenticateUser(req);
+  if (!session) {
+    return Response.json({ error: 'authentication required' }, { status: 401 });
+  }
+  const roleError = requireRole(session.role, 'operator');
+  if (roleError) return roleError;
   try {
     const run = await runConsolidation();
     const db = getDb();
