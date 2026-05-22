@@ -137,6 +137,24 @@ WORKSPACES = {
             "Need to record whether a selected tool helped or failed",
         ],
     },
+    "write": {
+        "description": "Knowledge write operations: create, update, append, and delete files with git integration, access control, and audit logging. Agents MUST use this instead of direct filesystem access.",
+        "tools": [
+            "knowledge_write",
+            "knowledge_delete",
+            "knowledge_ensure_dir",
+            "knowledge_git_status",
+            "knowledge_git_commit",
+        ],
+        "resources": [],
+        "use_when": [
+            "Need to create or update a knowledge file",
+            "Need to append to PENDING_FACTS or other append-only files",
+            "Need to create a new skill, vendor note, or project document",
+            "Need to delete a file (admin only)",
+            "Need to check or commit git changes",
+        ],
+    },
 }
 
 

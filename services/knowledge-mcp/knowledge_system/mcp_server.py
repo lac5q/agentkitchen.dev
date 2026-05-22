@@ -332,6 +332,121 @@ def knowledge_read(path: str, max_chars: int = 20000) -> dict:
 
 
 @_mcp_tool
+def knowledge_write(
+    path: str,
+    content: str,
+    agent_id: str = "unknown",
+    role: str = "agent",
+    append: bool = False,
+    require_frontmatter: bool = False,
+    auto_commit: bool = True,
+    commit_message: str = "",
+) -> dict:
+    """Write content to a knowledge file. Agents MUST use this instead of direct filesystem access.
+
+    Args:
+        path: Repo-relative path (e.g., "skills/my-skill/SKILL.md")
+        content: Content to write
+        agent_id: Agent identifier for audit trail
+        role: Agent role — "agent" (default), "curator", or "admin"
+        append: If True, append to existing file instead of overwriting
+        require_frontmatter: If True, validate YAML frontmatter before writing
+        auto_commit: If True, automatically stage and commit the change
+        commit_message: Custom git commit message (auto-generated if empty)
+
+    Returns:
+        dict with status, path, bytes_written, commit_sha
+    """
+    store = KnowledgeStore(_root())
+    return store.write_text(
+        relative_path=path,
+        content=content,
+        agent_id=agent_id,
+        role=role,
+        append=append,
+        require_frontmatter=require_frontmatter,
+        auto_commit=auto_commit,
+        commit_message=commit_message,
+    )
+
+
+@_mcp_tool
+def knowledge_delete(
+    path: str,
+    agent_id: str = "unknown",
+    role: str = "agent",
+    auto_commit: bool = True,
+) -> dict:
+    """Delete a knowledge file. Requires admin role.
+
+    Args:
+        path: Repo-relative path to delete
+        agent_id: Agent identifier for audit trail
+        role: Must be "admin" to delete files
+        auto_commit: If True, automatically stage and commit the deletion
+
+    Returns:
+        dict with status, path, deleted, commit_sha
+    """
+    store = KnowledgeStore(_root())
+    return store.delete_file(
+        relative_path=path,
+        agent_id=agent_id,
+        role=role,
+        auto_commit=auto_commit,
+    )
+
+
+@_mcp_tool
+def knowledge_ensure_dir(path: str) -> dict:
+    """Create directory structure in knowledge root.
+
+    Args:
+        path: Repo-relative directory path (e.g., "skills/my-skill/")
+
+    Returns:
+        dict with status, path, created
+    """
+    store = KnowledgeStore(_root())
+    return store.ensure_dir(path)
+
+
+@_mcp_tool
+def knowledge_git_status() -> dict:
+    """Return git status of the knowledge repository.
+
+    Returns:
+        dict with status, changes, has_changes, root
+    """
+    store = KnowledgeStore(_root())
+    return store.git_status()
+
+
+@_mcp_tool
+def knowledge_git_commit(
+    message: str,
+    agent_id: str = "unknown",
+    paths: list[str] | None = None,
+) -> dict:
+    """Stage and commit pending changes in the knowledge repository.
+
+    Args:
+        message: Git commit message
+        agent_id: Agent identifier for audit trail
+        paths: Specific paths to stage (None = stage all changes)
+
+    Returns:
+        dict with status, commit_sha, message
+    """
+    store = KnowledgeStore(_root())
+    return store.git_commit(
+        message=message,
+        agent_id=agent_id,
+        paths=paths,
+    )
+
+
+@_mcp_tool
 def search(query: str) -> dict:
     """Use this for ChatGPT connector search. Returns matching MemroOS knowledge documents."""
     store = KnowledgeStore(_root())
@@ -655,6 +770,43 @@ def knowledge_workspace_call(workspace: str, action: str, arguments: Optional[di
             "action": action,
             "message": "This workspace is cataloged, but the runtime adapter is not implemented yet.",
             "catalog": str(_recipes_catalog_path()),
+        }
+    if workspace == "write":
+        if action in {"write", "create", "update"}:
+            return knowledge_write(
+                path=str(args.get("path", args.get("file", ""))),
+                content=str(args.get("content", args.get("text", ""))),
+                agent_id=str(args.get("agent_id", args.get("agentId", "unknown"))),
+                role=str(args.get("role", "agent")),
+                append=bool(args.get("append", False)),
+                require_frontmatter=bool(args.get("require_frontmatter", False)),
+                auto_commit=bool(args.get("auto_commit", True)),
+                commit_message=str(args.get("commit_message", "")),
+            )
+        if action == "delete":
+            return knowledge_delete(
+                path=str(args.get("path", args.get("file", ""))),
+                agent_id=str(args.get("agent_id", args.get("agentId", "unknown"))),
+                role=str(args.get("role", "agent")),
+                auto_commit=bool(args.get("auto_commit", True)),
+            )
+        if action in {"ensure_dir", "mkdir"}:
+            return knowledge_ensure_dir(
+                path=str(args.get("path", args.get("dir", ""))),
+            )
+        if action in {"git_status", "status"}:
+            return knowledge_git_status()
+        if action in {"git_commit", "commit"}:
+            return knowledge_git_commit(
+                message=str(args.get("message", args.get("commit_message", ""))),
+                agent_id=str(args.get("agent_id", args.get("agentId", "unknown"))),
+                paths=args.get("paths") if isinstance(args.get("paths"), list) else None,
+            )
+        return {
+            "status": "unsupported_action",
+            "workspace": workspace,
+            "action": action,
+            "capabilities": get_capabilities(workspace),
         }
     return {
         "status": "unsupported_action",
