@@ -277,6 +277,7 @@ export interface SkillWorkflowItem {
   reviewStatus: SkillReviewStatus;
   reviewNotes: string;
   draftBody: string;
+  changeReason: string;
   owner: string;
   tags: string[];
   health: "ready" | "coverage-gap" | "needs-source" | "stale";
@@ -284,6 +285,7 @@ export interface SkillWorkflowItem {
   maturityScore: number;
   updatedAt: string | null;
   approvedAt: string | null;
+  usageCount: number;
 }
 
 export interface SkillReviewInput {
@@ -291,6 +293,7 @@ export interface SkillReviewInput {
   action: "save-draft" | "request-changes" | "approve-general" | "promote-enterprise";
   notes?: string;
   draftBody?: string;
+  changeReason?: string;
 }
 
 export interface ModelRoutingEvalsResponse {
@@ -496,15 +499,17 @@ export function useTokenStats() {
         "/api/tokens"
       ),
     refetchInterval: POLL_INTERVALS.tokens,
+    retry: false,
   });
 }
 
-export function useModelUsage() {
+export function useModelUsage(since?: string) {
+  const qs = since ? `?since=${encodeURIComponent(since)}` : "";
   return useQuery({
-    queryKey: ["model-usage"],
+    queryKey: ["model-usage", since ?? "all"],
     queryFn: () =>
       fetchJSON<{ usage: import("@/lib/parsers").ModelUsage; timestamp: string }>(
-        "/api/model-usage"
+        `/api/model-usage${qs}`
       ),
     refetchInterval: POLL_INTERVALS.tokens,
   });
@@ -1051,7 +1056,7 @@ export function useRecallStats() {
 
 export function useHiveFeed(limit = 20) {
   return useQuery({
-    queryKey: ["hive-feed"],
+    queryKey: ["hive-feed", limit],
     queryFn: () =>
       fetchJSON<{
         actions: Array<{
@@ -1208,10 +1213,12 @@ export function useMemoryStats() {
     queryFn: () =>
       fetchJSON<{
         lastRun: {
-          completed_at: string;
+          started_at: string;
+          completed_at: string | null;
           batch_size: number;
           insights_written: number;
           status: string;
+          error_message: string | null;
         } | null;
         pendingUnconsolidated: number;
         tierStats: Array<{
@@ -1221,6 +1228,7 @@ export function useMemoryStats() {
         }>;
         consolidationModel: string;
         sources: Array<{ agent_id: string; cnt: number }>;
+        recentFailures24h: number;
         timestamp: string;
       }>("/api/memory-stats"),
     refetchInterval: 30000,
@@ -1571,6 +1579,7 @@ export interface BusinessOutcomeEventsFilter {
   correlationId?: string;
   agentId?: string;
   since?: string;
+  until?: string;
   limit?: number;
 }
 
@@ -1579,6 +1588,7 @@ export function useBusinessOutcomeEvents(filter: BusinessOutcomeEventsFilter = {
   if (filter.correlationId) params.set("correlationId", filter.correlationId);
   if (filter.agentId) params.set("agentId", filter.agentId);
   if (filter.since) params.set("since", filter.since);
+  if (filter.until) params.set("until", filter.until);
   if (filter.limit) params.set("limit", String(filter.limit));
   const qs = params.toString();
   return useQuery({

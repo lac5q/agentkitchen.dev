@@ -11,6 +11,7 @@ interface SkillReviewBody {
   action?: "save-draft" | "request-changes" | "approve-general" | "promote-enterprise";
   notes?: string;
   draftBody?: string;
+  changeReason?: string;
 }
 
 export async function POST(req: NextRequest) {
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
       action: body.action,
       notes: typeof body.notes === "string" ? body.notes : undefined,
       draftBody: typeof body.draftBody === "string" ? body.draftBody : undefined,
+      changeReason: typeof body.changeReason === "string" ? body.changeReason : undefined,
       actor: session.email || session.userId,
     });
 

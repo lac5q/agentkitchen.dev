@@ -56,6 +56,7 @@ export function SkillsList({
         reviewStatus: coverageGaps.includes(name) ? "in-review" : "unreviewed",
         reviewNotes: "",
         draftBody: "",
+        changeReason: "",
         owner: "unassigned",
         tags: [],
         health: coverageGaps.includes(name) ? "coverage-gap" : "ready",
@@ -63,6 +64,7 @@ export function SkillsList({
         maturityScore: coverageGaps.includes(name) ? 35 : 50,
         updatedAt: null,
         approvedAt: null,
+        usageCount: 0,
       })),
     [allSkills, coverageGaps]
   );
@@ -218,11 +220,23 @@ export function SkillsList({
                 <StatusPill status={selected.reviewStatus} />
               </div>
 
-              <div className="grid gap-3 md:grid-cols-3">
+              <div className="grid gap-3 md:grid-cols-4">
                 <Metric label="Owner" value={selected.owner} />
                 <Metric label="Maturity" value={`${selected.maturityScore}%`} />
+                <Metric label="Times used" value={selected.usageCount > 0 ? `${selected.usageCount}×` : "not tracked"} />
                 <Metric label="Last activity" value={formatDate(selected.lastActivityAt)} />
               </div>
+
+              {selected.path ? (
+                <div>
+                  <p className="text-xs font-bold uppercase" style={{ color: NOC.soft, fontFamily: NOC_FONT_MONO }}>
+                    Source path
+                  </p>
+                  <p className="mt-1 truncate text-xs" style={{ color: NOC.muted, fontFamily: NOC_FONT_MONO }}>
+                    {selected.path}
+                  </p>
+                </div>
+              ) : null}
 
               <div className="grid gap-3 md:grid-cols-3">
                 {STAGES.map((stage, index) => {
@@ -254,10 +268,17 @@ export function SkillsList({
               </div>
 
               <div>
-                <p className="text-xs font-bold uppercase" style={{ color: NOC.soft, fontFamily: NOC_FONT_MONO }}>
-                  Source preview
-                </p>
-                <div className="mt-2 min-h-32 border p-4 text-sm leading-6" style={{ borderColor: NOC.rule, background: NOC.fog, color: NOC.muted }}>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs font-bold uppercase" style={{ color: NOC.soft, fontFamily: NOC_FONT_MONO }}>
+                    Current content
+                  </p>
+                  {selected.draftBody && selected.draftBody !== selected.bodyPreview ? (
+                    <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase" style={{ background: NOC.peach, color: NOC.terra, fontFamily: NOC_FONT_MONO }}>
+                      edit proposed
+                    </span>
+                  ) : null}
+                </div>
+                <div className="mt-2 max-h-48 overflow-auto border p-4 text-sm leading-6" style={{ borderColor: NOC.rule, background: NOC.fog, color: NOC.muted }}>
                   {selected.bodyPreview || "No source preview available yet."}
                 </div>
               </div>
@@ -281,9 +302,12 @@ export function SkillsList({
 
 function SkillReviewDesk({ selected }: { selected: SkillWorkflowItem | null }) {
   const [notes, setNotes] = useState(selected?.reviewNotes ?? "");
-  const [draftBody, setDraftBody] = useState(selected?.draftBody || selected?.bodyPreview || "");
+  const [draftBody, setDraftBody] = useState(selected?.draftBody || "");
+  const [changeReason, setChangeReason] = useState(selected?.changeReason ?? "");
   const [notice, setNotice] = useState<string | null>(null);
   const reviewMutation = useUpdateSkillReviewMutation();
+
+  const hasDiff = draftBody.trim() && draftBody.trim() !== (selected?.bodyPreview ?? "").trim();
 
   async function runReviewAction(action: "save-draft" | "request-changes" | "approve-general" | "promote-enterprise") {
     if (!selected) return;
@@ -292,6 +316,7 @@ function SkillReviewDesk({ selected }: { selected: SkillWorkflowItem | null }) {
       action,
       notes,
       draftBody,
+      changeReason,
     });
     setNotice(actionNotice(action));
   }
@@ -312,31 +337,62 @@ function SkillReviewDesk({ selected }: { selected: SkillWorkflowItem | null }) {
 
       <label className="block">
         <span className="text-xs font-bold uppercase" style={{ color: NOC.soft, fontFamily: NOC_FONT_MONO }}>
+          Why this change?
+        </span>
+        <textarea
+          aria-label="Reason for this change"
+          value={changeReason}
+          onChange={(event) => setChangeReason(event.target.value)}
+          className="mt-2 min-h-16 w-full resize-y border p-3 text-sm outline-none"
+          style={{ borderColor: NOC.rule, color: NOC.ink, background: NOC.paper }}
+          placeholder="Why is this edit recommended? What pattern or failure triggered it?"
+        />
+      </label>
+
+      <label className="block">
+        <span className="text-xs font-bold uppercase" style={{ color: NOC.soft, fontFamily: NOC_FONT_MONO }}>
           Review notes
         </span>
         <textarea
           aria-label="Skill review notes"
           value={notes}
           onChange={(event) => setNotes(event.target.value)}
-          className="mt-2 min-h-24 w-full border p-3 text-sm outline-none"
+          className="mt-2 min-h-20 w-full resize-y border p-3 text-sm outline-none"
           style={{ borderColor: NOC.rule, color: NOC.ink, background: NOC.paper }}
           placeholder="What must change before this skill is reusable?"
         />
       </label>
 
-      <label className="block">
-        <span className="text-xs font-bold uppercase" style={{ color: NOC.soft, fontFamily: NOC_FONT_MONO }}>
-          Proposed edit draft
-        </span>
+      <div className="block">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold uppercase" style={{ color: NOC.soft, fontFamily: NOC_FONT_MONO }}>
+            Proposed edit draft
+          </span>
+          {hasDiff ? (
+            <span className="rounded px-1.5 py-0.5 text-[10px] font-semibold" style={{ background: NOC.peach, color: NOC.terra, fontFamily: NOC_FONT_MONO }}>
+              differs from current
+            </span>
+          ) : null}
+        </div>
         <textarea
           aria-label="Skill edit draft"
           value={draftBody}
           onChange={(event) => setDraftBody(event.target.value)}
-          className="mt-2 min-h-40 w-full border p-3 text-sm outline-none"
-          style={{ borderColor: NOC.rule, color: NOC.ink, background: NOC.paper }}
-          placeholder="Draft revised instructions or approval rationale."
+          className="mt-2 min-h-64 w-full resize-y border p-3 text-sm leading-6 outline-none"
+          style={{ borderColor: hasDiff ? NOC.terra : NOC.rule, color: NOC.ink, background: NOC.paper }}
+          placeholder="Paste the full revised skill here. Leave blank to approve current content as-is."
         />
-      </label>
+        {!draftBody && selected?.bodyPreview ? (
+          <button
+            type="button"
+            className="mt-1 text-xs underline"
+            style={{ color: NOC.soft }}
+            onClick={() => setDraftBody(selected.bodyPreview)}
+          >
+            Start from current content
+          </button>
+        ) : null}
+      </div>
 
       {reviewMutation.isError ? (
         <p className="text-sm" style={{ color: NOC.terra }}>

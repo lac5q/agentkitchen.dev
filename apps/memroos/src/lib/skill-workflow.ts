@@ -14,6 +14,7 @@ export interface SkillReviewRecord {
   status: SkillReviewStatus;
   notes: string;
   draftBody: string;
+  changeReason: string;
   updatedAt: string;
   updatedBy: string;
   approvedAt?: string | null;
@@ -36,6 +37,8 @@ export interface SkillWorkflowItem {
   maturityScore: number;
   updatedAt: string | null;
   approvedAt: string | null;
+  usageCount: number;
+  changeReason: string;
 }
 
 type ReviewState = Record<string, SkillReviewRecord>;
@@ -53,6 +56,7 @@ export interface UpdateSkillReviewInput {
   action: "save-draft" | "request-changes" | "approve-general" | "promote-enterprise";
   notes?: string;
   draftBody?: string;
+  changeReason?: string;
   actor?: string;
 }
 
@@ -88,6 +92,7 @@ export async function readSkillReviewState(): Promise<ReviewState> {
         status: record.status as SkillReviewStatus,
         notes: typeof record.notes === "string" ? record.notes : "",
         draftBody: typeof record.draftBody === "string" ? record.draftBody : "",
+        changeReason: typeof record.changeReason === "string" ? record.changeReason : "",
         updatedAt: typeof record.updatedAt === "string" ? record.updatedAt : "",
         updatedBy: typeof record.updatedBy === "string" ? record.updatedBy : "unknown",
         approvedAt: typeof record.approvedAt === "string" ? record.approvedAt : null,
@@ -118,6 +123,7 @@ export async function updateSkillReviewState(input: UpdateSkillReviewInput) {
     status: previous?.status ?? "in-review",
     notes: input.notes ?? previous?.notes ?? "",
     draftBody: input.draftBody ?? previous?.draftBody ?? "",
+    changeReason: input.changeReason ?? previous?.changeReason ?? "",
     updatedAt: now,
     updatedBy: input.actor ?? "operator",
     approvedAt: previous?.approvedAt ?? null,
@@ -170,6 +176,14 @@ export async function buildSkillWorkflowItems({
         : "needs-source";
       const bodyPreview = normalizeWhitespace(stripMarkdown(raw)).slice(0, 360);
 
+      const usageRaw = skillUsage[name];
+      const usageCount =
+        typeof usageRaw === "number"
+          ? usageRaw
+          : usageRaw && typeof (usageRaw as Record<string, unknown>).count === "number"
+            ? (usageRaw as Record<string, unknown>).count as number
+            : 0;
+
       return {
         name,
         title,
@@ -180,6 +194,7 @@ export async function buildSkillWorkflowItems({
         reviewStatus,
         reviewNotes: review?.notes ?? "",
         draftBody: review?.draftBody ?? "",
+        changeReason: review?.changeReason ?? "",
         owner: metadata.owner || metadata.author || "unassigned",
         tags: parseTags(metadata.tags, raw),
         health,
@@ -187,6 +202,7 @@ export async function buildSkillWorkflowItems({
         maturityScore: maturityScore({ raw, description, stage, reviewStatus, hasGap: gapSet.has(name) }),
         updatedAt: review?.updatedAt || null,
         approvedAt: review?.approvedAt || null,
+        usageCount,
       };
     })
   );
