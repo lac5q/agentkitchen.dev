@@ -28,6 +28,12 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: "skillName and action are required" }, { status: 400 });
   }
 
+  const MAX_NOTES = 4_000;
+  const MAX_DRAFT = 50_000;
+  if ((body.notes?.length ?? 0) > MAX_NOTES || (body.draftBody?.length ?? 0) > MAX_DRAFT) {
+    return Response.json({ error: "field too long" }, { status: 400 });
+  }
+
   try {
     const review = await updateSkillReviewState({
       skillName: body.skillName,
