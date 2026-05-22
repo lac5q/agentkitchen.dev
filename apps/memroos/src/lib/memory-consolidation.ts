@@ -1,7 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { getDb } from './db';
 
-let _started = false;
+// Use globalThis to survive Next.js hot-reload module re-evaluation.
+// _consolidationInterval holds the NodeJS.Timeout so we can clear it if needed.
+declare global {
+  // eslint-disable-next-line no-var
+  var _consolidationInterval: ReturnType<typeof setInterval> | undefined;
+}
 
 const ALLOWED_INSIGHT_TYPES = new Set(['pattern', 'contradiction', 'summary']);
 const PROVIDER_BACKOFF_MINUTES = Number(process.env.CONSOLIDATION_PROVIDER_BACKOFF_MINUTES ?? 60);
@@ -159,14 +164,25 @@ function isProviderRateLimit(message: string): boolean {
 
 /**
  * Starts the consolidation scheduler (runs immediately, then every 15 min).
- * Module-level _started guard prevents double-start.
+ * Uses globalThis to survive Next.js hot-reload module re-evaluation so only
+ * one interval runs per process lifetime.
  */
 export function startConsolidationScheduler(): void {
-  if (_started) return;
-  _started = true;
+  if (typeof globalThis._consolidationInterval !== 'undefined') return;
   console.log('[consolidation] scheduler started (interval: 15m)');
   runConsolidation().catch(console.error);
-  setInterval(() => {
+  globalThis._consolidationInterval = setInterval(() => {
     runConsolidation().catch(console.error);
   }, 15 * 60 * 1000);
+}
+
+/**
+ * Stops the consolidation scheduler and clears the global reference.
+ * Useful for tests and graceful shutdown.
+ */
+export function stopConsolidationScheduler(): void {
+  if (typeof globalThis._consolidationInterval !== 'undefined') {
+    clearInterval(globalThis._consolidationInterval);
+    globalThis._consolidationInterval = undefined;
+  }
 }
