@@ -27,8 +27,10 @@ export function NocHeader() {
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = `memroos-noc-${windowLabel}-${workspace}.json`;
+    document.body.appendChild(anchor);
     anchor.click();
-    URL.revokeObjectURL(url);
+    document.body.removeChild(anchor);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   }
 
   const controlStyle = {
