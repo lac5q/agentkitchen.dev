@@ -18,17 +18,21 @@ key_files:
     - apps/memroos/src/app/api/seal/jobs/[id]/evidence/route.ts
   modified:
     - apps/memroos/src/lib/api-client.ts
+    - apps/memroos/src/lib/seal/types.ts
+    - apps/memroos/src/lib/seal/service.ts
+    - apps/memroos/src/components/seal/approval-queue-panel.tsx
 decisions:
   - "Runner W-scoring uses rescorePostApply() (modeled baseline delta) — sandbox transcript is the behavioral evidence artifact, not real agent re-execution output. Matches D-06 honesty constraint."
   - "taskSampleId is set to proposal.trace_id (single-sample behavioral eval) — multi-sample golden set expansion deferred to v5."
   - "preScoringHook seam on BehavioralRunnerOptions allows test injection of tool calls into sandbox transcript without changing the runner dispatch model."
   - "Failed runs persist partial evidence bundle with postApplyW=null — never truncates evidence on exception."
+  - "UI reads latestJobId/latestJobStatus from listProposals() LEFT JOIN — no extra round-trip per proposal; live job polling only fires on row expand."
 metrics:
-  duration: "~12 minutes"
-  completed: "2026-05-21"
-  tasks_completed: 2
+  duration: "~20 minutes"
+  completed: "2026-05-22"
+  tasks_completed: 3
   tasks_total: 3
-  files_modified: 5
+  files_modified: 8
 ---
 
 # Phase 72 Plan 03: Behavioral eval runner and SEAL UI polling Summary
@@ -65,15 +69,27 @@ Added 13 failing tests covering:
 
 **`api-client.ts`:** Added `useSealJob()` (polls 5s intervals, stops on terminal status) and `useSealJobEvidence()` React Query hooks.
 
-### Task 3: SEAL UI polling and evidence view (PAUSED — checkpoint:human-verify)
+### Task 3: SEAL UI polling and evidence view (committed `a9bb21d`)
 
-Task 3 is a `gate="blocking"` checkpoint requiring operator browser smoke on `/seal`. Execution paused for human verification of the wired UI and APIs.
+Wired `useSealJob` and `useSealJobEvidence` into the approval queue panel:
+
+**`service.ts` (listProposals):** Extended SQL with a LEFT JOIN on `seal_eval_jobs` to fetch the latest job id/status per proposal in one query. No extra round-trip per proposal in the list view.
+
+**`types.ts` + `api-client.ts`:** Added optional `latestJobId` and `latestJobStatus` fields to `SealProposal` — backward compatible (undefined when no job exists).
+
+**`approval-queue-panel.tsx`:** Added two new components:
+- `JobStatusBadge` — color-coded badge for job statuses (queued/running/passed/failed/rolled_back/canceled); running state pulses
+- `EvidenceView` — shown when a behavioral proposal row is expanded and has a `latestJobId`; polls `useSealJob` (5s, stops on terminal) and `useSealJobEvidence` (10s); renders sandbox transcript, W-lift delta, rollback handle
+
+Behavioral proposals (`agent_instruction_patch`, `skill_addition`) show an inline `JobStatusBadge` in the metadata row. Non-behavioral proposals show nothing. Expanding a behavioral proposal row with a job renders `EvidenceView` beneath the diff panel. Polling stops automatically on terminal status.
+
+**Build:** Passes (`✓ Compiled successfully`). All 13 behavioral-runner tests still pass.
 
 ## Deviations from Plan
 
 ### Auto-fixed Issues
 
-None — plan executed as written through Tasks 1-2.
+None — plan executed as written.
 
 ### Intentional Design Decisions
 
@@ -109,11 +125,18 @@ Files created:
 - `apps/memroos/src/app/api/seal/jobs/[id]/route.ts` — FOUND (1312931)
 - `apps/memroos/src/app/api/seal/jobs/[id]/evidence/route.ts` — FOUND (1312931)
 
+Files modified (Task 3):
+- `apps/memroos/src/lib/seal/types.ts` — FOUND (a9bb21d)
+- `apps/memroos/src/lib/seal/service.ts` — FOUND (a9bb21d)
+- `apps/memroos/src/lib/api-client.ts` — FOUND (a9bb21d)
+- `apps/memroos/src/components/seal/approval-queue-panel.tsx` — FOUND (a9bb21d)
+
 Commits:
 - `39daa52` — test(72-03): add failing tests for behavioral runner and job/evidence APIs
 - `1312931` — feat(72-03): implement behavioral runner and job/evidence APIs
+- `a9bb21d` — feat(72-03): wire SEAL UI polling and evidence view for behavioral proposals
 
 Tests: 13/13 passing
-Typecheck: clean
+Build: ✓ Compiled successfully
 
 ## Self-Check: PASSED

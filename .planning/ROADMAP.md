@@ -326,8 +326,8 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 
 2. Plan corrective Operations NOC Real-Data Wiring phase.
    - Source note: `.planning/notes/operations-noc-real-data-requirements.md`.
-   - Requirements: `NOC-01..NOC-11` in `.planning/REQUIREMENTS.md`.
-   - Goal: replace mock home-screen panels with live operational data, explicit missing/degraded states, real engagement dispatch, and the telemetry streams needed for efficiency signals.
+   - Requirements: `NOC-01..NOC-14` and `OPS-AUDIT-01..04` in `.planning/REQUIREMENTS.md`.
+   - Goal: replace mock home-screen panels with live operational data, explicit missing/degraded states, functional controls, date-windowed performance views, and the telemetry streams needed for efficiency signals.
 3. Plan Phase 70 follow-up topology closure.
    - Source note: `.planning/phases/70-foundation-engine-core/deferred-items.md`.
    - Requirement: `ORCH-FOLLOWUP-01` in `.planning/REQUIREMENTS.md`.
@@ -618,5 +618,5 @@ Plans:
 |-------|----------|---------------|--------|-----------|
 | 70 | v4.0 | 5/5 | Complete   | 2026-05-21 |
 | 71 | v4.0 | 6/6 | Complete | 2026-05-21 |
-| 72 | v4.0 | 6/6 | Complete   | 2026-05-21 |
+| 72 | v4.0 | 6/6 | Complete   | 2026-05-22 |
 | 73 | v4.0 | 1/1 | Complete   | 2026-05-21 |
