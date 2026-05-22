@@ -40,6 +40,8 @@ type ProposalRow = {
   baseline_layer_json: string;
   created_at: string;
   updated_at: string;
+  latest_job_id?: string | null;
+  latest_job_status?: string | null;
 };
 
 type DecisionInput = {
@@ -81,6 +83,8 @@ function rowToProposal(row: ProposalRow): SealProposal {
     baselineLayers: JSON.parse(row.baseline_layer_json),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    latestJobId: row.latest_job_id ?? null,
+    latestJobStatus: (row.latest_job_status ?? null) as SealProposal["latestJobStatus"],
   };
 }
 
@@ -167,11 +171,20 @@ export class SealService {
   }
 
   listProposals(filter: { status?: ProposalStatus } = {}): SealProposal[] {
+    // LEFT JOIN with the most recent eval job per proposal so callers can display
+    // behavioral job status inline without a separate round-trip.
+    const baseQuery =
+      "SELECT p.*, j.id AS latest_job_id, j.status AS latest_job_status " +
+      "FROM seal_proposals p " +
+      "LEFT JOIN seal_eval_jobs j ON j.proposal_id = p.id " +
+      "  AND j.created_at = (" +
+      "    SELECT MAX(created_at) FROM seal_eval_jobs WHERE proposal_id = p.id" +
+      "  ) ";
     const rows = filter.status
       ? this.db
-          .prepare("SELECT * FROM seal_proposals WHERE status = ? ORDER BY created_at DESC")
+          .prepare(baseQuery + "WHERE p.status = ? ORDER BY p.created_at DESC")
           .all(filter.status)
-      : this.db.prepare("SELECT * FROM seal_proposals ORDER BY created_at DESC").all();
+      : this.db.prepare(baseQuery + "ORDER BY p.created_at DESC").all();
     return (rows as ProposalRow[]).map(rowToProposal);
   }
 

@@ -6,8 +6,10 @@ import {
   useApproveMutation,
   useRejectMutation,
   useApplyMutation,
+  useSealJob,
+  useSealJobEvidence,
 } from "@/lib/api-client";
-import type { SealProposal } from "@/lib/api-client";
+import type { SealProposal, EvalJobStatus } from "@/lib/api-client";
 
 function StatusBadge({ status }: { status: SealProposal["status"] }) {
   const styles: Record<SealProposal["status"], string> = {
@@ -23,6 +25,138 @@ function StatusBadge({ status }: { status: SealProposal["status"] }) {
     >
       {status.replace("_", " ")}
     </span>
+  );
+}
+
+/** Behavioral proposal types that produce async eval jobs. */
+const BEHAVIORAL_TYPES = new Set(["agent_instruction_patch", "skill_addition"]);
+
+function JobStatusBadge({ status }: { status: EvalJobStatus }) {
+  const styles: Record<EvalJobStatus, string> = {
+    queued: "border-stone-400/40 bg-stone-400/10 text-stone-400",
+    running: "border-sky-400/40 bg-sky-400/10 text-sky-300 animate-pulse",
+    passed: "border-emerald-500/40 bg-emerald-500/10 text-emerald-300",
+    failed: "border-rose-500/40 bg-rose-500/10 text-rose-300",
+    rolled_back: "border-slate-500/40 bg-slate-500/10 text-slate-400",
+    canceled: "border-stone-500/40 bg-stone-500/10 text-stone-500",
+  };
+  return (
+    <span
+      className={`rounded border px-2 py-0.5 text-[10px] font-semibold uppercase ${styles[status]}`}
+    >
+      job: {status.replace("_", " ")}
+    </span>
+  );
+}
+
+function EvidenceView({ jobId }: { jobId: string }) {
+  const jobQuery = useSealJob(jobId);
+  const evidenceQuery = useSealJobEvidence(jobId);
+
+  const job = jobQuery.data?.job;
+  const evidence = evidenceQuery.data?.evidence;
+
+  if (jobQuery.isLoading) {
+    return (
+      <div className="mt-3 rounded border border-stone-200 bg-white/80 p-3 text-xs text-stone-500">
+        Loading job status...
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-3 rounded border border-stone-200 bg-white/80 p-3">
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+        Behavioral Eval Job
+      </p>
+
+      {/* Job status row */}
+      {job && (
+        <div className="mb-2 flex flex-wrap items-center gap-3 text-xs text-stone-600">
+          <span className="font-mono text-[10px] text-stone-400">{job.id}</span>
+          <JobStatusBadge status={job.status} />
+          {job.errorMessage && (
+            <span className="text-rose-400">{job.errorMessage}</span>
+          )}
+        </div>
+      )}
+      {!job && !jobQuery.isLoading && (
+        <p className="text-xs text-stone-400">Job not found.</p>
+      )}
+
+      {/* Evidence bundle */}
+      {evidence ? (
+        <div className="space-y-2 text-xs">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <span className="text-stone-400">Baseline W</span>
+              <span className="ml-2 font-mono text-stone-600">
+                {evidence.preApplyBaselineW.toFixed(4)}
+              </span>
+            </div>
+            <div>
+              <span className="text-stone-400">Post-apply W</span>
+              <span className="ml-2 font-mono text-stone-600">
+                {evidence.postApplyW !== null ? evidence.postApplyW.toFixed(4) : "—"}
+              </span>
+            </div>
+          </div>
+
+          {/* Sandbox transcript summary */}
+          {evidence.toolCallTranscript.length > 0 ? (
+            <div>
+              <p className="mb-1 text-[10px] font-semibold uppercase text-stone-400">
+                Sandbox Transcript ({evidence.toolCallTranscript.length} call
+                {evidence.toolCallTranscript.length !== 1 ? "s" : ""})
+              </p>
+              <ul className="space-y-1">
+                {evidence.toolCallTranscript.slice(0, 5).map((call, i) => (
+                  <li key={i} className="flex items-center gap-2 text-[11px]">
+                    <span
+                      className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+                        call.denied
+                          ? "bg-rose-500/10 text-rose-400"
+                          : "bg-emerald-500/10 text-emerald-400"
+                      }`}
+                    >
+                      {call.denied ? "denied" : "allowed"}
+                    </span>
+                    <span className="font-mono text-stone-500">{call.toolName}</span>
+                    {call.denyReason && (
+                      <span className="text-stone-400 line-clamp-1">{call.denyReason}</span>
+                    )}
+                  </li>
+                ))}
+                {evidence.toolCallTranscript.length > 5 && (
+                  <li className="text-[11px] text-stone-400">
+                    +{evidence.toolCallTranscript.length - 5} more
+                  </li>
+                )}
+              </ul>
+            </div>
+          ) : (
+            <p className="text-[11px] text-stone-400">No sandbox tool calls recorded.</p>
+          )}
+
+          {/* Rollback handle */}
+          {evidence.rollbackHandle && (
+            <div className="text-[11px] text-stone-400">
+              Rollback handle: <span className="font-mono">{evidence.rollbackHandle}</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        job &&
+        !["queued", "running"].includes(job.status) && (
+          <p className="text-xs text-stone-400">Evidence not available.</p>
+        )
+      )}
+
+      {/* Polling indicator for active jobs */}
+      {job && ["queued", "running"].includes(job.status) && (
+        <p className="mt-2 text-[11px] text-sky-400">Polling for updates...</p>
+      )}
+    </div>
   );
 }
 
@@ -77,6 +211,10 @@ function ProposalRow({ proposal }: { proposal: SealProposal }) {
             <span className="text-stone-600">
               {new Date(proposal.createdAt).toLocaleString()}
             </span>
+            {/* Inline job badge for behavioral proposal types */}
+            {BEHAVIORAL_TYPES.has(proposal.proposalType) && proposal.latestJobStatus && (
+              <JobStatusBadge status={proposal.latestJobStatus} />
+            )}
           </div>
         </div>
 
@@ -129,27 +267,33 @@ function ProposalRow({ proposal }: { proposal: SealProposal }) {
         </div>
       </div>
 
-      {/* Diff preview */}
+      {/* Diff preview + evidence for behavioral proposals */}
       {expanded && (
-        <div className="mt-3 rounded border border-stone-200 bg-white/90 p-3">
-          <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-stone-500">
-            Diff
-          </p>
-          <pre className="overflow-x-auto text-[11px] text-stone-600">
-            {JSON.stringify(proposal.diff, null, 2)}
-          </pre>
-          <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
-            {(["l1", "l2", "l3"] as const).map((layer) => {
-              const score = proposal.baselineLayers[layer]?.score;
-              return (
-                <div key={layer} className="text-stone-500">
-                  <span className="font-mono text-stone-500">{layer}</span>{" "}
-                  {score !== undefined ? score.toFixed(4) : "—"}
-                </div>
-              );
-            })}
+        <>
+          <div className="mt-3 rounded border border-stone-200 bg-white/90 p-3">
+            <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-stone-500">
+              Diff
+            </p>
+            <pre className="overflow-x-auto text-[11px] text-stone-600">
+              {JSON.stringify(proposal.diff, null, 2)}
+            </pre>
+            <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
+              {(["l1", "l2", "l3"] as const).map((layer) => {
+                const score = proposal.baselineLayers[layer]?.score;
+                return (
+                  <div key={layer} className="text-stone-500">
+                    <span className="font-mono text-stone-500">{layer}</span>{" "}
+                    {score !== undefined ? score.toFixed(4) : "—"}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+          {/* Evidence view for behavioral proposals that have a job */}
+          {BEHAVIORAL_TYPES.has(proposal.proposalType) && proposal.latestJobId && (
+            <EvidenceView jobId={proposal.latestJobId} />
+          )}
+        </>
       )}
     </div>
   );

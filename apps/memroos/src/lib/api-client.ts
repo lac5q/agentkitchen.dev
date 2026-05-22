@@ -359,6 +359,10 @@ export interface SealProposal {
   baselineLayers: Record<string, { score: number; weight: number }>;
   createdAt: string;
   updatedAt: string;
+  /** ID of the latest behavioral eval job for this proposal, if any. */
+  latestJobId?: string | null;
+  /** Status of the latest behavioral eval job, if any. */
+  latestJobStatus?: EvalJobStatus | null;
 }
 
 export interface SealAuditLogEntry {

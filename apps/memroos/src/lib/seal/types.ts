@@ -31,6 +31,10 @@ export interface SealProposal extends ProposalDraft {
   status: ProposalStatus;
   createdAt: string;
   updatedAt: string;
+  /** ID of the latest behavioral eval job for this proposal, if any. */
+  latestJobId?: string | null;
+  /** Status of the latest behavioral eval job, if any. */
+  latestJobStatus?: import("./behavioral-jobs").EvalJobStatus | null;
 }
 
 export interface SealDecision {
