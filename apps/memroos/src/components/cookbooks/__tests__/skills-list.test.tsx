@@ -94,6 +94,7 @@ describe("SkillsList", () => {
         action: "approve-general",
         notes: "Looks reusable for the standup room.",
         draftBody: "Draft with clear operator procedure.",
+        changeReason: "",
       });
     });
     expect(screen.getByText("Skill approved for general use.")).toBeTruthy();
