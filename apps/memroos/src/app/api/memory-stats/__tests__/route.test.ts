@@ -9,6 +9,14 @@ vi.mock('@/lib/db', () => ({
   closeDb: () => {},
 }));
 
+vi.mock('@/lib/auth/session', () => ({
+  authenticateUser: vi.fn().mockResolvedValue({ userId: 'test-user', role: 'operator', email: '', displayName: '', tenantId: 'default' }),
+}));
+
+vi.mock('@/lib/auth/middleware-roles', () => ({
+  requireRole: vi.fn().mockReturnValue(null),
+}));
+
 const { initSchema } = await import('@/lib/db-schema');
 initSchema(testDb);
 
