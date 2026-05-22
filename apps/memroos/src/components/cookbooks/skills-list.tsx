@@ -311,14 +311,19 @@ function SkillReviewDesk({ selected }: { selected: SkillWorkflowItem | null }) {
 
   async function runReviewAction(action: "save-draft" | "request-changes" | "approve-general" | "promote-enterprise") {
     if (!selected) return;
-    await reviewMutation.mutateAsync({
-      skillName: selected.name,
-      action,
-      notes,
-      draftBody,
-      changeReason,
-    });
-    setNotice(actionNotice(action));
+    try {
+      await reviewMutation.mutateAsync({
+        skillName: selected.name,
+        action,
+        notes,
+        draftBody,
+        changeReason,
+      });
+      setNotice(actionNotice(action));
+    } catch (err) {
+      // reviewMutation.error surfaces to the UI via isError; clear stale notice
+      setNotice("Error: " + (err instanceof Error ? err.message : "Review update failed"));
+    }
   }
 
   return (
