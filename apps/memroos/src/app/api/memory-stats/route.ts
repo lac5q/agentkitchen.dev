@@ -1,8 +1,19 @@
+import type { NextRequest } from 'next/server';
+
 import { getDb } from '@/lib/db';
+import { authenticateUser } from '@/lib/auth/session';
+import { requireRole } from '@/lib/auth/middleware-roles';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const session = await authenticateUser(req);
+  if (!session) {
+    return Response.json({ error: 'authentication required' }, { status: 401 });
+  }
+  const roleError = requireRole(session.role, 'operator');
+  if (roleError) return roleError;
+
   const db = getDb();
 
   const lastRunRow = db
