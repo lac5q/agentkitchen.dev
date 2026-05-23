@@ -94,12 +94,12 @@ describe("ChatGPT Actions bridge", () => {
   });
 
   it("uses the configured public base URL in the OpenAPI schema", async () => {
-    process.env.MEMROOS_CHATGPT_ACTIONS_PUBLIC_BASE_URL = "https://memroos.epiloguecapital.com";
+    process.env.MEMROOS_CHATGPT_ACTIONS_PUBLIC_BASE_URL = "https://app.memroos.test";
     const { GET } = await loadOpenApiRoute();
     const response = await GET(new Request("https://localhost:3002/api/chatgpt/actions/openapi"));
     const body = await response.json();
 
-    expect(body.servers).toEqual([{ url: "https://memroos.epiloguecapital.com" }]);
+    expect(body.servers).toEqual([{ url: "https://app.memroos.test" }]);
     delete process.env.MEMROOS_CHATGPT_ACTIONS_PUBLIC_BASE_URL;
   });
 
@@ -108,14 +108,14 @@ describe("ChatGPT Actions bridge", () => {
     const response = await GET(
       new Request("https://localhost:3002/api/chatgpt/actions/openapi", {
         headers: {
-          "x-forwarded-host": "memroos.epiloguecapital.com",
+          "x-forwarded-host": "app.memroos.test",
           "x-forwarded-proto": "https",
         },
       })
     );
     const body = await response.json();
 
-    expect(body.servers).toEqual([{ url: "https://memroos.epiloguecapital.com" }]);
+    expect(body.servers).toEqual([{ url: "https://app.memroos.test" }]);
   });
 
   it("searches MemRoOS on loopback without requiring a setup key", async () => {

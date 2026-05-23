@@ -5,7 +5,7 @@ import type { UserRole } from "@/lib/auth/types";
 
 const PUBLIC_HOSTS = new Set(["memroos.com", "www.memroos.com", "memroos.vercel.app"]);
 const LEGACY_HOSTS = new Set(["memroos.dev", "www.memroos.dev"]);
-const DEFAULT_HTTPS_APP_HOSTS = new Set(["memroos.epiloguecapital.com"]);
+const DEFAULT_HTTPS_APP_HOSTS = new Set<string>();
 
 function normalizeHost(host: string): string {
   return host.split(":")[0]?.toLowerCase() ?? "";

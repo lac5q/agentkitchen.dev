@@ -165,7 +165,7 @@ Lineage row shape:
 {
   "hop_type": "state_edit",
   "detail_json": {
-    "actor": "luis@epiloguecapital.com",
+    "actor": "operator@example.com",
     "before": {"taskSummary": "Deploy reviewed change"},
     "after": {"taskSummary": "Deploy reviewed change (edited)", "requiresApproval": false}
   }

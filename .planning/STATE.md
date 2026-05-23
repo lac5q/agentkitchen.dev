@@ -40,7 +40,7 @@ Phase: 73 (operator-ui-truth-phase-parity) — COMPLETE
 Plan: 1 of 1
 Wave 1 (complete): 71-01 recall foundation, 71-03 HIL SLA engine, 71-05 voice Daily bot
 Wave 2 (complete): 71-02 recall endpoint+job, 71-04 HIL dashboard, 71-06 voice consent UI
-Deployment closeout: merged to `main` at c2ff997, pushed to origin, rebuilt, restarted `com.memroos` launchd service on port 3002, and verified `https://memroos.epiloguecapital.com/login` returned HTTP 200.
+Deployment closeout: merged to `main` at c2ff997, pushed to origin, rebuilt, restarted `com.memroos` launchd service on port 3002, and verified the private HTTPS app login route returned HTTP 200.
 Phase 72 closeout: skill-aware dispatch and evidence integration complete with fail-closed SQL governance.
 Phase 73 closeout: HIL edit UI mounted in live approvals, NOC telemetry truth corrected, and phase-close UI representation gate added.
 Next action: run v4.0 milestone audit/closeout, then decide whether to deploy Phase 73 after separating unrelated dirty worktree changes.

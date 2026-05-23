@@ -38,7 +38,7 @@ This note preserves the projectless Codex thread context inside the MemRoOS repo
   - `launchctl kickstart -k gui/$(id -u)/com.memroos`
 - Local origin is listening on port `3002`.
 - Cloudflare-hosted private MemRoOS surface verified:
-  - `https://memroos.epiloguecapital.com/login` returned `200`
+  - private HTTPS app login route returned `200`
 - Vercel production deployment completed and was aliased:
   - `https://memroos.com` returned `200`
   - Deployment URL: `https://memroos-7enpenvr0-luis-calderons-projects-9c5eea79.vercel.app`

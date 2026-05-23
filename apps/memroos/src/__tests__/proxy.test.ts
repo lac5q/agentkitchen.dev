@@ -3,15 +3,15 @@ import { NextRequest } from "next/server";
 import { proxy } from "../proxy";
 
 describe("proxy", () => {
-  it("redirects the local Cloudflare app host from HTTP to HTTPS by default", async () => {
+  it("does not hard-code private hosts for HTTPS redirects", async () => {
     const response = await proxy(
-      new NextRequest("http://memroos.epiloguecapital.com/login", {
-        headers: { host: "memroos.epiloguecapital.com" },
+      new NextRequest("http://app.memroos.test/login", {
+        headers: { host: "app.memroos.test" },
       })
     );
 
-    expect(response.status).toBe(307);
-    expect(response.headers.get("location")).toBe("https://memroos.epiloguecapital.com/login");
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
   });
 
   it("redirects the production app host from HTTP to HTTPS", async () => {
@@ -53,9 +53,9 @@ describe("proxy", () => {
 
   it("lets ChatGPT Action routes handle their own API key authorization", async () => {
     const response = await proxy(
-      new NextRequest("https://memroos.epiloguecapital.com/api/chatgpt/actions/search", {
+      new NextRequest("https://app.memroos.test/api/chatgpt/actions/search", {
         method: "POST",
-        headers: { host: "memroos.epiloguecapital.com", "x-api-key": "action-key" },
+        headers: { host: "app.memroos.test", "x-api-key": "action-key" },
       })
     );
 

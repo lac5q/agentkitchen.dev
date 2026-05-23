@@ -154,7 +154,7 @@ class OrchestrationEngineTest(unittest.TestCase):
         self.engine.record_state_edit(
             run_id=run_id,
             correlation_id=correlation_id,
-            actor="luis@epiloguecapital.com",
+            actor="operator@example.com",
             patch={"taskSummary": "Audit this edit (corrected)"},
         )
 

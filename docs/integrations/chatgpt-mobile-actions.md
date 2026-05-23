@@ -26,7 +26,7 @@ custom header named `x-api-key`, and paste the generated value there.
 1. Make sure the MemRoOS app is reachable over HTTPS, for example:
 
    ```text
-   https://memroos.epiloguecapital.com
+   https://your-memroos.example.com
    ```
 
 2. In the GPT editor on ChatGPT web, create a GPT named `MemRoOS`.
@@ -34,7 +34,7 @@ custom header named `x-api-key`, and paste the generated value there.
 4. Import or paste the schema from:
 
    ```text
-   https://memroos.epiloguecapital.com/api/chatgpt/actions/openapi
+   https://your-memroos.example.com/api/chatgpt/actions/openapi
    ```
 
 5. Set authentication:

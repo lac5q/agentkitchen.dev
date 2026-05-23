@@ -84,14 +84,14 @@ describe("PATCH /api/orchestration/hil/[id]/edit", () => {
       json: async () => ({ ok: true, editedFields: [] }),
     });
 
-    const req = makeRequest({}, { "x-operator-id": "luis@epiloguecapital.com" });
+    const req = makeRequest({}, { "x-operator-id": "operator@example.com" });
     await PATCH(req, { params: Promise.resolve({ id: "hil-test-1" }) });
 
     expect(mockFetch).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
         headers: expect.objectContaining({
-          "x-operator-id": "luis@epiloguecapital.com",
+          "x-operator-id": "operator@example.com",
         }),
       })
     );
