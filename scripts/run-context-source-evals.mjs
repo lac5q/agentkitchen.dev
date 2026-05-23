@@ -22,4 +22,27 @@ for (const source of config.sources) {
   }
 }
 
+const spark = config.sources.find((source) => source.id === "spark");
+const readiness = spark?.readinessPolicy;
+const requiredReadinessKeys = [
+  "artifactCompleteMarker",
+  "pendingStateKey",
+  "ownerIdentitiesEnv",
+  "settleMinutesEnv",
+];
+if (!readiness) {
+  console.error("Spark source missing readinessPolicy");
+  process.exit(1);
+}
+for (const key of requiredReadinessKeys) {
+  if (!readiness[key]) {
+    console.error(`Spark readinessPolicy missing ${key}`);
+    process.exit(1);
+  }
+}
+if (readiness.artifactCompleteMarker !== "## Transcript") {
+  console.error("Spark readinessPolicy must require transcript-bearing artifacts");
+  process.exit(1);
+}
+
 console.log("Context source degradation eval passed");

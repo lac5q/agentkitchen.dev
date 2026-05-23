@@ -18,6 +18,26 @@ or `SOURCE_MISSING` and ask for the source lane to be repaired. They should not
 reconstruct meeting notes, email context, or source-backed artifacts from
 adjacent summaries unless Luis explicitly asks for reconstruction.
 
+## Meeting Readiness
+
+Meeting sources such as Spark, Google Meet notes, Zoom, and future Recall.ai
+connectors can surface metadata before transcript content is complete. A meeting
+row is not indexable just because the source row exists.
+
+Meeting source contracts must declare:
+
+- `ownerIdentitiesEnv`: an environment variable containing the operator email
+  identities that count as "my meetings".
+- `artifactCompleteMarker`: the marker required before an artifact is searchable
+  for meeting-note tasks, such as `## Transcript`.
+- `pendingStateKey`: the state bucket for rows seen before transcript hydration.
+- `settleMinutesEnv`: the configurable window that prevents in-progress
+  meetings from being indexed as final notes.
+
+Indexers should keep incomplete meeting rows in pending state and revisit them.
+They should not advance a one-way watermark in a way that makes a metadata-only
+stub look complete.
+
 ## Runtime Services
 
 Use:

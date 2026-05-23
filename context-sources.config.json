@@ -31,13 +31,19 @@
       "type": "spark",
       "enabled": false,
       "requiredTools": ["sqlite3", "python3"],
-      "envVars": ["SPARK_TRANSCRIPTS_DB"],
+      "envVars": ["SPARK_TRANSCRIPTS_DB", "MEMROOS_MEETING_IDENTITY_EMAILS"],
       "sourcePath": "./data/context/spark",
       "ingestCommand": "python3 services/ingestion/spark-transcripts.py",
       "indexCommand": "qmd index spark",
       "freshnessThresholdMinutes": 360,
       "qmdCollection": "spark",
-      "safeAnswerPolicy": "source_required"
+      "safeAnswerPolicy": "source_required",
+      "readinessPolicy": {
+        "artifactCompleteMarker": "## Transcript",
+        "pendingStateKey": "pending_message_rowids",
+        "ownerIdentitiesEnv": "MEMROOS_MEETING_IDENTITY_EMAILS",
+        "settleMinutesEnv": "SPARK_TRANSCRIPT_SETTLE_MINUTES"
+      }
     },
     {
       "id": "mem0",

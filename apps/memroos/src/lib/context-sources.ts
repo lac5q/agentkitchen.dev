@@ -20,6 +20,12 @@ export interface ContextSourceContract {
   freshnessThresholdMinutes: number;
   qmdCollection: string | null;
   safeAnswerPolicy: SafeAnswerPolicy;
+  readinessPolicy?: {
+    artifactCompleteMarker?: string;
+    pendingStateKey?: string;
+    ownerIdentitiesEnv?: string;
+    settleMinutesEnv?: string;
+  };
 }
 
 export interface ContextSourcesConfig {
