@@ -39,7 +39,7 @@ export function PulseStrip({ filters }: PulseStripProps) {
       modelUsage.data.usage.total.outputTokens +
       modelUsage.data.usage.total.cacheRead +
       modelUsage.data.usage.total.cacheCreation
-    : 0;
+    : null;
   const failedWork = actions.filter((a) => a.action_type === "error").length +
     delegationRows.filter((d) => d.status === "failed").length;
 
@@ -67,9 +67,9 @@ export function PulseStrip({ filters }: PulseStripProps) {
     },
     {
       label: `Model tokens · ${filters.window}`,
-      value: compactNumber(tokenTotal),
-      delta: modelUsage.isError ? "failed" : modelUsage.data?.usage.total.requests ? "live" : "empty",
-      spark: sparkFromPoints(modelUsage.data?.usage.models.slice(0, 12).map((m) => m.totalTokens) ?? [], tokenTotal),
+      value: tokenTotal === null ? "Loading" : compactNumber(tokenTotal),
+      delta: modelUsage.isError ? "failed" : modelUsage.isLoading ? "loading" : modelUsage.data?.usage.total.requests ? "live" : "empty",
+      spark: sparkFromPoints(modelUsage.data?.usage.models.slice(0, 12).map((m) => m.totalTokens) ?? [], tokenTotal ?? 0),
       color: NOC.success,
     },
     {
