@@ -6,9 +6,11 @@ import {
   ArrowRight,
   Brain,
   BriefcaseBusiness,
+  CalendarDays,
   CheckCircle2,
   Code2,
   Database,
+  ExternalLink,
   FileSearch,
   Gauge,
   GitBranch,
@@ -27,6 +29,9 @@ import { OperationsNoc } from "@/components/operations";
 
 const PUBLIC_LANDING_HOSTS = new Set(["memroos.com", "www.memroos.com", "memroos.vercel.app"]);
 const RESEARCH_PAPER_HREF = "/research/memroos-governed-knowledge-architecture-paper.pdf";
+const GITHUB_REPO_HREF = "https://github.com/lac5q/memroos";
+const GOOGLE_CALENDAR_HREF =
+  "https://calendar.google.com/calendar/appointments/schedules/AcZssZ2JkygvmpuopbcqA_NAPJZDRp0RfmZGa2x_w_oV_dFm-cYVGEyEYG9vy80meCKZzyianVC6P2vJ";
 
 function isPublicLandingHost(host: string): boolean {
   const normalized = host.split(":")[0]?.toLowerCase() ?? "";
@@ -142,6 +147,33 @@ const operatorSurfaces = [
     label: "Evidence loop",
     value: "trace",
     detail: "The roadmap ties agent output back to sources used, memories consumed, tool actions, verification checks, and residual risk.",
+  },
+];
+
+const screenshotShowcase = [
+  {
+    title: "Operator NOC",
+    image: "/screenshots/memroos-floor.png",
+    alt: "MemroOS operator NOC showing memory consumption, workload, model utility, governance, and agent activity panels.",
+    detail: "One operational surface for memory health, agent workload, governance, and evidence.",
+  },
+  {
+    title: "Memory",
+    image: "/screenshots/readme-memory.png",
+    alt: "MemroOS memory page with retained context search and memory activity surfaces.",
+    detail: "Search retained context before dispatch, then trace what agents consumed.",
+  },
+  {
+    title: "Dispatch",
+    image: "/screenshots/readme-dispatch.png",
+    alt: "MemroOS dispatch page with agent cards, live delegations, and task state.",
+    detail: "Send work to local, REST, and A2A-style agents from one governed registry.",
+  },
+  {
+    title: "Skills",
+    image: "/screenshots/readme-skills.png",
+    alt: "MemroOS skills page showing skill lifecycle, analytics, and review workflow.",
+    detail: "Promote repeated successful workflows into reviewed, reusable procedures.",
   },
 ];
 
@@ -579,7 +611,7 @@ function LandingPage() {
                 The paper explains why these stats matter: progressive disclosure, governed writes, dual-index retrieval, and the retain-retrieve-reinforce loop that makes memory useful across many agents.
               </p>
             </div>
-            <Link
+            <a
               href={RESEARCH_PAPER_HREF}
               target="_blank"
               rel="noopener noreferrer"
@@ -587,7 +619,7 @@ function LandingPage() {
             >
               Read the research paper
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
+            </a>
           </div>
           <div className="mt-8 divide-y divide-[#4a4a45] border-y border-[#4a4a45]">
             {competitorScores.map((competitor, index) => (
