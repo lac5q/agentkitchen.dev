@@ -1,382 +1,575 @@
-# Architecture Patterns: v4.0 Integration Analysis
+# Architecture: v5.0 Memory Trust + Operational Intelligence
 
-**Project:** Memroos v4.0 Orchestration Depth + Intelligence Uplift
-**Researched:** 2026-05-17
-**Confidence:** HIGH (all key claims verified against source code + Context7 docs)
-
----
-
-## Critical Structural Constraint: Two-Database Reality
-
-Every v4.0 feature lands on one of two database sides. This is the #1 constraint for the roadmapper.
-
-| Database | Owner | Tables relevant to v4.0 |
-|----------|-------|------------------------|
-| `data/orchestration.db` | Python orchestration service | `orchestration_runs`, `orchestration_lineage`, `orchestration_hil_decisions`, LangGraph checkpoint tables |
-| `data/conversations.db` | Next.js app (TypeScript) | `hil_escalations`, `audit_entries`, `seal_*`, `messages`, `memory_salience`, `recall_log`, `proposed_skills`, `agent_instructions` |
-
-The Python service and TypeScript app never share a DB handle. Cross-boundary state (e.g., a LangGraph run ID referenced in a hil_escalation row) is passed as foreign key values over HTTP, not as SQL JOINs.
+**Project:** Memroos
+**Milestone:** v5.0
+**Researched:** 2026-05-23
+**Scope:** Integration of Memory Security, Source Reliability, NOC Real-Data, Harness Evidence, and Auth Hardening into the existing architecture
 
 ---
 
-## Feature: HIL Edit-and-Continue (HIL-01..03)
+## Existing Architecture Baseline
 
-**What it needs:** Operator edits task payload fields (e.g., `taskSummary`, `selectedAgentId`, or custom fields) in a paused LangGraph graph before resuming.
+Before describing what changes, the points of attachment that v5.0 touches:
 
-**Integration point:** The current `resume()` method in `services/orchestration/graph.py` only supports `Command(resume="approve"|"reject")`. It has no mechanism to push a state patch before resuming.
-
-**LangGraph capability confirmed (HIGH confidence):** `graph.update_state(config, values=patch, as_node="approval")` followed by `graph.invoke(None, config)` is the canonical LangGraph pattern. `update_state` writes a new checkpoint with the patched fields; invoking with `None` resumes from that checkpoint. Source: https://docs.langchain.com/oss/python/langgraph/persistence
-
-**New component:** `PATCH /hil/{decision_id}/edit` endpoint in the Python FastAPI service. Accepts a JSON body with the state fields to overwrite. Internally calls `graph.update_state(thread_config, values=patch, as_node="approval")` without invoking — the operator triggers resume separately. This is separate from the existing `POST /hil/{decision_id}/resolve`.
-
-**Modified component:** `LangGraphRuntime.resume()` signature must change. Currently it only accepts `run_id: str, decision: str`. It needs to accept an optional `state_patch: dict` parameter and call `update_state` before `invoke(Command(resume=decision), config)`. Alternatively, edit and resume are two separate HTTP round trips, which is simpler and avoids racing.
-
-**Modified component:** `OrchestrationHilDecision` TypeScript interface in `lib/orchestration/client.ts` — add `editedState` field to surface what was patched.
-
-**Modified component:** `POST /hil/{decision_id}/resolve` endpoint body and `ResolveHilRequest` Pydantic model — add optional `statePatch: dict` field so a single call can both patch state and resume, as an alternative UX.
-
-**DB side:** `orchestration.db` (Python). The patched checkpoint is stored by SqliteSaver automatically. No new table needed; the lineage hop type `"state_edit"` should be added to `orchestration_lineage` for auditability.
-
-**Build order dependency:** Must complete before HIL Timeout + Escalation (HIL-04..06), because timeout auto-escalation may need to inject a state patch when it fires an override.
-
----
-
-## Feature: HIL Timeout + Escalation (HIL-04..06)
-
-**What it needs:** SLA countdown on paused LangGraph runs; auto-escalate (write to `hil_escalations`) or auto-reject when deadline passes.
-
-**Existing pattern:** `hil_escalations` table exists in `conversations.db` (TypeScript-owned). `checkSlaBreaches()` in `lib/audit/sla.ts` handles the deadline check — but it is LAZY: only called when `GET /api/escalations` is hit. A paused LangGraph run gets no SLA enforcement unless a UI user happens to poll that endpoint.
-
-**Decision required:** The SLA timer must fire proactively. Two viable locations:
-
-1. **Extend `scheduler-singleton.ts`** — add a new scheduled job (alongside the existing memory consolidation scheduler) that calls `checkSlaBreaches()` on an interval (e.g., every 60 seconds). This keeps SLA logic in TypeScript, consistent with how `hil_escalations` is already owned. Preferred because it uses existing scheduler infrastructure and does not require cross-DB calls.
-
-2. **Python orchestration service owns SLA** — the Python service polls its own `orchestration_hil_decisions` table and fires an HTTP callback to the Next.js app when a deadline passes. This creates an outbound callback dependency from Python to Next.js, which doesn't exist today.
-
-**Recommendation:** Option 1. Add a `setInterval` in `instrumentation.ts` (the same file that bootstraps the memory consolidation scheduler) that calls `checkSlaBreaches()` every 60 seconds. When a run is SLA-breached, the existing audit machinery marks it `sla_breached` in `conversations.db`. A separate step (manual or via a configurable auto-reject policy) calls `POST /hil/{decision_id}/resolve` with `decision=reject` to actually resume/terminate the LangGraph run.
-
-**New component:** SLA scheduler registration in `instrumentation.ts` — ~10 lines alongside existing `setInterval` for memory consolidation.
-
-**Modified component:** `lib/audit/sla.ts` `checkSlaBreaches()` — currently only targets open escalations. Needs to also query `orchestration_hil_decisions` via HTTP (or a new cross-DB lookup function) to identify runs that have been paused past their SLA and create `hil_escalations` rows for them if none exist yet.
-
-**DB side:** `conversations.db` for `hil_escalations`. Orchestration run lookups go through the existing `ORCHESTRATION_SERVICE_URL` HTTP client.
-
-**Build order dependency:** Depends on HIL Edit-and-Continue being stable (auto-escalation may inject edits). Can share a phase with Multi-hop Retry given both touch the Python engine.
+| Component | Location | Role in v5.0 |
+|-----------|----------|--------------|
+| Main SQLite DB (`conversations.db`) | `apps/memroos/src/lib/db.ts` | Gains `raw_artifacts`, `security_labels`, `classification_reviews`, `cron_job_registry` tables |
+| `db-schema.ts` `initSchema()` | Same file | All new DDL lands here as additive migrations |
+| `audit_log` | Existing table | Gains `security_label` and `policy_decision` columns; every gate allow/deny/redact logged here |
+| `/api/recall` | `app/api/recall/route.ts` | Wraps with retrieval policy gate before executing recall |
+| `/api/memory/search`, `/api/memory/multi-search` | `app/api/memory/search/`, `multi-search/` | Same gate wrapping |
+| `MemoryAdapter` interface | `lib/memory/adapter.ts` | Gate sits above adapters at route boundary — adapters remain ignorant of actor/policy |
+| `scanContent()` | `lib/content-scanner.ts` | Becomes the first deterministic detector in the classification cascade |
+| `authenticateUser()` | `lib/auth/session.ts` | Returns `SessionUser`; extended to `Actor` type that also covers agent API keys |
+| `instrumentation.ts` + `tryAcquireSchedulerLock()` | `src/instrumentation.ts`, `lib/scheduler-singleton.ts` | Cron health jobs register via existing scheduler pattern; no new scheduler infrastructure |
+| `/api/context/health` | `app/api/context/health/route.ts` | Model for cron health endpoint; same evaluate-from-registry pattern |
+| `seal_evidence_bundles` table | `lib/seal/behavioral-schema.ts` | Generalized into universal `task_evidence_bundles` keyed on `a2a_tasks.task_id` |
+| `orchestration.db` (Python, LangGraph) | `services/orchestration/` | Evidence bundles live in main DB; cross-DB link via `orchestration_thread_id` stored in `task_evidence_bundles` |
+| OAuth/SSO | Not yet built | Issues same JWT as current password auth; `session.ts` + cookie/Bearer flow unchanged |
 
 ---
 
-## Feature: Multi-hop Retry + Rollback Compensation (ORCH-08..10)
+## Question 1: Where Does the Raw Evidence Vault Live?
 
-**What it needs:** Per-hop retry budget; coordinated rollback across multiple agents in a chain when all retry budgets are exhausted.
+**Decision: Filesystem artifacts + metadata-only rows in main SQLite DB.**
 
-**Existing capability:** The orchestration engine already has `retry_limit`, `attempts`, and `orchestration_lineage` with `hop_type` values including `dispatch_failure`, `retry_scheduled`, and `retry_exhausted` (confirmed in `services/orchestration/engine.py`). Single-hop retry works today.
-
-**Gap:** Multi-hop is not modeled. The current graph is a single-agent dispatch: `route_policy → approval → dispatch → END`. There is no loop, no sub-graph per hop, and no rollback compensation handler.
-
-**New component (Python):** A `rollback_compensation` node in the LangGraph graph. When `retry_exhausted` fires on hop N, the graph routes to a `rollback_compensation` node that emits `hop_type="rollback"` lineage entries and transitions the run to `status="rolled_back"`. For multi-agent chains, compensation must be sequential in reverse hop order — the lineage table already records hop order, so the rollback node can read it.
-
-**Modified component (Python):** `OrchestrationState` TypedDict — add `hops: list[dict]` and `rollback_policy: str` fields. The graph currently doesn't track per-hop sub-tasks.
-
-**Modified component (Python):** `build_langgraph()` — add a `dispatch_loop` sub-graph or conditional re-entry that allows multiple dispatch hops before reaching END, each with its own interrupt point if `requiresApproval` per hop.
-
-**Modified component (Python):** `OrchestrationStore._init_schema()` — add `rollback_reason TEXT` and `rolled_back_at TEXT` columns to `orchestration_runs`. Additive migration, safe with `ALTER TABLE IF NOT EXISTS` pattern.
-
-**DB side:** `orchestration.db` (Python). All retry/rollback state lives there.
-
-**Build order dependency:** Can be built in parallel with HIL Edit-and-Continue since both are Python engine changes. However, if rollback compensation triggers a HIL interrupt, it shares the interrupt protocol — coordinate the interrupt schema changes in a single phase to avoid conflicts.
-
----
-
-## Feature: Memory Backend Pluggability (MEM-06..08)
-
-**What it needs:** Adapter interface for swapping or adding vector/graph/episodic backends beyond the current hard-coded mem0/Qdrant/Neo4j/SQLite.
-
-**Existing structure:** `lib/memory/backends.ts` contains three ad-hoc functions: `searchVectorMemory()` (calls mem0 HTTP), `queryGraphMemory()` (calls Neo4j HTTP directly), and episodic recall (in `lib/db-ingest.ts` via FTS5). There is no adapter interface — callers reach the concrete functions directly.
-
-**New component:** `lib/memory/adapter.ts` — defines a `MemoryAdapter` interface with methods:
-- `search(query: string, limit: number): Promise<MemorySearchResult[]>`
-- `write(payload: Record<string, unknown>): Promise<void>`
-- `health(): Promise<MemoryTierHealth>`
-
-Three concrete implementations wrap the existing code:
-- `Mem0VectorAdapter` — wraps `searchVectorMemory()` / mem0 HTTP
-- `Neo4jGraphAdapter` — wraps `queryGraphMemory()` / Neo4j HTTP
-- `SqliteEpisodicAdapter` — wraps `recallByKeyword()` / FTS5
-
-**New component:** `lib/memory/registry.ts` — a runtime map from `MemoryTier` to `MemoryAdapter[]`. Supports multiple adapters per tier (fan-out for cross-project recall). Initialized from env config at startup.
-
-**Modified component:** `lib/memory/backends.ts` — existing functions stay as-is internally; they become the implementation bodies of the concrete adapters. No callers need to change in this phase; the adapters are additive wrappers.
-
-**DB side:** No new tables. The adapter registry is in-process state.
-
-**Build order dependency:** MUST be completed before LLM-powered Recall and Cross-project Recall. Both of those features need to register new adapters (an embedding adapter and a cross-repo adapter respectively). Building pluggability first avoids implementing the same query path twice.
-
----
-
-## Feature: Voice Meeting Bot (VOICE-06..08)
-
-**What it needs:** Pipecat joins an external meeting (Daily.co room) as an active participant with real-time transcript and Memroos highlights panel.
-
-**Existing infrastructure:** `services/voice-server/` runs Pipecat 1.0.0 on port 7860 using `WebsocketServerTransport`. The service already has a multi-mode `build_pipeline()` dispatcher (`VOICE_MODE=gemini|cascade`). Transcripts are written to `conversations.db` via `transcript_writer.py`.
-
-**Pipecat meeting transport confirmed (HIGH confidence):** `DailyTransport` in Pipecat 1.0 accepts a `room_url: str` parameter to join any existing Daily.co room. Source: https://github.com/pipecat-ai/docs/blob/main/api-reference/server/services/transport/daily.mdx. The existing service uses `WebsocketServerTransport` — `DailyTransport` is a drop-in transport swap. No new service process is needed.
-
-**New component (Python):** `pipeline_meeting.py` in `services/voice-server/` — a third pipeline mode alongside `pipeline_gemini.py` and `pipeline_cascade.py`. Uses `DailyTransport(room_url, token, bot_name, DailyParams(...))` instead of `WebsocketServerTransport`. Reuses the same STT/TTS/LLM chain.
-
-**Modified component (Python):** `build_pipeline()` in `server.py` — add `elif mode == "meeting"` branch. Triggered by `VOICE_MODE=meeting` env var or a new `POST /meeting/join` FastAPI endpoint that accepts `{room_url, token}` and spawns a pipeline task.
-
-**Modified component (Python):** `requirements.txt` — add `pipecat-ai[daily]` to pull the Daily SDK dependency. Current install is `pipecat-ai[google,groq,cartesia,elevenlabs,websocket,kokoro]==1.0.0`.
-
-**New component (Next.js):** `GET/POST /api/voice/meeting` — Next.js proxy route that accepts a `room_url` and forwards to the voice service. Returns `session_id` and transcript WebSocket URL.
-
-**New component (Next.js):** `MeetingHighlightsPanel` — UI component on the Flow page showing real-time transcript and extracted highlights (agent-referenced tasks, decisions, action items). Highlights extracted by the LLM inside the pipeline, written to `hive_actions` table (already exists).
-
-**DB side:** Transcripts → `messages` table in `conversations.db` (same as existing voice transcripts, via `transcript_writer.py`). Highlights → `hive_actions` table.
-
-**Build order dependency:** Independent of all other v4.0 features. Can be built in parallel with any other phase.
-
-**Constraint:** Meeting bot only works with Daily.co rooms. Zoom/Meet/Teams are not supported by `DailyTransport`. Users need a Daily.co account and API key. This should be documented as a prerequisite.
-
----
-
-## Feature: LLM-powered Recall Scoring (RECALL-01..02)
-
-**What it needs:** Embedding-based semantic ranking to replace/complement the existing BM25 FTS5 recall in `GET /api/recall`.
-
-**Existing recall path:** `recallByKeyword()` in `lib/db-ingest.ts` → SQLite FTS5 `messages_fts` table → BM25 rank. Pure keyword matching, no semantic understanding.
-
-**Embedding storage decision:** Three options evaluated. Option A: `sqlite-vec` extension on `messages` — requires loading a native extension not currently installed in `better-sqlite3`. Option B: dual-write to a new Qdrant collection via mem0 — adds async consistency complexity and a new write path for a table currently SQLite-only. Option C (chosen): call the Ollama embeddings API (already running locally at `OLLAMA_BASE_URL`) with `nomic-embed-text`, store float vectors as JSON in a new `message_embeddings` SQLite table, compute cosine similarity in TypeScript.
-
-**Recommendation: Option C using Ollama `nomic-embed-text`.** The Ollama service is already a stack dependency — `services/memory/.env.example` shows `OLLAMA_BASE_URL=http://localhost:11434` and the `.env.example` explicitly requires `nomic-embed-text` to be pulled. No new external API dependency or new service is introduced. Embeddings are stored as JSON-serialized float arrays in a new `message_embeddings(message_id, embedding_json, model, created_at)` table. At recall time, the query is embedded via Ollama, cosine similarity is computed in TypeScript, and results are re-ranked. Note: Anthropic does NOT have a public embeddings API — `@anthropic-ai/sdk` cannot produce embeddings.
-
-**New component:** `lib/memory/embedding.ts` — `embedText(text: string): Promise<Float32Array>` via `fetch` to `${OLLAMA_BASE_URL}/api/embeddings` with `model: "nomic-embed-text"`. Cached in-process with a simple LRU map (< 1000 entries, short TTL) to avoid re-embedding identical queries.
-
-**New component:** `lib/memory/recall-semantic.ts` — `semanticRecall(db, query, limit): Promise<RecallResult[]>`. Reads pre-computed embeddings from `message_embeddings`, computes cosine similarity in TypeScript, returns top-N.
-
-**Modified component:** `lib/db-schema.ts` — add `message_embeddings` table. Additive migration.
-
-**Modified component:** `GET /api/recall/route.ts` — add `mode=semantic|bm25|hybrid` query param. Default `bm25` for backward compatibility. `hybrid` re-ranks BM25 results by semantic score.
-
-**Modified component:** A background job in `instrumentation.ts` — embed new messages on a rolling basis (not inline on ingest, to avoid blocking). Run every 5 minutes, embed up to 50 un-embedded messages per cycle.
-
-**DB side:** `conversations.db` — new `message_embeddings` table.
-
-**Build order dependency:** Depends on Memory Backend Pluggability (adapter interface should wrap both BM25 and semantic backends consistently). Also gates Cross-project Recall — cross-project needs the embedding function.
-
----
-
-## Feature: Cross-project Recall (RECALL-03..04)
-
-**What it needs:** Similar-task recommendations across multiple local repos. The `messages.project` column already stores the project name per message.
-
-**Existing capability:** `messages.project TEXT NOT NULL` column exists. The existing `contextMatchSignal` algorithm in `lib/tool-attention.ts` already weights by `repo` (multiplier ×2). Cross-project recall is a query filter change, not a new index.
-
-**Gap analysis:** Current `GET /api/recall` and `recallByKeyword()` have no multi-project option. The FTS5 index covers all projects already — it is not partitioned.
-
-**New component:** `GET /api/recall/cross-project` — accepts `q`, `exclude_project` (current project to deprioritize), and `limit`. Calls semantic recall (from LLM-powered recall above) without project filter, then groups and labels results by `project`. Returns top results from OTHER projects ranked by semantic similarity.
-
-**Modified component:** `lib/memory/registry.ts` (from pluggability phase) — add a `CrossProjectRecallAdapter` that queries `semanticRecall()` across all projects and re-ranks.
-
-**No new DB table needed.** The `messages.project` column and the `message_embeddings` table (added in LLM recall phase) are sufficient.
-
-**Build order dependency:** Strictly depends on LLM-powered Recall (needs `message_embeddings` and `semanticRecall()`). Memory Backend Pluggability must also be done first to have the adapter registry.
-
----
-
-## Feature: True Behavioral W-lift (SEAL-04..06)
-
-**What it needs:** When a SEAL proposal is applied, the W-score measurement must come from a real agent re-execution via the A2A hub, not from a synthetic re-score of the existing trace.
-
-**Existing capability:** `SealService.applyProposal()` already has the hook: it calls `this.evalService.rescoreForProposal()` if the method exists on the injected eval service, otherwise falls back to `runForTrace()`. The `EvalServiceLike` interface in `lib/seal/service.ts` defines `rescoreForProposal?` as optional. The current `EvalService` implementation does not implement it — `rescorePostApply` in `lib/seal/rescore.ts` provides synthetic re-scoring (modifies expected outputs based on proposal diff, no real agent call).
-
-**Gap:** `rescoreForProposal` needs a real implementation that dispatches the original trace's input to an agent via the A2A hub (`POST /api/a2a/task`) and captures the output for W-scoring.
-
-**New component:** `lib/seal/behavioral-eval.ts` — `BehavioralEvalService` that implements `EvalServiceLike`. Its `rescoreForProposal()`:
-1. Looks up the original trace's input from `eval_run_examples` (already stored per run)
-2. Dispatches to the same `agentId` via `POST /api/a2a/tasks` with the original input
-3. Polls for completion (the A2A task API already has status tracking in `a2a_tasks` table)
-4. Scores the agent's new output using `scoreTraceWithEvalEngine()` from `lib/evals/engine.ts`
-5. Returns an `EvalRunResult` with the real W score
-
-**Modified component:** `lib/seal/service.ts` — `SealServiceOptions.evalService` should default to `BehavioralEvalService` when `SEAL_BEHAVIORAL_EVAL=true` env var is set. Retains `EvalService` as default for environments without live agents.
-
-**Modified component:** `lib/evals/engine.ts` — ensure `scoreTraceWithEvalEngine()` can accept a raw output string (from agent response) in addition to a stored trace. Currently it reads from stored trace records; needs a path for live-capture traces.
-
-**DB side:** New eval runs written to `eval_runs` and `eval_run_examples` in `conversations.db`. A2A task dispatch tracked in `a2a_tasks`. No new tables.
-
-**Build order dependency:** Depends on the A2A hub being reliable (shipped in v2.0, confirmed stable). Depends on `eval_run_examples` having the original trace inputs stored — verify this is populated before building. Can be built in parallel with Voice Meeting Bot and Recall features.
-
-**Risk:** Real agent re-execution is non-deterministic and slow (seconds to tens of seconds). The behavioral eval path must be async and must not block the SEAL approval UI. The `applyProposal()` method is already async; ensure the UI uses polling or a webhook for result delivery.
-
----
-
-## Feature: Cross-harness Skills (universal skill registry)
-
-**What it needs:** A universal skill registry not tied to a single agent harness; skills callable from any agent via A2A.
-
-**Existing tables:** `proposed_skills(id, skill_id, instruction_text, ...)`, `agent_skill_reports(agent_id, skill_id, ...)`, `agent_instructions(agent_id, ...)`. These are per-agent tables, not a universal registry.
-
-**New component:** `skill_registry` table in `conversations.db` — columns: `id TEXT PK`, `name TEXT`, `description TEXT`, `instruction_text TEXT`, `harness TEXT` (the agent type/harness it was defined in), `promoted_from_agent_id TEXT`, `status TEXT` (draft/active/deprecated), `created_at TEXT`, `updated_at TEXT`.
-
-**New component:** `GET/POST /api/skills/registry` — CRUD for the universal registry. `POST` promotes a `proposed_skill` or `agent_instruction` into the universal registry.
-
-**Modified component:** `lib/db-schema.ts` — additive `CREATE TABLE IF NOT EXISTS skill_registry` migration.
-
-**Modified component:** A2A task dispatch — when an agent requests skill execution, the dispatcher looks up `skill_registry` first, then falls back to per-agent `agent_instructions`. This requires a change in `lib/dispatch/` or `lib/a2a/` (verify exact dispatch path before touching).
-
-**DB side:** `conversations.db`.
-
-**Build order dependency:** Independent. Can be built in any phase after the Memory Pluggability phase (to stay organized with the adapter registry pattern).
-
----
-
-## Feature: Flow Trigger Button (UI-05) and Library Freshness Indicator (UI-06)
-
-These are UI-only features with thin backend changes. Grouped here for completeness.
-
-**Flow trigger button:** `POST /api/knowledge/update` route that calls `qmd update` via `execFileSync`. The `POST` route does not exist today; only GET endpoints exist under `/api/knowledge/`. Add a protected `POST /api/knowledge/update` that spawns the QMD process and streams progress via SSE or returns job status. No new DB table.
-
-**Library freshness indicator:** The PROJECT.md notes this as known debt: "Library freshness indicator reflects file mtime, not QMD index recency." Fix: `qmd status` output (or a `.qmd-last-indexed` timestamp file written by QMD post-run) becomes the source of truth. The existing `/api/health` or a new `/api/knowledge/status` endpoint exposes the delta between last-indexed timestamp and latest file mtime. No new DB table.
-
-**Build order dependency:** Both are independent of all other v4.0 features. Can be done in any phase, likely bundled together.
-
----
-
-## Component Classification Summary
-
-| Component | New or Modified | Service | DB |
-|-----------|----------------|---------|-----|
-| `PATCH /hil/{id}/edit` FastAPI endpoint | NEW | orchestration (Python) | orchestration.db |
-| `LangGraphRuntime.resume()` + `update_state` | MODIFIED | orchestration (Python) | orchestration.db |
-| SLA scheduler job in `instrumentation.ts` | NEW | Next.js (TypeScript) | conversations.db |
-| `hil_escalations` backfill for LangGraph runs | MODIFIED | Next.js `lib/audit/sla.ts` | conversations.db |
-| `rollback_compensation` graph node | NEW | orchestration (Python) | orchestration.db |
-| Multi-hop `OrchestrationState` fields | MODIFIED | orchestration (Python) | orchestration.db |
-| `lib/memory/adapter.ts` (MemoryAdapter interface) | NEW | Next.js | — |
-| `lib/memory/registry.ts` (adapter registry) | NEW | Next.js | — |
-| `lib/memory/backends.ts` concrete adapters | MODIFIED (wrap existing) | Next.js | — |
-| `pipeline_meeting.py` + DailyTransport | NEW | voice-server (Python) | — |
-| `POST /meeting/join` FastAPI endpoint | NEW | voice-server (Python) | — |
-| `pipecat-ai[daily]` in requirements.txt | MODIFIED | voice-server (Python) | — |
-| `GET/POST /api/voice/meeting` Next.js proxy | NEW | Next.js | — |
-| `MeetingHighlightsPanel` UI component | NEW | Next.js | conversations.db |
-| `lib/memory/embedding.ts` | NEW | Next.js | — |
-| `lib/memory/recall-semantic.ts` | NEW | Next.js | — |
-| `message_embeddings` table in db-schema.ts | NEW | Next.js | conversations.db |
-| `GET /api/recall` semantic mode | MODIFIED | Next.js | conversations.db |
-| Embedding background job in `instrumentation.ts` | NEW | Next.js | conversations.db |
-| `GET /api/recall/cross-project` | NEW | Next.js | conversations.db |
-| `lib/seal/behavioral-eval.ts` | NEW | Next.js | conversations.db |
-| `skill_registry` table | NEW | Next.js | conversations.db |
-| `GET/POST /api/skills/registry` | NEW | Next.js | conversations.db |
-| `POST /api/knowledge/update` | NEW | Next.js | — |
-| `/api/knowledge/status` freshness endpoint | NEW | Next.js | — |
-
----
-
-## Dependency-aware Build Order
+Raw artifacts are NOT stored in SQLite as large blobs. The vault is a directory tree on disk:
 
 ```
-Phase A: Memory Backend Pluggability (MEM-06..08)
-  - No dependencies on other v4.0 features
-  - Blocks: LLM Recall, Cross-project Recall (need adapter interface)
-  - Risk: LOW — pure refactor, existing tests cover current functions
-
-Phase B (parallel with A): HIL Edit-and-Continue (HIL-01..03)
-  - No dependencies on Phase A
-  - Blocks: HIL Timeout + Escalation (uses edit semantics in auto-escalate)
-  - Risk: MEDIUM — interrupt protocol change; requires coordinated
-    update to ResolveHilRequest schema and TS client
-
-Phase B+C (MUST be same phase): HIL Edit-and-Continue + Multi-hop Retry + Rollback
-  - HIL Edit (HIL-01..03) and Multi-hop Retry/Rollback (ORCH-08..10) both modify
-    graph.py, OrchestrationState, and the interrupt protocol in the same Python service.
-    Building them in separate phases creates merge conflicts and forces two interrupt
-    protocol migrations. Ship them together in a single phase.
-  - Blocks: HIL Timeout + Escalation (Phase E)
-  - Risk: MEDIUM — graph topology change + interrupt protocol update;
-    extend both Python engine tests and TS client tests before shipping
-
-Phase D (after A): LLM-powered Recall Scoring (RECALL-01..02)
-  - Requires: Phase A (adapter interface)
-  - Blocks: Cross-project Recall
-  - Risk: LOW-MEDIUM — Ollama must have nomic-embed-text pulled; gate
-    with MEMROOS_EMBEDDING_ENABLED flag; cap 50 messages/cycle to avoid
-    blocking the scheduler
-
-Phase E (after B): HIL Timeout + Escalation (HIL-04..06)
-  - Requires: Phase B (edit semantics available for auto-override)
-  - Risk: LOW-MEDIUM — extends existing scheduler pattern
-
-Phase F (after D): Cross-project Recall (RECALL-03..04)
-  - Requires: Phase D (message_embeddings table + semanticRecall())
-  - Risk: LOW — mostly a query filter + new API route
-
-Phase G (independent): Voice Meeting Bot (VOICE-06..08)
-  - No dependencies on other v4.0 features
-  - Requires: Daily.co account + DAILY_API_KEY in env (external dependency)
-  - Risk: MEDIUM — external service dependency; DailyTransport not tested
-    in current CI (voice-server tests are unit tests only)
-
-Phase H (independent): True Behavioral W-lift (SEAL-04..06)
-  - Depends on A2A hub reliability (shipped v2.0, stable)
-  - No dependency on other v4.0 phases
-  - Risk: HIGH — async agent execution with non-deterministic timing;
-    needs timeout + retry on the A2A dispatch call
-
-Phase I (independent, low risk): Flow Trigger + Library Freshness (UI-05, UI-06)
-  - No dependencies
-  - Risk: LOW — thin backend + UI
-
-Phase J (after A): Cross-harness Skills registry
-  - No hard dependency, but logically follows adapter registry pattern
-  - Risk: LOW — new table + CRUD routes
+~/.memroos/vault/
+  {tenant_id}/
+    {year}/{month}/{day}/
+      {session_id}.ndjson.zst     # per-session compressed NDJSON
+      {session_id}.ndjson.zst.sha # content hash for verification
 ```
 
-Recommended sequencing for roadmapper:
-- **Phase 1:** A + (B+C merged) — Memory pluggability (TS) + HIL edit + Multi-hop retry (Python engine, same phase to avoid graph.py conflicts)
-- **Phase 2:** D + E + G — LLM recall (Ollama embeddings) + HIL timeout escalation + Voice meeting bot (all parallelizable)
-- **Phase 3:** F + H + I + J — Cross-project recall + True W-lift + UI polish + Skills registry
+The main SQLite DB holds a `raw_artifacts` table that is a metadata index only:
+
+```sql
+CREATE TABLE IF NOT EXISTS raw_artifacts (
+  id              TEXT PRIMARY KEY,               -- UUID
+  artifact_uri    TEXT NOT NULL UNIQUE,           -- filesystem path relative to vault root
+  content_hash    TEXT NOT NULL,                  -- sha256 of compressed bytes
+  source          TEXT NOT NULL,                  -- 'meeting'|'email'|'dm'|'file'|'agent_conv'
+  actor_id        TEXT,                           -- user_id or agent_id that originated it
+  tenant_id       TEXT NOT NULL DEFAULT 'default-tenant',
+  project_id      TEXT,
+  session_id      TEXT,
+  created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+  artifact_date   TEXT NOT NULL,                  -- date of the content (not ingestion)
+  compression     TEXT NOT NULL DEFAULT 'zstd',
+  size_bytes      INTEGER,
+  encryption_key_id TEXT,                         -- null = unencrypted; else key id in key store
+  replay_state    TEXT NOT NULL DEFAULT 'pending' -- 'pending'|'indexed'|'archived'|'deleted'
+);
+```
+
+Security labels are stored in a separate `artifact_labels` table that joins to `raw_artifacts` by `artifact_id`:
+
+```sql
+CREATE TABLE IF NOT EXISTS artifact_labels (
+  artifact_id       TEXT NOT NULL REFERENCES raw_artifacts(id) ON DELETE CASCADE,
+  visibility        TEXT NOT NULL DEFAULT 'private'
+                    CHECK(visibility IN ('private','internal','public_safe','public_approved')),
+  domain            TEXT,                -- 'legal'|'finance'|'hr'|'sales'|'client'|'personal'|'engineering'
+  sensitivity       TEXT,               -- 'pii'|'secret'|'credential'|'privileged'|'contract'|'payment'|'health'
+  policy            TEXT NOT NULL DEFAULT 'sealed'
+                    CHECK(policy IN ('indexable','agent_visible','requires_redaction','requires_human_review','sealed')),
+  classifier_version TEXT NOT NULL,
+  confidence        REAL,
+  reason_code       TEXT,
+  evidence_spans_json TEXT,
+  review_state      TEXT NOT NULL DEFAULT 'auto'
+                    CHECK(review_state IN ('auto','pending_review','approved','rejected')),
+  reviewed_by       TEXT,
+  reviewed_at       TEXT,
+  created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+  PRIMARY KEY (artifact_id)
+);
+```
+
+The same label structure applies at the `messages` row level (inline columns, not a join table, for query performance):
+
+```sql
+-- Migration: add label columns to existing messages table
+ALTER TABLE messages ADD COLUMN visibility  TEXT NOT NULL DEFAULT 'private';
+ALTER TABLE messages ADD COLUMN sensitivity TEXT;
+ALTER TABLE messages ADD COLUMN policy      TEXT NOT NULL DEFAULT 'sealed';
+ALTER TABLE messages ADD COLUMN classifier_version TEXT;
+```
+
+**Why not SQLite blobs:** The spike explicitly rules out raw binary in SQLite as the long-term source of truth. Large blobs create WAL pressure, complicate retention/deletion, and resist compression. Filesystem artifacts support content-addressed dedup, archival, and encryption at the file layer.
+
+**Backward compatibility:** Existing `messages` rows gain label columns with safe defaults (`visibility='private'`, `policy='sealed'`). No existing query breaks; they simply see all rows as private/sealed until reclassified.
 
 ---
 
-## Pitfall Register
+## Question 2: How Does Classification Fit Into Existing Ingest Paths?
 
-### Interrupt protocol is a breaking change
+**Decision: Classification runs at ingest as a non-blocking cascade; policy is enforced at retrieval.**
 
-The current `resume()` accepts only `"approve"|"reject"` strings. Adding `state_patch` support changes the contract between Next.js (`lib/orchestration/client.ts`) and the Python service. Any phase that touches `resolve_hil` must update both sides atomically. Test coverage exists for the Python engine (`services/orchestration/tests/`) — extend it before shipping.
+The classification cascade is a new library: `lib/classification/`. It does not replace or move `scanContent()` — it composes with it.
 
-### SLA timer is currently lazy
+### Cascade Layers (in order)
 
-`checkSlaBreaches()` only fires on `GET /api/escalations`. For paused LangGraph runs with no UI polling, SLA breaches will not be detected until someone opens the escalations panel. The scheduler-based fix (Phase E) is required for the feature to work in production.
+```
+Source metadata gates
+  └── content-scanner.ts (existing 18 patterns, severity tiers)
+        └── New deterministic detectors:
+            │   - source-path detector (gmail_label, slack_channel, drive_folder, mime_type)
+            │   - sender-domain detector
+            │   - calendar-attendees detector
+            │   - secret/credential regex (extends existing patterns)
+              └── LLM constrained adjudicator (only when deterministic gates abstain)
+                    └── Human review queue (low confidence, legal/finance/HR/credential/public)
+```
 
-### Embedding requires Ollama with nomic-embed-text
+### Integration Points by Ingest Source
 
-The background embedding job calls Ollama's local API (`nomic-embed-text` model). If Ollama is not running or the model is not pulled, the job silently no-ops (embeddings remain absent, `messages_fts` BM25 still works as fallback). Add a startup check: if `MEMROOS_EMBEDDING_ENABLED=true` but Ollama is unreachable, log a warning and surface it in the Library health panel. Gate the feature with `MEMROOS_EMBEDDING_ENABLED` env flag (default off). Cap the background job to 50 messages/cycle to avoid blocking the scheduler lock.
+**SQLite conversation store (messages table):**
+- Classification runs in `lib/db-ingest.ts` after the message is written.
+- Label update is a second write to the `artifact_labels` table (or inline columns on `messages`).
+- If the classifier needs human review, a `classification_reviews` row is inserted and the message `policy` stays `sealed`.
+- Existing dedup logic (hash+mtime+origin) is unchanged; classification is additive.
 
-### Daily.co is required for meeting bot
+**Meeting transcripts (Pipecat DailyTransport → messages):**
+- Source path = `meeting`, source metadata includes meeting_id, attendees, consent_given.
+- All meeting content defaults to `visibility='private'`, `domain='client'` unless a promotion is explicitly approved.
+- Attendees are a deterministic signal: internal-only attendees vs external parties.
 
-Pipecat's meeting bot support is via `DailyTransport`, which requires Daily.co rooms. There is no Zoom/Meet/Teams transport in Pipecat 1.0 without third-party bridges (Recall.ai, etc.). This is an external service dependency. Document it and gate the meeting bot UI behind a `DAILY_API_KEY` check.
+**Emails (Gmail/Spark ingest path):**
+- Source path = `email`, metadata includes sender_domain, gmail_label, thread_id.
+- `sender_domain` detector: internal domain → `visibility='internal'`; external → `visibility='private'`.
+- `gmail_label` detector: labels matching `legal_*`, `finance_*`, `hr_*` set corresponding `domain`.
+- Label-based classification is deterministic — no LLM call needed for these cases.
 
-### Behavioral W-lift timing
+**New `classification_reviews` table:**
 
-Real agent re-execution via A2A takes seconds to tens of seconds. `applyProposal()` is async but the current SEAL UI may treat it as synchronous. Ensure the `/api/seal/proposals/{id}/apply` endpoint returns immediately with a `job_id`, and the UI polls for completion. Blocking on a live agent call in a request handler will hit Next.js 30-second timeout limits.
+```sql
+CREATE TABLE IF NOT EXISTS classification_reviews (
+  id              TEXT PRIMARY KEY,
+  artifact_id     TEXT REFERENCES raw_artifacts(id),
+  message_id      INTEGER REFERENCES messages(id),
+  review_type     TEXT NOT NULL,    -- 'low_confidence'|'conflicting_rules'|'public_promotion'|'legal'|'finance'|'hr'
+  proposed_labels_json TEXT NOT NULL,
+  evidence_spans_json  TEXT,
+  policy_reason   TEXT,
+  assigned_to     TEXT,
+  status          TEXT NOT NULL DEFAULT 'pending'
+                  CHECK(status IN ('pending','approved','rejected','escalated')),
+  created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+  resolved_at     TEXT
+);
+```
 
-### Two-DB foreign key illusion
+---
 
-`hil_escalations.entity_id` stores strings like `"orchestration_run:abc123"` that refer to rows in `orchestration.db`. SQLite cannot enforce this FK across databases. Application code must validate existence via HTTP before writing escalation rows, not by relying on DB integrity.
+## Question 3: Where Does the Retrieval Authorization Gate Intercept?
+
+**Decision: A single library `lib/memory/policy-gate.ts` wraps at the route boundary — NOT inside MemoryAdapter.**
+
+The gate must NOT live inside adapters. MemoryAdapters are unaware of actor or purpose by design (MEM-06 enforces no client handle leakage; the same isolation principle applies to policy). A future adapter cannot accidentally bypass the gate if the gate is at the route layer.
+
+### Actor Shape
+
+Both human users and agents must be representable as an actor:
+
+```typescript
+// lib/memory/policy-gate.ts
+export type ActorKind = 'user' | 'agent';
+
+export interface Actor {
+  kind: ActorKind;
+  id: string;
+  role: string;               // UserRole ('admin'|'operator'|'reviewer') or agent capability tier
+  tenantId: string;
+  projectId?: string;
+  capabilities: string[];     // agent_capabilities rows or user capabilities derived from role
+  purpose?: string;           // 'recall'|'context_pack'|'export'|'dispatch'|'index_write'
+}
+```
+
+`authenticateUser()` in `session.ts` returns `SessionUser` — this is promoted to `Actor` with `kind='user'`. For agent API keys, `Actor` is constructed from `agent_api_keys` + `agent_capabilities` rows. Both flows go through the same gate.
+
+### Interception Points
+
+| Surface | File to Modify | Gate Behavior |
+|---------|---------------|---------------|
+| `/api/recall` | `app/api/recall/route.ts` | `policyGate(actor, purpose='recall', labels)` before result assembly |
+| `/api/memory/search` | `app/api/memory/search/route.ts` | Gate on each result item (not the query) |
+| `/api/memory/multi-search` | `app/api/memory/multi-search/route.ts` | Gate on each result item |
+| Context pack assembly | `lib/dispatch/` or wherever context is assembled for agent dispatch | Gate before packing |
+| `/api/chatgpt` (ChatGPT Actions) | `app/api/chatgpt/route.ts` | Gate on all memory-backed results |
+| Derived index writes (FTS, Qdrant, Neo4j, qmd) | `lib/db-ingest.ts`, `lib/memory/*.ts` | Check `indexable=true` before writing; otherwise skip or write redacted projection |
+| Export endpoints | Any `/api/*/export` route | Gate on export purpose |
+| A2A dispatch context | `lib/a2a/` or `lib/dispatch/` | Gate on dispatch purpose before attaching memory context |
+
+**Gate decision outcomes:** `allow | deny | redact | review_required`
+
+Every decision is logged to `audit_log` with `actor_id`, `resource_type`, `resource_id`, `security_label_snapshot`, `purpose`, `decision`, and `reason_code`. This is the evidence for MEMSEC-08 negative fixtures.
+
+### What Does NOT Change
+
+- `MemoryAdapter` interface — no policy fields added
+- `MemoryAdapter` registry — no policy registration
+- Existing recall BM25/semantic/hybrid modes — gate wraps results, not the query execution
+- Existing cross-project recall authorization (`allowed_project_ids` param) — remains as-is, gate is additive
+
+---
+
+## Question 4: How Do Evidence Bundles Integrate With A2A Task Tracking?
+
+**Decision: Generalize `seal_evidence_bundles` into `task_evidence_bundles` keyed on `a2a_tasks.task_id`.**
+
+The existing `seal_evidence_bundles` table (in `lib/seal/behavioral-schema.ts`) already has the right shape: `tool_call_transcript_json`, `verification_checks_json`, `unverified_assumptions_json`, `residual_risks_json`, `sources_consumed_json`, `replay_handle`, `rollback_handle`.
+
+The universal evidence bundle is that schema promoted to apply to any task, not just SEAL eval jobs:
+
+```sql
+-- Phase 72 already has seal_evidence_bundles for SEAL jobs.
+-- v5.0 adds task_evidence_bundles for all A2A tasks.
+CREATE TABLE IF NOT EXISTS task_evidence_bundles (
+  task_id                       TEXT PRIMARY KEY REFERENCES a2a_tasks(task_id) ON DELETE CASCADE,
+  orchestration_thread_id       TEXT,    -- LangGraph thread_id in orchestration.db (cross-DB link)
+  plan_json                     TEXT,    -- Plan phase: declared context, tools, permissions
+  execution_transcript_json     TEXT NOT NULL DEFAULT '[]',  -- tool calls, results, hop sequence
+  verification_checks_json      TEXT NOT NULL DEFAULT '[]',
+  unverified_assumptions_json   TEXT NOT NULL DEFAULT '[]',
+  residual_risks_json           TEXT NOT NULL DEFAULT '[]',
+  sources_consumed_json         TEXT NOT NULL DEFAULT '[]',  -- artifact_ids, memory_ids, source labels
+  memories_consumed_json        TEXT NOT NULL DEFAULT '[]',
+  permissions_granted_json      TEXT NOT NULL DEFAULT '[]',
+  replay_handle                 TEXT,
+  rollback_handle               TEXT,
+  created_at                    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+  updated_at                    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+);
+```
+
+**Cross-DB boundary (main DB vs orchestration.db):**
+- Evidence bundles live in main DB only.
+- `orchestration_thread_id` is a string foreign key pointing at LangGraph checkpoints in `orchestration.db`.
+- There is no cross-process join; callers who need both fetch the bundle from main DB and the checkpoint from orchestration DB independently.
+- This is the same pattern as `a2a_tasks` (main DB) referencing LangGraph execution — the boundary is already established.
+
+**SEAL evidence bundles remain.** `seal_evidence_bundles` is not replaced. It is purpose-specific for SEAL eval jobs with SEAL-specific fields (`pre_apply_baseline_w`, `post_apply_w`). `task_evidence_bundles` is the general-purpose sibling.
+
+---
+
+## Question 5: What New Telemetry Streams Does NOC Real-Data Require?
+
+Most NOC panels (NOC-03 through NOC-09) can be wired from already-live API endpoints (see NOC note). The gap is NOC-10: efficiency signals require new telemetry streams that do not yet exist.
+
+### New Telemetry Events (to be generated at runtime)
+
+| Signal | Where Generated | New Table/Column |
+|--------|----------------|-----------------|
+| Retrieval call before useful work | After `/api/recall` or memory search returns; if no downstream dispatch follows within N seconds, log a `retrieval_without_action` event | `efficiency_events` table |
+| Same-source re-read | In `lib/db-ingest.ts` or dispatch context assembly, track source_id reads within a task window | `efficiency_events` table |
+| Raw-context ingest token share | In `/api/memory/add` or ingest path, record `token_count` and `ingest_type=raw_context|summary|agent_output` | Column on `agent_memory_writes` |
+| Operator re-ask redundancy | When a HIL interrupt asks for info already in memory (detectable at HIL creation time) | Column on `orchestration_lineage` or event in `efficiency_events` |
+| Rediscovered-fact rate | When mem0/Qdrant write produces a high-similarity hit to an existing memory | Returned by mem0 dedup logic; emit event |
+
+**New `efficiency_events` table:**
+
+```sql
+CREATE TABLE IF NOT EXISTS efficiency_events (
+  id              TEXT PRIMARY KEY,
+  event_type      TEXT NOT NULL
+                  CHECK(event_type IN (
+                    'retrieval_without_action',
+                    'source_re_read',
+                    'operator_re_ask',
+                    'fact_rediscovery'
+                  )),
+  task_id         TEXT,
+  session_id      TEXT,
+  actor_id        TEXT,
+  source_id       TEXT,
+  metadata_json   TEXT,
+  occurred_at     TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+);
+```
+
+### Unified NOC Endpoint
+
+Rather than having each NOC panel make 6+ individual API calls, a unified endpoint aggregates the live sources:
+
+**New:** `GET /api/operations/noc` — accepts `window` param (1h, 24h, 7d), returns per-panel provenance object:
+
+```typescript
+{
+  pulse: { source: 'agents+hive+tokens', status: 'live', lastUpdated: '...', data: {...} },
+  memory: { source: 'memory-stats+recall-stats', status: 'live', data: {...} },
+  agentWorkload: { source: 'agents+orchestration', status: 'live', data: {...} },
+  modelUtility: { source: 'model-routing+model-usage', status: 'live', data: {...} },
+  efficiency: { status: 'missing_telemetry', requiredStreams: ['retrieval_without_action', ...] },
+  governance: { source: 'audit-log+orchestration-hil+security', status: 'live', data: {...} },
+  skills: { source: 'skills+seal-proposals', status: 'live', data: {...} },
+  // ...
+}
+```
+
+Each panel component consumes this via a single `useNocDashboard()` hook (React Query, polling every 30s).
+
+### Cron Health Telemetry
+
+New `cron_job_registry` table tracks each scheduled job's heartbeat and caught-up status:
+
+```sql
+CREATE TABLE IF NOT EXISTS cron_job_registry (
+  job_id          TEXT PRIMARY KEY,      -- 'consolidation'|'decay'|'sla_escalation'|'embedding'
+  display_name    TEXT NOT NULL,
+  interval_ms     INTEGER NOT NULL,
+  last_run_at     TEXT,
+  last_success_at TEXT,
+  last_error      TEXT,
+  status          TEXT NOT NULL DEFAULT 'unknown'
+                  CHECK(status IN ('healthy','warning','paused','stopped','unknown')),
+  caught_up       INTEGER NOT NULL DEFAULT 0,  -- 1 = backlog cleared
+  pause_reason    TEXT,
+  updated_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+);
+```
+
+Each scheduler registered in `instrumentation.ts` writes to `cron_job_registry` on start, on tick success, and on error. The `startConsolidationScheduler`, `startSlaScheduler`, etc. each gain a `jobId` registration call. No new scheduler infrastructure is created — this is metadata-only observability layered onto the existing `tryAcquireSchedulerLock` + `instrumentation.ts` pattern.
+
+New endpoint: `GET /api/cron/health` — same pattern as `/api/context/health`, returns per-job status from `cron_job_registry`. Pause/resume controls POST to `/api/cron/{jobId}/pause` and `/api/cron/{jobId}/resume`.
+
+---
+
+## Question 6: How Does OAuth/SSO Fit Into Existing JWT + RBAC?
+
+**Decision: OAuth/SSO is an additional token-acquisition path; the session primitive is unchanged.**
+
+The existing auth flow:
+```
+POST /api/auth/login → verifies password → signAccessToken() → JWT stored in HttpOnly cookie
+  └── authenticateUser(req) reads JWT or Bearer → returns SessionUser
+```
+
+OAuth/SSO adds a parallel acquisition path:
+```
+GET /api/auth/oauth/{provider} → redirect to provider
+  └── GET /api/auth/oauth/{provider}/callback → exchange code → create/lookup user row → signAccessToken() → same JWT
+```
+
+`signAccessToken()`, `verifyAccessToken()`, and `authenticateUser()` are unchanged. The OAuth callback creates a `users` row (or looks up by email) and then calls the existing `signAccessToken()`. From that point forward, session behavior is identical to password login.
+
+**Role assignment for OAuth users:** OAuth-created users receive the `reviewer` role by default. An admin must promote to `operator` or `admin` via the existing user management UI. This prevents OAuth signup from bypassing role gates.
+
+**Password reset:** A `password_reset_tokens` table stores time-limited tokens. `/api/auth/reset-password/request` emails a link; `/api/auth/reset-password/confirm` verifies the token and calls `hashPassword()`. The existing `password.ts` functions are reused.
+
+**Backward compatibility:** All existing JWT tokens remain valid. All existing `authenticateUser()` call sites are unaffected. The only change to `session.ts` is accepting `oauth_provider` as an optional field on the `users` row.
+
+---
+
+## New vs Modified Components
+
+### New Components
+
+| Component | Type | Purpose |
+|-----------|------|---------|
+| `~/.memroos/vault/` | Filesystem | Append-only compressed artifact storage |
+| `raw_artifacts` table | SQLite | Vault metadata index |
+| `artifact_labels` table | SQLite | Security label dimensions per artifact |
+| `classification_reviews` table | SQLite | Human review queue for classification conflicts |
+| `task_evidence_bundles` table | SQLite | Universal evidence bundles for all A2A tasks |
+| `efficiency_events` table | SQLite | New telemetry: retrieval-without-action, re-reads, etc. |
+| `cron_job_registry` table | SQLite | Cron health heartbeat/status metadata |
+| `lib/classification/` | TypeScript library | Cascade: deterministic detectors → LLM adjudicator → review queue |
+| `lib/memory/policy-gate.ts` | TypeScript library | Single retrieval/use authorization gate |
+| `GET /api/operations/noc` | Next.js API route | Unified NOC data contract with per-panel provenance |
+| `GET /api/cron/health` | Next.js API route | Cron job registry health endpoint |
+| `POST /api/cron/{jobId}/pause`, `/resume` | Next.js API routes | Cron job controls |
+| `GET /api/auth/oauth/{provider}`, `/callback` | Next.js API routes | OAuth/SSO acquisition path |
+| `POST /api/auth/reset-password/request`, `/confirm` | Next.js API routes | Password reset flow |
+| `lib/vault/` | TypeScript library | Vault read/write/compress/encrypt helpers |
+| `lib/encryption/` | TypeScript library | Envelope encryption, key management, rotation |
+
+### Modified Components
+
+| Component | Change | Backward Compatible |
+|-----------|--------|-------------------|
+| `lib/db-schema.ts` `initSchema()` | Add new tables, add label columns to messages/audit_log/hive_actions | Yes — additive migrations only |
+| `lib/db-ingest.ts` | Run classification cascade after message write; call policy gate before FTS index writes | Yes — gate is additive; FTS skip for sealed content is safe |
+| `app/api/recall/route.ts` | Wrap result assembly with policy gate | Yes — gate returns filtered results; existing callers see same shape |
+| `app/api/memory/search/route.ts`, `multi-search/` | Same gate wrapping | Yes |
+| `app/api/chatgpt/route.ts` | Gate on memory-backed results | Yes |
+| `instrumentation.ts` | Register each scheduler with `cron_job_registry` on boot | Yes — additive |
+| `lib/hil/sla-scheduler.ts`, `lib/memory-consolidation.ts`, etc. | Write heartbeat/success/error to `cron_job_registry` | Yes — additive writes |
+| `lib/auth/session.ts` | Promote `SessionUser` to `Actor` type (superset); accept OAuth provider field | Yes — `SessionUser` remains valid |
+| `lib/auth/types.ts` | Add `Actor` union type | Yes — new export only |
+| `apps/memroos/src/components/operations/*.tsx` | Wire to `useNocDashboard()` hook; remove any remaining mock imports | Panels are already mock-free per Phase 73; wiring is additive |
+| `app/api/memory/add/route.ts` | Run classification on new memories; label vector/graph writes | Yes — additive label pass |
+| A2A dispatch path (`lib/a2a/`, `lib/dispatch/`) | Gate on dispatch context assembly; create `task_evidence_bundles` row | Yes — bundle creation is additive |
+
+---
+
+## Build Order With Dependency Justification
+
+Dependencies flow strictly: classification schema must exist before the retrieval gate can check labels; the vault and labels must exist before safe-index projections can respect them; telemetry streams must exist before NOC panels can render them.
+
+### Phase A: Raw Vault + Label Schema (prerequisite for everything)
+
+1. `raw_artifacts` table DDL in `initSchema()`
+2. `artifact_labels` table DDL
+3. `classification_reviews` table DDL
+4. Label columns added to `messages`, `audit_log`, `hive_actions`, `agent_memory_writes`, `recall_log` (additive ALTER TABLE migrations in `initSchema()`)
+5. Vault filesystem helpers (`lib/vault/`) — path conventions, compression (zstd), write/read
+6. No classification logic yet; all new rows default to `visibility='private'`, `policy='sealed'`
+
+**Why first:** The label schema is the foundation that every subsequent component (gate, classifier, safe indexes) reads from. Running migrations before any logic is written ensures the schema exists in prod before any gate check.
+
+### Phase B: Deterministic Detector Layer + Classification Cascade
+
+1. `lib/classification/detectors.ts` — source-metadata, sender-domain, MIME, calendar, secret/credential detectors (extends `scanContent()`)
+2. `lib/classification/adjudicator.ts` — constrained LLM adjudicator with strict JSON output, abstention, evidence spans
+3. `lib/classification/cascade.ts` — chains detectors → adjudicator → review queue insert
+4. Wire cascade into `lib/db-ingest.ts` (messages) and `app/api/memory/add` (mem0/vector writes)
+
+**Depends on:** Phase A (label tables must exist to write to)
+
+### Phase C: Retrieval Policy Gate
+
+1. `lib/memory/policy-gate.ts` — Actor type, gate decision function, `audit_log` write
+2. Wire into `/api/recall`, `/api/memory/search`, `/api/memory/multi-search`
+3. Wire into ChatGPT Actions, export endpoints, context pack assembly, A2A dispatch
+
+**Depends on:** Phase A (label columns on messages/artifacts must be readable); Phase B classification is NOT a hard dependency for the gate — gate can operate on default labels before classification runs, safely denying restricted content by default.
+
+### Phase D: Safe Index Projections (Qdrant, Neo4j, FTS, qmd)
+
+1. Add label check in `lib/db-ingest.ts` FTS writer: skip write if `policy != 'indexable'`
+2. Add label check in mem0/Qdrant write path: skip or use redacted projection if not `indexable`
+3. Add label check in Neo4j/graph write path: same pattern
+4. Add label check in qmd ingest command generation
+
+**Depends on:** Phase A (labels must exist), Phase C (gate proves security boundary; safe indexes are defense-in-depth on top)
+
+### Phase E: Envelope Encryption
+
+1. `lib/encryption/` — key generation, encrypt/decrypt helpers, key rotation API
+2. Encryption applied to vault file writes (vault is already filesystem; encryption wraps the zstd artifact before write)
+3. Encryption of sensitive JSON fields in `raw_artifacts` and `artifact_labels`
+
+**Depends on:** Phase A (vault must exist). Does NOT block Phase C or D — encryption is defense-in-depth, not the primary security boundary.
+
+### Phase F: Security Regression Tests (MEMSEC-08)
+
+1. Negative fixture dataset: legal, finance, HR, credential, payment, privileged, personal, public-promotion samples
+2. Tests prove each sample cannot appear in: recall results, memory search, context packs, ChatGPT Actions, exports, FTS, Qdrant query, Neo4j query, audit search
+3. Tests are fail-closed: if gate is bypassed, tests fail
+
+**Depends on:** Phases A-D (all gate and index surfaces must exist)
+
+### Phase G: NOC Telemetry Streams + `/api/operations/noc`
+
+1. `efficiency_events` table DDL (additive)
+2. Emit `retrieval_without_action` events from recall/dispatch path
+3. Emit `source_re_read` events from context assembly
+4. `token_count` + `ingest_type` column on `agent_memory_writes`
+5. `GET /api/operations/noc` endpoint aggregating live API sources with per-panel provenance
+6. Wire `components/operations/*.tsx` panels to `useNocDashboard()` hook
+
+**Depends on:** Nothing in the security chain; this is a parallel track. Telemetry streams must exist before the efficiency panels can render — emit streams (steps 1-4) before building panel UI (steps 5-6).
+
+### Phase H: Cron Health Registry
+
+1. `cron_job_registry` table DDL (additive)
+2. Registration calls in each scheduler started from `instrumentation.ts`
+3. `GET /api/cron/health` endpoint
+4. `POST /api/cron/{jobId}/pause`, `/resume` endpoints
+5. Schedules and routines console UI
+
+**Depends on:** Nothing in the security chain. Parallel with Phase G. Uses existing `tryAcquireSchedulerLock` pattern — no new scheduler infrastructure.
+
+### Phase I: Universal Evidence Bundles
+
+1. `task_evidence_bundles` table DDL (additive to main DB)
+2. Bundle creation at A2A task dispatch (write empty bundle at task creation, append during execution)
+3. Bundle retrieval surface: `GET /api/a2a/tasks/{taskId}/evidence`
+4. Harness Control Plane UI: Plan-Execute-Verify timeline panel
+
+**Depends on:** Phase A (sources_consumed_json should reference artifact_ids from raw_artifacts). Can be built before full classification is complete; bundles record whatever label state exists at execution time.
+
+### Phase J: Auth Hardening (OAuth/SSO, Password Reset, Role-Aware Nav)
+
+1. `password_reset_tokens` table DDL (additive)
+2. `oauth_provider` + `oauth_provider_id` columns on `users` table (additive)
+3. Password reset request/confirm endpoints
+4. OAuth provider routes and callback handlers
+5. Email invitation delivery (extends existing `/api/auth/invite`)
+6. Role-aware navigation gating (UI changes, no API changes)
+7. API-key rotation UI
+
+**Depends on:** Nothing in the security or telemetry chain. Fully parallel. The only constraint is that OAuth must issue the same JWT as password auth — which is guaranteed by reusing `signAccessToken()` unchanged.
+
+---
+
+## Dependency Graph Summary
+
+```
+Phase A (vault + label schema)
+  ├── Phase B (classification cascade) → depends on A
+  ├── Phase C (retrieval gate)         → depends on A (not B — gate works on defaults)
+  │     └── Phase D (safe indexes)    → depends on A + C
+  │           └── Phase F (regression tests) → depends on A + C + D
+  └── Phase E (encryption)            → depends on A only
+      
+Phase G (NOC telemetry)               → independent of A-F
+Phase H (cron health)                 → independent of A-G
+Phase I (evidence bundles)            → soft depends on A (for artifact_ids in bundles)
+Phase J (auth hardening)              → independent of all
+```
+
+**Critical path:** A → B → C → D → F (security chain). All other phases are parallel.
+
+---
+
+## Anti-Patterns Explicitly Rejected
+
+### Do Not Put the Gate Inside MemoryAdapter
+Adapters are stateless, actor-unaware search/write/health abstractions. A gate inside an adapter would be bypassable by registering a new adapter without the gate, and would duplicate actor resolution on every adapter. The gate lives at the route boundary and wraps all adapter calls.
+
+### Do Not Store Raw Artifacts in SQLite as Source of Truth
+Large blobs in SQLite create WAL pressure, resist content-addressed dedup, complicate retention/archival, and cannot be efficiently encrypted at the file layer. SQLite holds metadata only; the vault directory holds content.
+
+### Do Not Build a New Scheduler for Cron Health
+`instrumentation.ts` + `tryAcquireSchedulerLock()` is the established pattern. Cron health is a metadata-only observability layer (heartbeat writes + a status table) on top of existing scheduled functions. No new setInterval infrastructure.
+
+### Do Not Build OAuth as a Separate Auth System
+OAuth is an acquisition-path shim that terminates at `signAccessToken()`. The session primitive, cookie mechanics, JWT format, `authenticateUser()`, and all RBAC role checks are unchanged. OAuth users get the same JWT, same role gates, same audit actor identity as password users.
+
+---
+
+## Confidence Assessment
+
+| Area | Confidence | Basis |
+|------|-----------|-------|
+| Schema changes | HIGH | Read actual db-schema.ts, seal/behavioral-schema.ts, existing table structures |
+| Gate integration points | HIGH | Read actual route files, adapter interface, auth session.ts |
+| Vault storage pattern | HIGH | Directly specified in memory-security-storage-spike.md |
+| Classification cascade structure | HIGH | Directly specified in privacy-classification-policy-spike.md |
+| NOC telemetry gaps | HIGH | Read noc-mock-data note + existing API list |
+| OAuth integration | HIGH | Read existing jwt.ts, session.ts, auth types |
+| Evidence bundle generalization | HIGH | Read seal/behavioral-schema.ts directly |
+| Cross-DB orchestration.db boundary | HIGH | Confirmed in PROJECT.md and ROADMAP.md Phase 36 |
+| Cron health pattern | HIGH | Read instrumentation.ts and scheduler-singleton.ts |
 
 ---
 
 ## Sources
 
-- `services/orchestration/graph.py` — LangGraph runtime, interrupt protocol, graph topology (read directly)
-- `services/orchestration/engine.py` — retry/rollback/lineage model (read directly)
-- `apps/memroos/src/lib/seal/service.ts` — SEAL apply/rollback/W-scoring flow (read directly)
-- `apps/memroos/src/lib/memory/backends.ts` — current memory backend structure (read directly)
-- `apps/memroos/src/lib/db-schema.ts` — full SQLite schema (read directly)
-- `apps/memroos/src/lib/audit/sla.ts` — lazy SLA breach check pattern (read directly)
-- `apps/memroos/src/lib/scheduler-singleton.ts` — scheduler lock pattern (read directly)
-- `services/voice-server/server.py`, `requirements.txt` — Pipecat 1.0.0 WebsocketServerTransport setup (read directly)
-- LangGraph `update_state` + time-travel: https://docs.langchain.com/oss/python/langgraph/persistence (HIGH confidence, Context7)
-- Pipecat `DailyTransport` room_url parameter: https://github.com/pipecat-ai/docs/blob/main/api-reference/server/services/transport/daily.mdx (HIGH confidence, Context7)
+- `.planning/notes/memory-security-storage-spike.md` (raw vault, two-gateway security model, label dimensions, encryption decision)
+- `.planning/notes/privacy-classification-policy-spike.md` (classification cascade, deterministic gates first, LLM as constrained adjudicator)
+- `.planning/notes/operations-noc-real-data-requirements.md` (live data already available, missing telemetry streams)
+- `.planning/PROJECT.md` (v5.0 requirements MEMSEC-01..08, NOC-01..14, AUTH-FOLLOWUP-01..03)
+- `.planning/REQUIREMENTS.md` (full requirement text for all v5.0 targets)
+- `apps/memroos/src/lib/db-schema.ts` (existing schema: messages, audit_log, a2a_tasks, seal_evidence_bundles, users, skill_registry)
+- `apps/memroos/src/lib/seal/behavioral-schema.ts` (seal_evidence_bundles structure — model for task_evidence_bundles)
+- `apps/memroos/src/lib/memory/adapter.ts` (MemoryAdapter interface — gate must sit above this)
+- `apps/memroos/src/lib/auth/session.ts`, `jwt.ts`, `types.ts` (existing JWT + RBAC pattern)
+- `apps/memroos/src/instrumentation.ts`, `lib/scheduler-singleton.ts` (existing scheduler pattern to preserve)
+- `apps/memroos/src/app/api/context/health/route.ts` (existing source health pattern to replicate for cron health)
+- `apps/memroos/src/app/api/recall/route.ts` (existing recall route — primary gate interception point)

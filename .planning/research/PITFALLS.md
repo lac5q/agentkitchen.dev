@@ -1,308 +1,420 @@
-# Domain Pitfalls: Memroos v4.0
+# Domain Pitfalls: v5.0 Memory Trust + Operational Intelligence
 
-**Project:** Memroos — AI Agent Hub
-**Researched:** 2026-05-17
-**Scope:** Adding v4.0 features to an existing production system
-
----
-
-## SCOPE NOTE
-
-`cross-harness skills portability` appears in the task brief but is **not listed in PROJECT.md Active (v4.0)** requirements. All other features map to known requirement IDs. The roadmapper must confirm whether cross-harness portability is in v4.0 scope before writing requirements for it. Pitfalls below cover only the nine features with explicit PROJECT.md requirement IDs. A stub section at the end notes what would need research if it is confirmed in scope.
+**Domain:** Adding memory security vault, fail-closed classification, retrieval authorization, NOC real-data, harness evidence bundles, and auth hardening to MemroOS (A2A agent hub, LangGraph orchestration, Next.js/Python stack)
+**Researched:** 2026-05-23
+**Confidence:** HIGH — sourced from PROJECT.md, memory-security-storage-spike.md, privacy-classification-policy-spike.md, and direct analysis of existing system components.
 
 ---
 
-## Cross-Cutting Pitfalls (Apply to ALL Phases)
+## Critical Pitfalls
 
-These pitfalls must be established as guardrails before the first v4.0 phase is written.
-
-### CC-1: Two SQLite Files, Two Lock Domains
-**What goes wrong:** `data/memroos.db` is owned by the Next.js `better-sqlite3` singleton (WAL mode, `busy_timeout=5000`). `data/orchestration.db` is owned by the Python `OrchestrationStore` (sqlite3, no WAL pragma — confirmed by reading `engine.py`). Any feature that tries to read one from the other process, or opens the same file from both, will produce lock contention or data races.
-**Risk Level:** CRITICAL
-**Prevention:** Never open `orchestration.db` from Node/TypeScript code, and never open `memroos.db` from Python. Data exchange between the two processes is over HTTP only — the orchestration FastAPI service and Next.js API routes.
-**Which Phase:** ALL — enforce as architectural invariant from the first v4.0 phase.
-
-### CC-2: `OrchestrationStore` is Per-Request, Not a Singleton
-**What goes wrong:** `app.py` calls `get_engine()` on every HTTP request, which creates a new `sqlite3.connect()` and closes it in `finally`. Any feature that assumes in-process Python state persists between requests (timers, retry queues, in-flight counters, async tasks) will lose that state on the next request.
-**Risk Level:** HIGH
-**Prevention:** All timer state, retry budgets, and SLA deadlines must be rows in `orchestration.db`, not in-memory Python objects.
-**Which Phase:** ALL — call out in any phase touching the orchestration service.
-
-### CC-3: `execSync`/`exec` Ban at Process Boundaries
-**What goes wrong:** Behavioral W-lift and voice-bot control code will need to invoke subprocesses. Using `exec` or `execSync` with a shell string is both a security risk and a constraint violation (PROJECT.md Constraints). Researchers familiar with Python subprocess patterns may port the wrong idiom.
-**Risk Level:** HIGH
-**Prevention:** All subprocess invocations in TypeScript must use `execFileSync` with an explicit argv array, never a shell string. In Python, use `subprocess.run([...], shell=False)`.
-**Which Phase:** SEAL-04..06 (behavioral W-lift sandbox), VOICE-06..08 (meeting bot control).
-
-### CC-4: `orchestration.db` Missing WAL Mode
-**What goes wrong:** The `OrchestrationStore._init_schema()` runs `executescript(CREATE TABLE IF NOT EXISTS ...)` but never sets `PRAGMA journal_mode=WAL`. With v4.0 adding edit-and-continue (concurrent read+write) and timer polling, the default rollback journal mode will cause writer-blocks-reader stalls under concurrent HTTP requests.
-**Risk Level:** HIGH
-**Prevention:** Add `conn.execute("PRAGMA journal_mode=WAL")` and `conn.execute("PRAGMA busy_timeout=5000")` in `OrchestrationStore.__init__` before `_init_schema()`. Do this in the first phase that touches the orchestration service (HIL-01..03).
-**Which Phase:** HIL-01..03 — first opportunity, make it a prerequisite.
-
-### CC-5: New Endpoints Must Not Skip `authorizeRegistryWrite`
-**What goes wrong:** v4.0 adds multiple new API routes (HIL edit, SLA escalation, meeting bot control, SEAL re-execution trigger). If any new route omits the `authorizeRegistryWrite` guard (pattern established in `route.ts` for HIL), it becomes an open endpoint reachable through the Cloudflare tunnel.
-**Risk Level:** HIGH
-**Prevention:** Copy the exact guard pattern from `/api/orchestration/hil/route.ts` to every new API route. Add a CI lint rule or test asserting that every route under `/api/orchestration/` calls `authorizeRegistryWrite`.
-**Which Phase:** ALL — check in every new route PR.
+Mistakes that cause data leaks, silent security bypasses, or force rewrites.
 
 ---
 
-## HIL Edit-and-Continue (HIL-01..03)
+### Pitfall C-01: Backfill Blindness — Restricted Content Already in FTS5/Qdrant/Neo4j Before the Authz Gate Flips
 
-### HIL-P1: `update_state` + `as_node` Ordering Mistake
-**What goes wrong:** LangGraph's edit-and-continue requires calling `graph.update_state(config, values, as_node="<node>")` before issuing `Command(resume=...)`. The `as_node` parameter tells LangGraph which node produced the updated values, which determines which node runs next. In the current graph, if `as_node="route_policy"` is used, execution resumes at `approval` or `dispatch` (route_policy's successors), which is correct for a task-payload edit. If `as_node` is omitted or set to `"approval"`, the successor is `END` and the graph terminates immediately after the edit without dispatching.
-**Risk Level:** HIGH
-**Prevention:** In the Python edit endpoint, always pass `as_node="route_policy"` when editing task payload fields before resume. Verify against the compiled graph's edge map, not assumptions. Covered by Context7 LangGraph docs (`update_state` with `as_node` for forking state).
-**Which Phase:** HIL-01..03
+**What goes wrong:** Classification is shipped and the retrieval authorization gate starts denying restricted content. But content ingested before the gate existed — already embedded in the SQLite FTS5 conversation store, indexed in Qdrant Cloud via the background embedding job, and written into Neo4j graph facts via mem0 — is never reclassified. The gate denies new writes but silently leaks through the old derived indexes.
 
-### HIL-P2: Concurrent Edits Racing the Checkpointer
-**What goes wrong:** `LangGraphRuntime._compiled()` opens a new `SqliteSaver` context on every call. Two simultaneous edit-and-resume requests for the same `thread_id` will both read the same checkpoint, apply edits, and write back — last writer wins, first edit is silently lost.
-**Risk Level:** HIGH
-**Prevention:** Serialize edit+resume operations per `thread_id` using a per-thread lock (e.g., a threading.Lock registry keyed by `run_id`). Alternatively, enforce at the HTTP layer: accept edit only when `status == "waiting_for_approval"` and optimistically lock with a status CAS.
-**Which Phase:** HIL-01..03
+**Why it happens:** The gate is built as a forward-only control. Teams assume the existing indexes are clean without auditing them.
 
-### HIL-P3: Unvalidated Keys in `update_state` Payload
-**What goes wrong:** `graph.update_state(config, arbitrary_dict)` will write any keys into the checkpoint. If the edit endpoint accepts arbitrary JSON from the operator without validating against `OrchestrationState`, injected keys will silently persist in the checkpoint and may cause type errors or incorrect routing at resume time.
-**Risk Level:** MEDIUM
-**Prevention:** Validate the edit payload against the `OrchestrationState` TypedDict schema (Pydantic model on the FastAPI side) before passing to `update_state`. Reject unknown keys with HTTP 422.
-**Which Phase:** HIL-01..03
+**Existing components at risk:**
+- SQLite FTS5 store (conversations.db) — full plaintext, searchable without classification
+- Background embedding job (50 msgs/cycle, 5-min interval) — embeds content before classification runs if ordering is wrong
+- Qdrant Cloud vector store (mem0 collection `agent_memory` — read-only from app, written via mem0 HTTP API) — no ingest gate on the HTTP path
+- Neo4j graph facts via mem0 — same HTTP bypass applies
 
----
+**Consequences:** The retrieval authorization gate gives false confidence. Restricted memory (legal, finance, HR, credentials) is accessible via semantic search even after the gate ships.
 
-## HIL Timeout + SLA Escalation (HIL-04..06)
+**Prevention:**
+1. Before flipping the gate to enforce, run a backfill classification sweep across all existing FTS5 rows, Qdrant payloads, and Neo4j facts.
+2. Remove or quarantine any content that classifies as restricted from all four derived indexes (FTS5, Qdrant, Neo4j, qmd).
+3. Gate enforcement must be conditional: only enforce once backfill sweep completes and emits a verified completion event.
+4. Write a negative regression test (MEMSEC-08) that queries each index for a known restricted fixture and asserts zero results.
 
-### HIL-P4: In-Process Timer State Lost on Restart
-**What goes wrong:** LaunchAgent will restart the orchestration service on crash or OS reboot. Any timer state stored as a Python `asyncio.sleep` task or `threading.Timer` will be lost. Pending decisions that were approaching their SLA will restart their clock from zero silently.
-**Risk Level:** HIGH
-**Prevention:** Store SLA deadline as an ISO timestamp column (`sla_deadline_at`) on `orchestration_hil_decisions` at creation time. The timer mechanism is a Next.js `instrumentation.ts` scheduler tick polling `/hil/expired` — not an in-process Python timer. Matches the established scheduler pattern (PROJECT.md Key Decisions v1.5).
-**Which Phase:** HIL-04..06
+**Detection:** Any restricted content surfacing in recall after the gate is declared live. Failing the MEMSEC-08 negative test fixtures.
 
-### HIL-P5: Escalation Fan-Out on Repeated Timer Ticks
-**What goes wrong:** The scheduler polls `/hil/expired` on a fixed interval. If escalation creates a new HIL decision without an idempotency guard, a slow human response will cause the scheduler to create a new escalation decision on every tick until the decision is resolved.
-**Risk Level:** HIGH
-**Prevention:** Add a unique constraint on `(run_id, escalation_level)` in `orchestration_hil_decisions`. Set `status = "escalated"` on the original decision at the same time as creating the escalation row (single DB transaction).
-**Which Phase:** HIL-04..06
-
-### HIL-P6: Timer Ownership Ambiguity
-**What goes wrong:** Adding an `asyncio` background task in the FastAPI app for SLA polling creates a second, incompatible scheduler path alongside the established `instrumentation.ts` scheduler. Two sources of escalation for the same decision will race.
-**Risk Level:** MEDIUM
-**Prevention:** One canonical timer owner: Next.js `instrumentation.ts`. The orchestration service exposes a stateless `/hil/expired` endpoint that returns decisions past their `sla_deadline_at`. The scheduler calls that endpoint and triggers escalation via a `POST /hil/{id}/escalate`.
-**Which Phase:** HIL-04..06
+**Phase:** Memory Security Foundation (MEMSEC-01..08)
 
 ---
 
-## Multi-Hop Retry + Rollback (ORCH-08..10)
+### Pitfall C-02: Embedding Before Classification — Background Job Creates Vectors of Restricted Content
 
-### ORCH-P1: Compensation Closures in Code, Not Data
-**What goes wrong:** Storing rollback logic as Python callables (lambda, functools.partial) means that a process crash mid-rollback loses the compensation plan. The next process start cannot reconstruct what compensation steps were pending.
-**Risk Level:** HIGH
-**Prevention:** Store compensation as declarative rows in `orchestration_lineage` with `hop_type="compensation_pending"` and a `detail_json` that encodes the compensation verb and target. Reconstruction reads the lineage log, not in-memory state.
-**Which Phase:** ORCH-08..10
+**What goes wrong:** The existing background embedding job (50 messages/cycle, 5-minute interval, added in RECALL-01/02) embeds all new messages into Qdrant regardless of classification labels. If classification runs after embedding — or classification is async and the embedding job fires first — restricted content gets vector-indexed.
 
-### ORCH-P2: A2A Transport Has No Rollback Verb
-**What goes wrong:** Multi-hop rollback may need to send a compensation action to a remote agent via A2A. A2A v1 has no first-class "undo" message type. Assuming remote agents will handle a freeform "rollback" task message is fragile and depends on agent cooperation.
-**Risk Level:** HIGH
-**Prevention:** Define a Memroos-side local compensation contract. Remote agents receive a standard task with `requiredCapability: "compensate"` and a `correlationId` back-reference. If the agent does not implement compensation, Memroos records a `compensation_skipped` lineage row and continues without expecting remote rollback.
-**Which Phase:** ORCH-08..10
+**Why it happens:** The embedding job was built for semantic recall performance, before security labels existed. Its schedule runs independently of any classification pipeline.
 
-### ORCH-P3: Per-Hop Retry Budget Stuffed into `attempts` Column
-**What goes wrong:** The current `orchestration_runs` table has a single `attempts` INTEGER. Multi-hop rollback needs per-hop retry tracking. Incrementing the same column for different hops makes it impossible to know which hop exhausted its budget.
-**Risk Level:** MEDIUM
-**Prevention:** Store per-hop retry counts in `orchestration_lineage.detail_json` keyed by `hop_id`. Do not reuse or overload the top-level `attempts` column for hop-level tracking.
-**Which Phase:** ORCH-08..10
+**Existing components at risk:**
+- Background embedding job in instrumentation.ts scheduler bootstrap pattern (established in v1.5)
+- Qdrant Cloud vector store — write path from the embedding job has no label check
+- The 18-pattern content scanner (SEC-01) partially overlaps but is not the same as classification labels
 
-### ORCH-P4: Increment-Before-Dispatch Leaves Inflated Attempt Count on Crash
-**What goes wrong:** `increment_attempts` commits to SQLite before the dispatch call. If the process crashes between the commit and the actual dispatch, `attempts` is inflated by 1 with no actual hop having occurred. This is a latent bug that rollback work will amplify.
-**Risk Level:** MEDIUM
-**Prevention:** Add a `dispatch_confirmed_at` timestamp column. Only count an attempt as real when the dispatch acknowledgement is received. Saga recovery reads unconfirmed attempts as candidates for re-dispatch.
-**Which Phase:** ORCH-08..10 (address before adding new hop logic on top).
+**Consequences:** Semantic recall returns restricted memory even if the FTS5 path is gated. The embedding job acts as a silent classification bypass.
+
+**Prevention:**
+1. Classify at write time before the embedding job can access the content. Classification must run synchronously at ingest or stamp a provisional `private` label that the embedding job will not embed.
+2. Add a label check in the embedding job: skip embedding any message where `visibility != public_safe AND visibility != public_approved` or where `policy = sealed`.
+3. Do not treat the 18-pattern scanner as equivalent to the new classification dimensions — merge detectors rather than running parallel engines (see Pitfall C-05).
+
+**Detection:** Query Qdrant for a fixture message that is known-restricted and assert it has no embedding.
+
+**Phase:** Memory Security Foundation (MEMSEC-01..08)
 
 ---
 
-## Memory Backend Pluggability (MEM-06..08)
+### Pitfall C-03: mem0 HTTP Bypass — Content Written by External Clients Never Passes the Ingest Gate
 
-### MEM-P1: Adapter Exposing Direct Vector Client Handle
-**What goes wrong:** The HTTP-only invariant for mem0/Qdrant (PROJECT.md Key Decisions v1.3) prohibits direct Qdrant client access from app code. An adapter interface that exposes a `getClient()` or `getQdrantClient()` method will invite callers to bypass the constraint.
-**Risk Level:** HIGH
-**Prevention:** The `MemoryBackendAdapter` interface exposes only `search(query, limit)`, `save(entry)`, and `health()`. No client handle, no raw collection access. Enforce at the TypeScript interface level — no method returning a Qdrant/Neo4j client type.
-**Which Phase:** MEM-06..08
+**What goes wrong:** The `agent_memory` collection in Qdrant is read-only from the Next.js app; all writes go through the mem0 HTTP API. This means any agent writing memories directly via mem0 bypasses MemroOS's new ingestion classification gate entirely. Content entering through A2A-dispatched agents or the Daily.co meeting bot transcript pipeline lands in `agent_memory` without classification labels.
 
-### MEM-P2: Single-Writer-Per-Tier Violated by Bundled Adapters
-**What goes wrong:** If a new adapter bundles two tiers (e.g., a Postgres+pgvector adapter handling both vector and episodic), the existing `searchVectorMemory` (mem0 HTTP) and SQLite episodic paths will continue to write concurrently — double-writing to the same logical tier.
-**Risk Level:** HIGH
-**Prevention:** The adapter contract must declare which tiers it owns (`tiers: ("vector" | "graph" | "episodic")[]`). A registered adapter that claims a tier disables the built-in path for that tier. No tier may have two active writers simultaneously.
-**Which Phase:** MEM-06..08
+**Why it happens:** The read-only constraint (established in v1.3, "mem0 writes via HTTP only — never direct Qdrant") was a correctness discipline for direct writes, not a security constraint. It now means the classification gate has no leverage over the most common write path.
 
-### MEM-P3: Health Panel Reporting Stale Tiers After Adapter Swap
-**What goes wrong:** `SqliteHealthPanel` and `MemoryIntelligencePanel` call `checkVectorHealth()` and `checkGraphHealth()` by name. Swapping in a new adapter for the vector tier will leave the panels still polling the old mem0 endpoint, reporting stale/incorrect health.
-**Risk Level:** MEDIUM
-**Prevention:** Health check functions must be dynamically resolved from the adapter registry, not hardcoded to `checkVectorHealth`/`checkGraphHealth`. Each registered adapter provides a `healthCheck()` function.
-**Which Phase:** MEM-06..08
+**Existing components at risk:**
+- mem0 HTTP API (external write path)
+- Daily.co meeting bot (Pipecat DailyTransport) — writes per-speaker transcripts to `messages` table and meeting highlights to `hive_actions` via the MemroOS-controlled path. But agent tasks dispatched via A2A hub that call mem0 directly are not controlled.
+- A2A-dispatched agents using skill registry — may write memories as side effects
 
-### MEM-P4: Env Namespace Collision Between Adapters
-**What goes wrong:** Today `backends.ts` reads `NEO4J_HTTP_URL`, `NEO4J_DATABASE`, etc. at call time. A second graph adapter would need the same env vars but for a different host. Unnamespaced global env vars mean you can only configure one backend per tier at a time and cannot stage a migration.
-**Risk Level:** MEDIUM
-**Prevention:** Use a namespaced env convention: `MEMORY_BACKEND_<ADAPTER_NAME>_URL`, `MEMORY_BACKEND_<ADAPTER_NAME>_KEY`. The adapter registration call specifies its env prefix.
-**Which Phase:** MEM-06..08
+**Consequences:** The retrieval authorization gate can only gate on content it can see. Content in `agent_memory` that was never classified is either always allowed (unsafe) or must be treated as untrusted and classified on read (performance cost, double classification).
+
+**Prevention:**
+1. Treat `agent_memory` content as untrusted at read time: apply classification on retrieval, not just ingestion.
+2. For content MemroOS controls (transcript write path, hive_actions, messages table), classify at write time before the embedding job runs.
+3. Document explicitly which paths are and are not governed; do not claim the gate covers the HTTP bypass path.
+
+**Detection:** Insert a known-sensitive fixture via the mem0 HTTP API directly, then confirm it surfaces (and is blocked or labeled) at retrieval.
+
+**Phase:** Memory Security Foundation (MEMSEC-01..08); revisit at Retrieval Authorization Gate.
 
 ---
 
-## Voice Meeting Bot (VOICE-06..08)
+### Pitfall C-04: LangGraph Checkpoint Payload Leak — SqliteSaver Contains Unclassified Task Content
 
-### VOICE-P1: Pipecat Has No Native Zoom/Teams Transport (FEASIBILITY BLOCKER)
-**What goes wrong:** The current voice server uses `WebsocketServerTransport` (port 7860), which accepts inbound WebSocket connections from a browser. Pipecat's production transport for real external calls is `DailyTransport` (Daily WebRTC). Zoom and Teams do not expose a Daily room URL — joining an external Zoom/Teams meeting requires either: (a) a virtual audio device that routes through a WebRTC bridge, (b) a Zoom/Teams SDK bot (bot-platform API, available on paid plans), or (c) a telephony bridge (Twilio PSTN dial-in). Pipecat has Twilio and Daily transports but no first-class Zoom or Teams meeting-join transport. Once an integration path is chosen (Daily bridge, Twilio PSTN, or Zoom bot SDK), risk drops to HIGH.
-**Risk Level:** CRITICAL — This is a feasibility-class constraint. The roadmapper must choose the integration path before writing VOICE-06..08 requirements. Pipecat documentation confirms Daily WebRTC is the recommended production transport; Zoom/Teams direct join requires an intermediary service.
-**Prevention:** Decide on the meeting-join path before phase planning. The safest path in this stack: use Daily.co as the WebRTC fabric (Pipecat has `DailyTransport` and dial-out support), and use Daily's Zoom meeting integration or a Zoom bot SDK to bridge. Document this as a new external dependency (`DAILY_API_KEY`).
-**Which Phase:** VOICE-06..08 — must be resolved in phase design, not implementation.
+**What goes wrong:** LangGraph uses SqliteSaver for checkpoint persistence. Checkpoints contain the full `OrchestrationState`, including task content, HIL edit payloads (added in Phase 70), and any tool call results. These are serialized to the `checkpoints` SQLite table. Envelope encryption protects raw vault artifacts, but the checkpoint table is not part of the raw vault and has no encryption or classification labels.
 
-### VOICE-P2: Meeting URLs Are Bearer Credentials — Must Not Be Logged
-**What goes wrong:** Zoom and Teams meeting URLs contain join tokens. If meeting-bot join requests pass through the existing `audit_log` or `hive_actions` tables (which log summaries freely), the join token will be persisted in plaintext and visible to any dashboard user.
-**Risk Level:** HIGH
-**Prevention:** Never log meeting URLs or join tokens to `audit_log` or `hive_actions`. Log only the meeting ID (opaque string). Add a content scanner rule (matching the existing 18-pattern scanner in v1.5) for meeting URL patterns.
-**Which Phase:** VOICE-06..08
+**Why it happens:** Checkpoints were designed for fault-tolerance and replay, not as a security boundary. HIL edit-and-continue (HIL-01..03, Phase 70) adds operator-modified fields back into checkpoints, which may now include corrected sensitive values.
 
-### VOICE-P3: FTS5 Trigger Cost Under High-Volume Meeting Transcripts
-**What goes wrong:** The `transcript_writer.py` writes meeting transcripts to the main SQLite (`messages` table). A 60-minute meeting at 10-second transcript flush intervals = 360 `INSERT INTO messages` calls, each triggering the `messages_ai` FTS5 trigger. Combined with other live writes during a meeting, this will saturate the SQLite write window.
-**Risk Level:** MEDIUM
-**Prevention:** Batch transcript segments into 60-second chunks before writing. For meetings > 30 minutes, write to a separate `meeting_transcripts` table without FTS5 trigger, and index asynchronously after the meeting ends.
-**Which Phase:** VOICE-06..08
+**Existing components at risk:**
+- LangGraph SqliteSaver checkpoint table in the shared better-sqlite3 WAL singleton
+- HIL lineage rows in `orchestration_lineage` (before/after values, Phase 70-02)
+- Cross-harness skill registry dispatch calls that embed task context
 
-### VOICE-P4: Two-Port Architecture Overloaded with Meeting Control
-**What goes wrong:** The voice server currently uses port 7860 (audio WebSocket) and port 7861 (health FastAPI). Adding meeting-join control (join URL, leave, mute) via the health endpoint overloads its responsibility and breaks the health-check contract.
-**Risk Level:** MEDIUM
-**Prevention:** Add a third endpoint surface (port 7862 or a new FastAPI route group `/meeting`) for meeting-bot control APIs. Do not add meeting commands to the `/health` endpoint.
-**Which Phase:** VOICE-06..08
+**Consequences:** Sensitive task content (finance figures, HR notes, legal terms) lives in plaintext checkpoints even if the raw vault is encrypted. Checkpoint replay (for multi-hop retry with declarative rollback, ORCH-08/09) could reconstitute restricted content without authorization.
 
-### VOICE-P5: Recording Consent (Non-Technical)
-**What goes wrong:** Recording and transcribing external meetings without participant consent violates GDPR, CCPA, and local wiretap laws in many jurisdictions.
-**Risk Level:** HIGH (legal, not technical)
-**Prevention:** Require the meeting bot to announce itself and state it is recording on join. Provide a clear UI toggle for recording consent confirmation before the bot joins. Document jurisdiction restrictions in the operator guide.
-**Which Phase:** VOICE-06..08
+**Prevention:**
+1. Add classification labels and optional encryption to checkpoint rows — at minimum, mark them with the label of the highest-sensitivity content they contain.
+2. Apply the retrieval authorization gate to checkpoint reads (task resume, HIL continuation, retry replay).
+3. Scope checkpoint retention to the task lifetime — do not retain checkpoints indefinitely.
+
+**Detection:** Insert a task containing a known-sensitive fixture, allow it to checkpoint, then query the checkpoint table directly and assert restricted content is absent or encrypted.
+
+**Phase:** Memory Security Foundation (MEMSEC-01..08)
 
 ---
 
-## LLM-Powered Recall Scoring (RECALL-01..02)
+### Pitfall C-05: Detector Sprawl — 18-Pattern Security Scanner and New Deterministic Detectors Diverge
 
-### RECALL-P1: Embedding Every Candidate at Query Time
-**What goes wrong:** If embeddings are computed for all candidate messages at query-time, a recall request over a large conversation store (tens of thousands of messages) will issue thousands of LLM embedding API calls per query — catastrophic latency and cost.
-**Risk Level:** HIGH
-**Prevention:** Precompute and persist embeddings at ingest time. The `messages_ai` trigger (or a post-insert hook) should enqueue an embedding job. Store embeddings in a `message_embeddings` table (BLOB column with vector dimension or sqlite-vec extension). Query-time embedding is only for the query string itself.
-**Which Phase:** RECALL-01..02
+**What goes wrong:** v1.5 shipped an 18-pattern content scanner (SEC-01) with HIGH/MEDIUM/LOW severity tiers and a 4096-char length guard. v5.0 adds new deterministic detectors: regex, NER, source path, MIME type, sender domain, calendar attendees, Drive folder, Gmail label, Slack channel, attachment type, and secret/credential scans. If these are implemented as separate subsystems, coverage gaps between them become security gaps — a pattern not in the old scanner but not yet in the new detectors passes both checks.
 
-### RECALL-P2: Choosing the Same Local Embedding Stack as GitNexus
-**What goes wrong:** PROJECT.md Known Debt: "GitNexus embeddings partial (285/473) — crash bug upstream" (node-llama-cpp macOS arm64). Using the same local llama.cpp runtime for recall embeddings will hit the same crash.
-**Risk Level:** HIGH
-**Prevention:** Use a remote embedding provider (OpenAI `text-embedding-3-small`, Voyage, or Cohere) or a different local runtime (Ollama with a small model). Do not depend on node-llama-cpp until the upstream bug is resolved.
-**Which Phase:** RECALL-01..02
+**Why it happens:** The old scanner was purpose-built for agent output. The new detectors are for ingestion classification. Different authors, different call sites, different schemas.
 
-### RECALL-P3: Embedding Storage Conflict with mem0/Qdrant
-**What goes wrong:** mem0 already stores embeddings in Qdrant Cloud for the `agent_memory` collection. If recall embeddings for `messages` are also stored in Qdrant under a new collection, there are now two Qdrant collections with different write paths, ownership, and retention policies.
-**Risk Level:** MEDIUM
-**Prevention:** Define clearly: recall embeddings for `messages` live in SQLite (sqlite-vec extension or a `BLOB` column), not in Qdrant. Qdrant remains exclusively for mem0-managed agent memory. This keeps the mem0 HTTP-only invariant unambiguous.
-**Which Phase:** RECALL-01..02
+**Consequences:** Credential or PII content that triggers the new detectors but not the old scanner (or vice versa) gets inconsistent treatment. Double-firing on the same content wastes compute.
 
-### RECALL-P4: BM25 Fallback Path Abandoned on Embedding Outage
-**What goes wrong:** If the embedding API is down, recall falls back to nothing (no BM25 results) rather than the existing FTS5/BM25 path.
-**Risk Level:** MEDIUM
-**Prevention:** Keep the FTS5 recall path as a fallback, following the degradation gate pattern from v3.1 context source contracts. If embedding API health check fails, recall silently falls back to BM25 and adds `degraded: true` to the response.
-**Which Phase:** RECALL-01..02
+**Prevention:**
+1. Consolidate into a single `DetectorPipeline` that the old scanner feeds into as a sub-stage. Do not add the new detectors as a parallel service.
+2. Run the 18-pattern scanner as the first stage (fast, already tested, 680+ tests covering it); layer NER and metadata detectors after.
+3. Emit a single unified result envelope with label dimensions, confidence, reason codes, and evidence spans regardless of which detector triggered.
+
+**Detection:** Write a fixture that triggers only the old scanner and another that triggers only a new detector — assert both emit the same label envelope format.
+
+**Phase:** Memory Security Foundation / Classification cascade (MEMSEC-03, CTX-FOLLOWUP-03)
 
 ---
 
-## Cross-Project Recall (RECALL-03..04)
+## Moderate Pitfalls
 
-### RECALL-P5: Triggering Recursive `readdir` on Project Roots
-**What goes wrong:** Cross-project recall needs to know which projects exist and their conversation logs. If implementation scans project root directories recursively at query time, it hits the same constraint as the Obsidian vault: catastrophic inode load (PROJECT.md Constraints: "No recursive readdir on Obsidian vault").
-**Risk Level:** HIGH
-**Prevention:** Cross-project recall uses opt-in path configuration only. Each additional project is registered as an explicit path list (e.g., in `context-sources.config.json`). No filesystem discovery at query time.
-**Which Phase:** RECALL-03..04
+### Pitfall M-01: Classification Cascade Too Aggressive — Breaks All Recall on Migration
 
-### RECALL-P6: Default Cross-Project Leaks Work Context Across Clients
-**What goes wrong:** If cross-project recall is on by default, a query about Project A may surface memories from Project B (potentially from a different employer or client), creating a privacy violation.
-**Risk Level:** HIGH
-**Prevention:** Cross-project recall is opt-in per query — a caller must explicitly pass `crossProject: true` and a list of allowed project IDs. The default `recall` behavior remains single-project scoped.
-**Which Phase:** RECALL-03..04
+**What goes wrong:** Fail-closed classification defaults to `private`, which is correct. But with no escape hatch for clearly non-sensitive content (engineering notes, skill definitions, benchmark results), every existing memory becomes private by default on migration. Agents cannot recall anything until human review clears each item, freezing the system.
 
-### RECALL-P7: Unormalized Scores Favour Larger Projects
-**What goes wrong:** If a cross-project BM25 or cosine score is compared directly across projects of different sizes, the larger project's denser index will dominate results regardless of relevance.
-**Risk Level:** MEDIUM
-**Prevention:** Normalize recall scores per project before merging (e.g., max-norm per project). Merge and re-rank after normalization.
-**Which Phase:** RECALL-03..04
+**Existing components at risk:**
+- SQLite FTS5 conversation store — all existing messages
+- qmd BM25 index — all existing knowledge files
+- Cross-project recall (RECALL-03/04) — `allowed_project_ids` parameter becomes useless if caller role fails the new authz gate
+
+**Prevention:**
+1. Define source-path auto-promotion rules that deterministically promote from `private` to `internal` or `indexable` on migration (e.g., content from the `engineering` domain with no PII/credential signals). This is a deterministic rule, not an LLM decision.
+2. Backfill promotion must run and complete before the gate enforces.
+3. Generate a migration report showing how many messages would be blocked before and after backfill promotion.
+
+**Phase:** Memory Security Foundation (MEMSEC-03..05)
 
 ---
 
-## True Behavioral W-Lift (SEAL-04..06)
+### Pitfall M-02: Human Review Queue Grows Unbounded Without SLA or Drain Mechanism
 
-### SEAL-P1: Re-Execution Against Live State-Mutating Agents
-**What goes wrong:** Behavioral W-lift re-runs agent instructions to measure outcome improvement. If the agent under eval has side-effecting tools enabled (file writes, email sends, API calls), a re-execution run will mutate real state — creating files, sending emails, etc.
-**Risk Level:** CRITICAL
-**Prevention:** Behavioral re-execution requires a sandboxed eval profile that stubs or disables all side-effecting tools. The eval runner must pass a tool-stub configuration that replaces `file_write`, `send_email`, and any external API tools with no-op stubs that return synthetic success responses.
-**Which Phase:** SEAL-04..06 — the sandbox mechanism must be designed and tested before any behavioral re-execution is run.
+**What goes wrong:** The classification cascade routes low-confidence, conflicting, legal/finance/HR/credential, and public-promotion cases to a human review queue. Without an SLA, a timeout, or a drain path, the queue accumulates indefinitely. New ingest is silently blocked while the queue backs up.
 
-### SEAL-P2: Scoring Across Different Model Versions
-**What goes wrong:** If behavioral eval runs for "before" and "after" use different `judge_model` versions (due to model deprecation or auto-routing), the W-lift delta reflects model variance, not agent improvement.
-**Risk Level:** HIGH
-**Prevention:** Pin `judge_model` and `judge_model_family` for the duration of a SEAL evaluation cycle. `EvalRunRow` already carries these fields — add a constraint that behavioral W-lift pairs must share the same `judge_model`. Reject comparison if versions differ.
-**Which Phase:** SEAL-04..06
+**Why it happens:** Review queues feel harmless at low volume. At scale (daily meeting transcripts, Gmail ingestion, Slack imports), ingest rate easily exceeds human review capacity.
 
-### SEAL-P3: Unbounded Re-Execution Token Cost
-**What goes wrong:** Each behavioral re-execution involves multiple LLM calls (agent execution + judge scoring). Without a budget, a single SEAL cycle on a complex agent could exhaust daily token quotas or incur unexpected cost.
-**Risk Level:** HIGH
-**Prevention:** Require a daily token budget knob (`SEAL_MAX_DAILY_TOKENS`) enforced by the eval runner before each re-execution. Surface current-day usage in the eval UI before running.
-**Which Phase:** SEAL-04..06
+**Existing components at risk:**
+- Meeting bot transcripts (Daily.co/Pipecat) write at high velocity
+- Cron health monitoring (CRON-HEALTH-01..05) — if classification latency spikes, cron health alerts fire but the review queue is the real bottleneck
 
-### SEAL-P4: Behavioral Runs Overwriting Existing Eval Rows
-**What goes wrong:** `persistEvalRun` keys on `trace_id`. If behavioral re-execution reuses the original `trace_id`, it will overwrite the baseline eval row, losing the before/after comparison.
-**Risk Level:** MEDIUM
-**Prevention:** Behavioral W-lift runs append new `EvalRun` rows with a `(trace_id, generation)` compound key, where `generation` increments per behavioral run. The baseline is `generation=0`. Never upsert over the baseline row.
-**Which Phase:** SEAL-04..06
+**Prevention:**
+1. Define an SLA per content type (e.g., meeting transcripts: 48h, credentials: 4h).
+2. Add a drain path: content that exceeds its SLA without human action auto-promotes to `private` (not blocked forever) with an audit entry.
+3. Implement queue depth monitoring as a NOC panel — treat queue depth like a service health metric.
+
+**Phase:** Memory Security Foundation + NOC Real-Data (MEMSEC-03, NOC-01..14)
 
 ---
 
-## Cross-Harness Skills Portability (Scope Unconfirmed)
+### Pitfall M-03: LLM Classifier Without Abstention Path — Hallucinated Labels and Cost Explosion
 
-This feature appears in the task brief but is not in `PROJECT.md Active (v4.0)`. If the roadmapper confirms it is in v4.0 scope, key pitfall areas to research are:
+**What goes wrong:** An LLM classifier without a strict output schema, confidence floor, and `abstain=true` path will invent labels for ambiguous content. In a security context, hallucinated `public_approved` labels leak sensitive data. Running the LLM classifier on every ingested message (vs. only on deterministic-detector failures/low-confidence cases) drives cost to unsustainable levels at Daily.co meeting volume.
 
-- Skill schema portability across different harness formats (Claude Code, LangChain, AutoGen) — likely needs a canonical skill serialization format that maps to each harness's tool-call schema.
-- Skill execution sandboxing — same concerns as SEAL-P1 above.
-- Import/export auth: skills may contain API keys or service assumptions embedded in their instructions.
+**Why it happens:** The spike notes recommend constrained LLM adjudication, but implementation pressure leads to calling the LLM first as the "easy path" rather than after deterministic detectors.
 
-**Action for roadmapper:** Confirm scope before assigning requirement IDs.
+**Prevention:**
+1. Enforce the deterministic-first cascade in code: LLM adjudication is only invoked when the deterministic pipeline returns confidence below a threshold.
+2. Require strict JSON output schema: label dimensions, confidence, reason code, evidence span ids, and `abstain` flag. Reject any LLM response that does not conform.
+3. Add a cost counter to the classification pipeline and alert when daily LLM classification spend exceeds a threshold.
+
+**Phase:** Classification cascade (MEMSEC-03, CTX-FOLLOWUP-03)
 
 ---
 
-## Phase-Specific Warning Summary
+### Pitfall M-04: Envelope Encryption Breaks Key Rotation for Vault Replay
 
-| Phase | Feature | Top Pitfall | Mitigation |
-|-------|---------|-------------|------------|
-| First v4.0 phase | ALL | CC-4: `orchestration.db` missing WAL mode | Add WAL pragma in `OrchestrationStore.__init__` before writing any v4.0 features |
-| HIL-01..03 | Edit-and-continue | HIL-P1: Wrong `as_node` terminates graph silently | Use `as_node="route_policy"`, validate against edge map |
-| HIL-01..03 | Edit-and-continue | HIL-P2: Concurrent edits race checkpointer | Per-`thread_id` serialization lock |
-| HIL-04..06 | SLA escalation | HIL-P4: In-process timers lost on restart | DB-row deadlines + Next.js scheduler tick |
-| HIL-04..06 | SLA escalation | HIL-P5: Escalation fan-out | Unique constraint on `(run_id, escalation_level)` |
-| ORCH-08..10 | Multi-hop rollback | ORCH-P1: Compensation closures in code | Declarative compensation rows in lineage |
-| ORCH-08..10 | Multi-hop rollback | ORCH-P2: A2A has no rollback verb | Local compensation contract, not remote dependency |
-| MEM-06..08 | Backend pluggability | MEM-P1: Adapter exposes client handle | Interface must have only search/save/health |
-| MEM-06..08 | Backend pluggability | MEM-P2: Double-writer per tier | Adapter declares owned tiers; built-in path disabled |
-| VOICE-06..08 | Meeting bot | VOICE-P1: No native Zoom/Teams transport | Resolve integration path (Daily.co bridge) before phase design |
-| VOICE-06..08 | Meeting bot | VOICE-P2: Meeting URLs in audit log | Never log join tokens; add content scanner rule |
-| RECALL-01..02 | LLM recall scoring | RECALL-P1: Per-query embedding of all candidates | Pre-compute at ingest; query-time only for query string |
-| RECALL-01..02 | LLM recall scoring | RECALL-P2: node-llama-cpp crash | Use remote embedding provider or Ollama |
-| RECALL-03..04 | Cross-project recall | RECALL-P5: Recursive readdir | Opt-in path config, no filesystem discovery |
-| RECALL-03..04 | Cross-project recall | RECALL-P6: Default cross-project data leak | Opt-in per query only |
-| SEAL-04..06 | Behavioral W-lift | SEAL-P1: Re-execution mutates live state | Sandboxed eval profile with stubbed side-effect tools |
-| SEAL-04..06 | Behavioral W-lift | SEAL-P3: Unbounded re-execution cost | Daily token budget knob before any run |
+**What goes wrong:** Raw vault artifacts encrypted with a rotated (retired) key become unreadable if the old key is removed after rotation. Replay of historical evidence bundles — needed for ORCH-09 rollback compensation and SEAL-06 behavioral eval replay — fails silently or errors after key rotation.
+
+**Existing components at risk:**
+- LangGraph multi-hop retry with declarative rollback (ORCH-08/09) needs to replay compensating actions from old vault artifacts
+- SEAL-06 evidence bundles carry `replay handle` — if the artifact is encrypted with a rotated key, replay fails
+- Operating profiles (local-dev vs. cloud-https) have different key lifecycle expectations
+
+**Prevention:**
+1. Key rotation must be additive, not destructive: retired keys remain in the keystore with a `retired` status; the app can decrypt with them but will not encrypt new content with retired keys.
+2. Store `key_id` in every encrypted artifact and test decryption with the old key after rotation.
+3. Write a rotation test that: encrypts an artifact, rotates the key, decrypts with the old key id, confirms new writes use the new key.
+
+**Phase:** Memory Security Foundation (MEMSEC-07)
+
+---
+
+### Pitfall M-05: NOC Panels Wired to Live Data That Does Not Exist Yet — Zero Masquerades as Clean Metric
+
+**What goes wrong:** NOC-10 requires new telemetry streams before efficiency signals can be shown (retrieval calls before useful work, raw-context ingest token share, rediscovered-fact rate). If panels are wired to live API endpoints that return zero because the telemetry table has not been created yet, the dashboard shows "0 retrieval calls wasted" — which looks correct but is actually missing data masquerading as a clean metric.
+
+**Why it happens:** Wiring the UI to an endpoint is the easy part. The endpoint returning zero vs. returning `{status: "missing-telemetry"}` is a single if-statement easy to skip under time pressure.
+
+**Existing components at risk:**
+- All 14 Operations NOC panels (NOC-01..14) on the NOC home
+- This exact failure mode was fixed in Phase 73 for previously hardcoded state values — it will reappear for any panel wired before its telemetry source exists
+
+**Prevention:**
+1. Enforce the NOC data contract (NOC-02): every panel response must include `status: live|empty|degraded|missing`. Panels render a missing-telemetry checklist, not zeros, when `status=missing`.
+2. Write the NOC-11 test that fails if any production Operations component imports `noc-mock-data`.
+3. For NOC-10 efficiency signals specifically, do not build the panel UI until the telemetry tables exist and have at least one real row.
+
+**Detection:** The NOC-11 test; and a seeded API test asserting metrics match fixture DB inputs (not zero).
+
+**Phase:** Operations NOC Real-Data (NOC-01..14)
+
+---
+
+### Pitfall M-06: Two-Truth Audit Log — Evidence Bundles Fork From Existing Audit Infrastructure
+
+**What goes wrong:** MemroOS already has: (1) `audit_log` table (AuditLogPanel, SEC-02/03), (2) HIL lineage rows in `orchestration_lineage` (Phase 70), (3) SEAL evidence bundles (SEAL-06, carrying task sample, tools/commands, checks passed, assumptions, residual risks, replay/rollback handle). v5.0 adds a fourth: "universal evidence bundles" for the harness control plane. If these are separate tables with separate schemas, querying the full audit history for a task requires joining across four tables, and any gap between them becomes a compliance blind spot.
+
+**Existing components at risk:**
+- AuditLogPanel on the NOC — reads from `audit_log`
+- HIL edit panel — reads from `orchestration_lineage`
+- SEAL proposal apply flow — reads from SEAL evidence bundle store
+- The new "task-level Plan-Execute-Verify timelines" (v5.0 harness requirement)
+
+**Prevention:**
+1. Pick one canonical evidence schema. The SEAL-06 evidence bundle fields (task sample, tools, checks, assumptions, risks, replay handle) are the most complete baseline — adopt them as the universal schema.
+2. Existing audit_log and lineage rows project into this schema, not the reverse. Older stores are append-only; new writes use the canonical schema.
+3. The harness control plane reads from the canonical schema, not by joining legacy tables.
+
+**Phase:** Harness Control Plane + Evidence
+
+---
+
+### Pitfall M-07: OAuth Identity Mapping Creates Duplicate Principals
+
+**What goes wrong:** The existing JWT auth system (HttpOnly cookie, fixed in v3.1 security hardening) carries a `user_id` + role derived from the local user store. When OAuth/SSO is added (AUTH-FOLLOWUP-03), the external IdP returns a `sub` claim. If the mapping between `sub` and `user_id` is not deterministic on first login, a user ends up with two principals — one from OAuth and one from their pre-existing password account — each with different role assignments and different audit trails.
+
+**Existing components at risk:**
+- JWT cookie auth (HttpOnly, fixed v3.1)
+- Invite token system (v3.0) — invited users create accounts before OAuth is enabled; their identities must merge cleanly
+- RBAC role assignments — duplicate principal means role conflicts at the authz gate
+
+**Prevention:**
+1. Map OAuth `sub` to `user_id` by email as the canonical merge key. On first OAuth login, look up existing accounts by email before creating a new principal.
+2. If an account with that email already exists, bind the OAuth `sub` to the existing `user_id` and retire the password credential (or leave it active per tenant policy). Do not create a new row.
+3. Log the identity binding event in `audit_log` with before/after state.
+
+**Phase:** Auth + Team Hardening (AUTH-FOLLOWUP-01..03)
+
+---
+
+### Pitfall M-08: API Key Rotation Breaks In-Flight A2A Tasks
+
+**What goes wrong:** A2A-dispatched agents use API keys (not JWT). The API key rotation feature (AUTH-FOLLOWUP-03) can revoke an active key mid-task. If a long-running LangGraph orchestration is mid-graph when its API key is rotated, the next A2A call from that task fails with 401, leaving the task in a failed state with no recovery path.
+
+**Existing components at risk:**
+- A2A task API (Phase 35) — agents authenticate via API key
+- LangGraph multi-hop retry (ORCH-08/09) — retry budget is consumed, not the key being rotated
+- HIL SLA countdown (Phase 71) — a task waiting at HIL that has its key rotated cannot be resumed by the agent
+
+**Prevention:**
+1. API key rotation must have a configurable grace period: old key remains valid for N minutes after rotation to allow in-flight tasks to complete.
+2. Issue a deprecation event at rotation time; the A2A task monitor surfaces it as a warning.
+3. The key rotation UI must display active tasks using the key being rotated and require confirmation before proceeding.
+
+**Phase:** Auth + Team Hardening (AUTH-FOLLOWUP-01..03)
+
+---
+
+### Pitfall M-09: OAuth Middleware Wraps All Routes and Breaks API-Key Consumers
+
+**What goes wrong:** Adding OAuth/SSO changes how session tokens are issued and validated. If the OAuth middleware is applied globally (a common implementation shortcut), routes that previously accepted API keys or Bearer tokens from A2A agents start requiring OAuth session tokens. MCP clients using the tool gateway, external A2A agents, and the Python LangGraph service are all affected.
+
+**Existing components at risk:**
+- A2A v1 task API (`/.well-known/agent.json`, Phase 35) — uses API key headers
+- MCP gateway tools (`tool_catalog`, `tool_discover`, `tool_load`, `tool_record_outcome`, `tool_stats`, v1.7) — direct MCP client calls
+- Python LangGraph service — calls Next.js APIs via proxy
+
+**Prevention:**
+1. Apply OAuth/SSO only to human-facing browser routes. API-key-authenticated routes must remain on a separate middleware chain.
+2. Write an integration test that confirms A2A API key auth still works after OAuth middleware is added.
+3. Auth middleware must be composable: `withOAuth` for browser routes, `withApiKey` for machine routes — not a global `withAuth` that implicitly prefers one method.
+
+**Phase:** Auth + Team Hardening (AUTH-FOLLOWUP-01..03)
+
+---
+
+### Pitfall M-10: Evidence Bundle Collection Blocks Agent Execution
+
+**What goes wrong:** Universal evidence bundles require capturing sources, memories accessed, tools called, checks run, assumptions, and residual risks. If the harness waits synchronously for evidence collection before completing each step (e.g., flushing the bundle to the vault before returning to the graph), agent execution latency spikes. LangGraph steps that previously completed in milliseconds now wait on vault writes.
+
+**Existing components at risk:**
+- LangGraph StateGraph (Phase 36) — each node is synchronous from the graph's perspective
+- HIL SLA countdown (Phase 71) — SLA timers are running; added latency delays the time-to-HIL
+- SEAL-06 behavioral eval already solved this: `applyProposal()` returns `job_id` immediately, UI polls — apply the same pattern here
+
+**Prevention:**
+1. Evidence collection is a side-channel write, not a blocking step in the execution path. The step completes; evidence is queued and written asynchronously.
+2. The vault write is fire-and-forget with a retry queue for failures — agent execution does not wait.
+3. Evidence bundle completeness is eventually consistent: the bundle is marked `pending` until the async writer flushes all fields.
+
+**Phase:** Harness Control Plane + Evidence
+
+---
+
+### Pitfall M-11: Classification Latency Causes Cron Health False Alarms
+
+**What goes wrong:** CRON-HEALTH-01..05 adds heartbeat and caught-up monitoring to ingest cron jobs. Classification at ingestion adds latency per message. If the classification cascade (deterministic + LLM adjudication path) is slow on large batches, the cron heartbeat misses its window and the health monitor flags the job as degraded or paused — when in fact the job is running but slow due to classification.
+
+**Existing components at risk:**
+- LLM consolidation scheduler on 15-minute schedule (instrumentation.ts bootstrap, v1.5)
+- Background embedding job (5-minute interval)
+- New cron jobs for source ingestion (Drive, Slack, Gmail — CTX-FOLLOWUP-01..02)
+
+**Prevention:**
+1. Classification runs asynchronously with a provisional `private` label stamped immediately. The cron job completes with provisional labels and reports `caught_up=true`; classification backfill updates labels as a separate async process.
+2. Cron health thresholds must account for classification backfill lag — do not set heartbeat windows tighter than the 95th-percentile classification time for the largest batch expected.
+
+**Phase:** Memory Security Foundation + Cron Job Health (MEMSEC-03, CRON-HEALTH-01..05)
+
+---
+
+## Minor Pitfalls
+
+### Pitfall m-01: Salience Decay Conflicts with Retention Policy for Restricted Memory
+
+**What goes wrong:** The 4-tier salience decay formula (`rate/(1+LOG(1+access_count))`, MEM-02, v1.5) lowers the decay rate for frequently accessed memories — making them persist longer. If a restricted memory (finance, HR, legal) is frequently accessed by agents before the authz gate ships, its salience score resists decay and it persists beyond the intended retention window. Retention policy says delete; salience says keep.
+
+**Prevention:** Retention policy wins over salience for restricted content. Add a retention policy check to the decay/cleanup job that removes restricted items regardless of access count. Retention policy check runs first; salience score is irrelevant for restricted content.
+
+**Phase:** Memory Security Foundation (MEMSEC-01, MEMSEC-04)
+
+---
+
+### Pitfall m-02: Skill Registry Imports Can Contain Secrets
+
+**What goes wrong:** The cross-harness skill registry (SKILL-01..04, Phase 72) imports SKILL.md files from external harnesses. These files can contain API endpoints, token patterns, or environment variable references embedded in skill preconditions or tool definitions. Without classification at import time, a SKILL.md containing credentials lands in `skill_registry` undetected.
+
+**Prevention:** Run the deterministic detector pipeline on SKILL.md imports before writing to `skill_registry`. Flag any content matching credential/secret patterns for human review before the row is written.
+
+**Phase:** Memory Security Foundation (MEMSEC-03)
+
+---
+
+### Pitfall m-03: Password Reset Bypasses Rate Limiting
+
+**What goes wrong:** The password reset flow (AUTH-FOLLOWUP-02) sends a token to an email address. Without rate limiting on the reset request endpoint, an attacker can enumerate user emails (one request per second, checking for 200 vs. 404 responses) or flood a user's inbox.
+
+**Prevention:** Rate-limit reset requests per email per hour. Return the same HTTP 200 response regardless of whether the email exists (constant-time response prevents enumeration). Set reset token expiry to 1 hour maximum at the DB level.
+
+**Phase:** Auth + Team Hardening (AUTH-FOLLOWUP-01..03)
+
+---
+
+### Pitfall m-04: Email Invitation Tokens Without DB-Level Expiry
+
+**What goes wrong:** The invite token system (v3.0) issues tokens. If expiry is enforced only in application logic and not as a database constraint, a code path that bypasses the expiry check (direct DB query, migration, or bug) can accept an expired token.
+
+**Prevention:** Store `expires_at` in the invitations table and add a DB-level check constraint. Reject token use after expiry in the DB query itself, not just in the application layer. Run a periodic cleanup job for expired tokens.
+
+**Phase:** Auth + Team Hardening (AUTH-FOLLOWUP-01..03)
+
+---
+
+### Pitfall m-05: Key Material Committed to .env.example or Operating Profile Defaults
+
+**What goes wrong:** Envelope encryption introduces key material that must be configured per deployment profile. The operating profile pattern uses `.env.example` and operator-supplied `.env` files. If key material is committed to `.env.example` as a convenience default for local-dev (e.g., a sample AES key), it propagates to all OSS installs and the git history.
+
+**Existing components at risk:** Operating profile system (local-dev/single-host/private-network/cloud-https/custom), `.env.example`, SECURITY.md
+
+**Prevention:** Key material must never appear in `.env.example`. The `setup.sh` prereq script must generate a fresh key at first install and store it outside the repo. Add a CI check that scans `.env.example` for key-pattern strings and fails if any are present.
+
+**Phase:** Memory Security Foundation (MEMSEC-07)
+
+---
+
+## Phase-Specific Warnings Summary
+
+| Phase Topic | Specific Component at Risk | Likely Pitfall | Mitigation Required Before Phase Closes |
+|-------------|---------------------------|----------------|------------------------------------------|
+| Memory Security Foundation | FTS5/Qdrant/Neo4j existing content | Backfill blindness (C-01) | Reclassification sweep + purge + MEMSEC-08 negative tests passing |
+| Memory Security Foundation | Background embedding job (instrumentation.ts) | Embeddings before classification (C-02) | Classify-before-embed ordering enforced at write |
+| Memory Security Foundation | mem0 HTTP API write path | Ingestion gate bypass (C-03) | Retrieve-time classification of untrusted mem0 content documented and tested |
+| Memory Security Foundation | SqliteSaver checkpoints | Checkpoint payload leak (C-04) | Classification labels + authz gate applied to checkpoint reads |
+| Memory Security Foundation | 18-pattern scanner + new detectors | Detector sprawl (C-05) | Single DetectorPipeline merging both; old scanner feeds in as sub-stage |
+| Memory Security Foundation | LLM classifier | Hallucinated labels + cost (M-03) | Deterministic-first cascade; LLM adjudicates only on low-confidence |
+| Memory Security Foundation | Envelope encryption key rotation | Replay breaks post-rotation (M-04) | Additive key rotation; old key retained with `retired` status |
+| Memory Security Foundation | Classification review queue | Unbounded queue (M-02) | SLA + drain path defined before first ingest |
+| Memory Security Foundation | .env.example | Key material in VCS (m-05) | Key generation in setup.sh; CI scan of .env.example |
+| Memory Security Foundation | Salience decay cleanup job | Decay vs. retention conflict (m-01) | Retention policy overrides salience for restricted content |
+| Memory Security Foundation | Skill registry import | Secrets in SKILL.md (m-02) | Credential detector runs on import before DB write |
+| Classification Cascade | Existing memories | Too-aggressive fail-closed (M-01) | Source-path auto-promotion rules + migration report before gate enforces |
+| NOC Real-Data | All 14 NOC panels | Blank-zero vs. missing-telemetry (M-05) | NOC data contract enforced; NOC-11 test; no mock-data imports in production |
+| Harness Evidence | audit_log / lineage / SEAL bundles | Two-truth audit (M-06) | Single canonical evidence schema; legacy tables project into it |
+| Harness Evidence | LangGraph steps | Evidence collection blocks execution (M-10) | Async side-channel write following SEAL-06 fire-and-forget pattern |
+| Cron Job Health | Ingest cron + classification latency | False-alarm degraded state (M-11) | Provisional label strategy; heartbeat thresholds account for backfill lag |
+| Auth Hardening | JWT + OAuth | Duplicate principals (M-07) | Email-as-merge-key; bind OAuth sub to existing user_id on first login |
+| Auth Hardening | A2A API keys | In-flight task broken by rotation (M-08) | Grace period; active-task display required before rotation confirms |
+| Auth Hardening | OAuth middleware | Breaks API-key consumers (M-09) | Separate middleware chains; A2A integration test runs with OAuth active |
+| Auth Hardening | Password reset endpoint | Enumeration + rate bypass (m-03) | Rate limit per email/hour + constant-time response |
+| Auth Hardening | Invite tokens | Non-expiring tokens (m-04) | DB-level expiry constraint; not just application logic |
 
 ---
 
 ## Sources
 
-- LangGraph Python docs via Context7 (`/websites/langchain_oss_python_langgraph`) — `update_state` + `as_node` semantics, `Command(resume=...)` pattern. MEDIUM-HIGH confidence (current official source).
-- Pipecat docs via Context7 (`/pipecat-ai/docs`) — transport options (Daily WebRTC, Twilio), confirmed absence of native Zoom/Teams transport. HIGH confidence (official source).
-- `services/orchestration/engine.py` — confirmed absence of WAL pragma on `orchestration.db`. HIGH confidence (source code).
-- `apps/memroos/src/lib/db.ts` — confirmed WAL + busy_timeout on main `memroos.db`. HIGH confidence (source code).
-- `services/voice-server/server.py` — confirmed two-port architecture and `WebsocketServerTransport`. HIGH confidence (source code).
-- `apps/memroos/src/lib/memory/backends.ts` — confirmed HTTP-only mem0 access, global env var pattern for Neo4j. HIGH confidence (source code).
-- `apps/memroos/src/lib/evals/service.ts` — confirmed `EvalRunRow` fields (`judge_model`, `judge_model_family`, `trace_id`). HIGH confidence (source code).
-- `PROJECT.md` — constraints, key decisions, known debt. HIGH confidence.
+- `/Users/lcalderon/github/memroos/.planning/PROJECT.md` — existing component inventory, tech decisions, constraint list
+- `/Users/lcalderon/github/memroos/.planning/notes/memory-security-storage-spike.md` — two-gateway security model, raw vault design, non-goals
+- `/Users/lcalderon/github/memroos/.planning/notes/privacy-classification-policy-spike.md` — classification cascade design, abstention requirement, human review workflow
+- `/Users/lcalderon/github/memroos/.planning/REQUIREMENTS.md` — v4.0 requirements including SEAL-06 evidence bundle pattern, ORCH-08/09 rollback, RECALL-01/02 embedding job, HIL-01..03 edit payloads

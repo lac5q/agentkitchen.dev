@@ -1,299 +1,338 @@
-# Feature Landscape: Memroos v4.0
+# Feature Landscape: Memroos v5.0 Memory Trust + Operational Intelligence
 
-**Domain:** AI agent hub — orchestration runtime, memory, voice, recall, SEAL evaluation
-**Researched:** 2026-05-17
-**Mode:** Subsequent milestone — new capabilities only (existing features excluded)
-
----
-
-## HIL Edit-and-Continue
-
-**Depends on:** Basic HIL approve/reject in LangGraph (v3.x existing)
-
-### Table Stakes
-
-- Operator can modify one or more declared task state fields before resuming the graph (not just approve/reject)
-- Modified payload is passed via `Command(resume={...})` carrying the edited field values; LangGraph's `interrupt()` call returns the operator-provided object
-- UI presents only the fields declared as editable in the interrupt value — not a raw JSON dump of entire graph state
-- Edited values are validated against expected types before resume (prevents graph crashes from malformed input)
-- Audit log records: who edited, which fields changed, before/after values, timestamp
-
-### Differentiators
-
-- Diff view: highlight which fields the operator changed vs the agent's proposed values
-- Field-level change reason prompt: operator can annotate why they changed a value (stored in audit log)
-- Pre-resume dry-run: show which downstream nodes will be affected by the edited fields before committing
-
-### Anti-features
-
-- Full state-tree visual editor (anti — editable fields must be declared by the graph; exposing full internal state to operators is a security and UX footgun)
-- Free-form JSON paste (anti — schema-validated form fields only; raw JSON input creates type error blast radius)
-- Re-running already-completed upstream nodes to "re-derive" state (anti — edit-and-continue means forward-only from the interrupt point)
-
-**Complexity:** Medium. The `interrupt()` / `Command(resume=...)` primitive is native LangGraph; the work is UI form generation from declared editable fields + audit integration.
+**Domain:** AI agent hub — memory security, operational observability, harness control plane
+**Researched:** 2026-05-23
+**Mode:** Subsequent milestone — new capabilities only (v4.0 and earlier excluded)
 
 ---
 
-## HIL Timeout + SLA Escalation
+## Build Order and Hard Dependencies
 
-**Depends on:** Basic HIL approve/reject in LangGraph, audit log (v1.5+)
-
-### Table Stakes
-
-- Each interrupt point has a configurable SLA deadline (e.g., 30 min, 4 hr, 24 hr)
-- A background job (scheduler) scans pending interrupt threads and fires escalation when deadline passes
-- Escalation actions: (a) notify a secondary operator, (b) auto-approve with AI recommendation, (c) auto-reject and compensate, (d) mark thread abandoned
-- SLA configuration is per-interrupt-type (not global), stored with the graph definition
-- Dashboard shows pending HIL items with countdown timers and SLA status (green/yellow/red)
-- Escalation events are written to the audit log
-
-### Differentiators
-
-- Escalation chain: primary operator → secondary → auto-decision, each with its own deadline
-- SLA breach metrics on dashboard (how often HIL items exceed SLA, by interrupt type)
-- Operator notification via existing channels (in-app, or extensible to webhook/email)
-
-### Anti-features
-
-- LangGraph native SLA (does not exist — LangGraph threads sit in the checkpointer indefinitely with no built-in timeout; the scheduler and TTL scan must be built outside LangGraph)
-- Per-user SLA routing (anti for v4 — single-operator system; routing is to "escalation target" not to a user pool)
-- Integrating an external workflow engine like Temporal just for SLA (anti — a cron/scheduler scanning SQLite thread metadata achieves the same at zero infra cost)
-
-**Complexity:** Medium. LangGraph provides no native timeout — the scheduler pattern from v1.5 (instrumentation.ts 15-min cron) is the implementation model. Core work is: deadline storage, scanner job, escalation action dispatch, and dashboard countdown UI.
-
----
-
-## Multi-hop Retry + Rollback
-
-**Depends on:** A2A hub, agent registry, LangGraph orchestration (v2.0+)
-
-### Table Stakes
-
-- Per-hop retry budget: each agent node in a multi-agent chain has a configurable `max_attempts` with backoff (LangGraph `RetryPolicy` + `TimeoutPolicy` are native — use them)
-- On exhaustion of retries at any hop, the chain does not silently succeed — it fires a compensation path
-- Compensation path executes undo/rollback actions in reverse order for completed hops (Saga pattern: each forward action has a paired compensating action)
-- Failed chain state is persisted (not lost) — operator can inspect which hop failed and why
-- A2A task status reflects the failure accurately: not just "error" but "failed at hop N, compensated hops 1..N-1"
-
-### Differentiators
-
-- Partial success surfacing: completed hops before the failure are enumerated in the UI, showing what succeeded before rollback
-- Idempotency keys per hop: retry-safe by design (re-executing a hop is safe if the upstream result is unchanged)
-- Selective retry: operator can manually retry a specific failed hop without re-running the whole chain
-
-### Anti-features
-
-- Full distributed transaction semantics / two-phase commit (anti — Saga with best-effort compensation is the correct model for LLM agent chains; 2PC is unimplementable across heterogeneous agents)
-- Writing your own Temporal-equivalent orchestration engine (anti — LangGraph `RetryPolicy` + Saga compensation logic on top of existing checkpointing is sufficient)
-- Automatic infinite retry (anti — retry budgets must be finite; unbounded retry loops starve the queue and mask real bugs)
-
-**Complexity:** High. Saga compensation requires that every agent action in a multi-hop chain declare a compensating action — this is a design contract, not just an implementation detail. Retrofitting existing chains requires per-chain analysis.
-
----
-
-## Memory Backend Pluggability
-
-**Depends on:** Unified three-tier memory (Qdrant Cloud + Neo4j via mem0 + SQLite episodic, v2.0+)
-
-### Table Stakes
-
-- Adapter interface (abstract base class or protocol) defining the contract: `add`, `search`, `delete`, `health_check` for each memory tier (vector, graph, episodic)
-- Existing backends (mem0/Qdrant, mem0/Neo4j, SQLite) are refactored to implement the adapter interface — no behavior change, just formalized contract
-- New backend can be registered by dropping in a class that implements the adapter protocol — no changes to calling code
-- Adapter configuration is environment-driven (which backends are active and with what credentials)
-- Health check aggregates across all active adapters (existing context health UI extends to show per-adapter status)
-
-### Differentiators
-
-- Reference adapter implementations: at least one additional vector backend (e.g., Pinecone or Chroma) as a worked example
-- Adapter validation test suite: any new adapter can be verified by running a shared test harness
-- Hot-swap documentation: clear operator guide for switching backends without data loss
-
-### Anti-features
-
-- Writing custom vector/graph databases (anti — the point is adapter-out, not NIH backends)
-- Universal migration tooling between backends (anti for v4 — migration is operator responsibility; pluggability means you can swap, not that migration is automatic)
-- Exposing adapter internals to agents (anti — adapters are infrastructure, not agent-visible; agents query memory through the existing API surface)
-
-**Complexity:** Medium. The adapter interface design is the hard part; the mechanical refactoring of existing backends is straightforward. Risk: mem0's HTTP API model means the "adapter" for the existing vector/graph tier wraps HTTP calls, not a storage library directly.
-
----
-
-## Voice Meeting Bot
-
-**Depends on:** Pipecat voice server (local mic/speaker, v1.5+)
-
-### Table Stakes
-
-- Bot joins a live Zoom, Teams, or Google Meet meeting as a participant (not a passive recording tool) using a meeting bot infrastructure layer (Recall.ai or Meeting BaaS are the two dominant APIs; Pipecat's transport adapters support both)
-- Real-time transcript is captured per speaker (not just a single merged audio stream)
-- Transcript is written to SQLite (consistent with existing voice transcript storage from v1.5)
-- Bot appears in the meeting participant list with a recognizable display name (not anonymous)
-- Bot can be started/stopped from the Memroos dashboard with a meeting URL as input
-
-### Differentiators
-
-- Memroos highlights panel: during or after the meeting, surfaces key moments (action items, decisions, questions) extracted by LLM from the transcript
-- Per-speaker attribution in the transcript panel (who said what, not just what was said)
-- Post-meeting summary pushed to episodic memory (meeting is stored as a searchable memory event)
-
-### Anti-features
-
-- Bot speaking in the meeting (TTS output to meeting participants) — this is a listener-only use case for v4; a speaking bot requires latency budgets, turn-taking logic, and meeting etiquette handling that are out of scope
-- Building a meeting recording infrastructure layer from scratch (anti — Recall.ai or Meeting BaaS handle the platform authentication, bot injection, and audio routing; Pipecat connects to them via transport adapter)
-- Diarization model training (anti — use Gladia or Deepgram for speaker-separated transcription; off-the-shelf STT with diarization is sufficient)
-- Multi-meeting concurrent joining (anti for v4 — single meeting at a time; concurrency adds queue management complexity with no clear v4 use case)
-
-**Complexity:** High. The Pipecat local voice server (v1.5) runs on mic/speaker; a meeting bot is a fundamentally different deployment: it requires a headless browser or native SDK to inject into the meeting platform, plus a cloud-callable service endpoint. Recall.ai or Meeting BaaS abstract this, but they are paid APIs. The Pipecat + Recall.ai integration exists in the ecosystem (GitHub issue #3272 documents it) but is not a native Pipecat transport — it requires custom wiring.
-
----
-
-## LLM-Powered Recall Scoring
-
-**Depends on:** BM25 lexical recall (QMD, v1.x), mem0/Qdrant vector search (v2.0+)
-
-### Table Stakes
-
-- Hybrid retrieval: BM25 candidates + dense embedding candidates merged via Reciprocal Rank Fusion (RRF) before returning results — not replacing BM25, augmenting it
-- Embedding model produces query and document vectors; cosine similarity provides the semantic ranking signal
-- RRF fusion prevents score-scale mismatch between BM25 and embedding scores (standard practice — RRF is model-agnostic and parameter-light)
-- Recall API returns a single ranked list; callers do not need to know which backend contributed each result
-
-### Differentiators
-
-- Cross-encoder reranking as a second-pass: top-N hybrid candidates are reranked by a cross-encoder model (e.g., `bge-reranker-v2-m3` or Cohere Rerank) for higher precision
-- Dynamic alpha tuning: fusion weight between BM25 and dense scores adjusts based on query type (keyword-heavy queries weight BM25 higher; conceptual queries weight dense higher)
-- Recall quality metrics: nDCG@k tracked as a dashboard metric to show recall improvement over baseline BM25
-
-### Anti-features
-
-- Replacing BM25 entirely with embeddings (anti — BM25 has higher precision on exact-match queries like function names, error codes, and identifiers; hybrid always outperforms pure dense)
-- Hosting a reranker model locally (anti for v4 — adds GPU/inference infrastructure; use Cohere Rerank API or a quantized ONNX model only if latency budget allows)
-- Per-query embedding model fine-tuning (anti — use a general-purpose embedding model; fine-tuning requires labeled data the system does not have)
-
-**Complexity:** Medium. The embedding infrastructure (Qdrant Cloud) already exists. The work is: query embedding pipeline, RRF fusion logic, and updated recall API response shape. The optional cross-encoder reranking adds a second API call per query.
-
----
-
-## Cross-Project Recall
-
-**Depends on:** Similar-task memory recommendations (contextMatchSignal, v1.7), mem0/Qdrant (v2.0+)
-
-### Table Stakes
-
-- Recall API accepts a `scope: "cross-project"` parameter that searches across all indexed repos, not just the current one
-- Each memory/task record is tagged with its source repo identifier at ingestion time
-- Results are ranked by semantic similarity regardless of source repo, but source repo is surfaced in the result metadata
-- SimilarTaskPanel (v1.7) can display cross-project results with repo attribution
-
-### Differentiators
-
-- Repo affinity scoring: weight results from repos with similar tech stack or overlapping agent/skill usage higher than unrelated repos
-- Cross-project pattern surfacing: "this pattern was solved in 3 other repos" summary above the result list
-- Project similarity index: lightweight precomputed similarity between repos based on shared tools, skills, and task types (not full embedding of all code)
-
-### Anti-features
-
-- Org-wide enterprise search (anti — Memroos is a local tool; cross-project means multiple local repos on the same machine, not a hosted search index across an organization's GitHub)
-- Indexing all files in all repos (anti — the existing no-recursive-readdir constraint from PROJECT.md applies; cross-project recall is bounded to the same ingestion rules as single-project recall)
-- Cross-project memory writes (anti — cross-project recall is read-only; agents write memory scoped to their active project only)
-
-**Complexity:** Medium. The core change is adding `repo_id` as a filter dimension in the recall API and removing that filter for cross-project queries. The contextMatchSignal algorithm (v1.7) already uses repo as a weighting signal — the upgrade is letting that signal cross repo boundaries.
-
----
-
-## True Behavioral W-lift
-
-**Depends on:** SEAL substrate, modeled W-lift (v2.5+), LangGraph orchestration
-
-### Table Stakes
-
-- An instruction or skill proposal generated by SEAL is evaluated by actually re-executing representative tasks with the proposed instruction/skill active, not just by a modeled score
-- Re-execution harness: takes a held-out task set, runs the agent with the proposal applied, captures outcomes (success/fail, output quality score)
-- Behavioral W-lift = delta in outcome quality between baseline (without proposal) and treatment (with proposal) on the held-out task set
-- Proposals with negative or negligible behavioral W-lift are not promoted, regardless of their modeled score
-
-### Differentiators
-
-- Baseline vs treatment result comparison UI: side-by-side task outcomes for a sample of the held-out set, so the operator can inspect what actually changed
-- Confidence interval on behavioral W-lift: report not just the mean delta but the variance across the held-out task set
-- Automatic promotion gating: proposals only reach "ready to apply" status if behavioral W-lift exceeds a configured threshold (e.g., +5% outcome quality)
-
-### Anti-features
-
-- Model retraining / fine-tuning (anti — behavioral W-lift evaluates the proposal against the existing model using re-execution; SEAL is about instruction/skill improvement, not weight updates)
-- Exhaustive task re-execution (anti — a held-out sample of 10-20 representative tasks is sufficient for the signal; running every historical task is computationally prohibitive and unnecessary)
-- Real-time behavioral eval during production (anti — behavioral W-lift is computed offline as a pre-promotion gate, not as a live production metric)
-
-**Complexity:** High. Re-execution requires a deterministic task replay harness: tasks must be replayable with known inputs, agent must be instrumented to capture outcomes consistently, and the held-out set must be curated and maintained. This is the largest engineering surface in v4.0.
-
----
-
-## Cross-Harness Skills Portability
-
-**Depends on:** Agent registry, A2A hub (v2.0+), existing skill management (v1.2+)
-
-### Table Stakes
-
-- Memroos skill registry stores skills in the SKILL.md open standard format (Anthropic spec, December 2025; adopted by 32+ tools including Codex CLI, Gemini CLI, Cursor, VS Code by March 2026)
-- A skill registered in Memroos is readable by any harness that supports SKILL.md: two required YAML fields (`name`, `description`) plus a Markdown body
-- Skills directory structure follows the standard: `SKILL.md` + optional `scripts/`, `references/`, `assets/` subdirectories
-- Skill export: operator can export a skill from the registry as a portable SKILL.md directory
-
-### Differentiators
-
-- Harness-specific compatibility flags: each skill entry records which harnesses it has been verified on (Claude Code, Codex, Gemini CLI, etc.)
-- Import from existing skill directories: Memroos can ingest a SKILL.md directory discovered on the local filesystem and register it without manual re-entry
-- Skill validation: on registration, Memroos checks that the SKILL.md parses correctly and that all referenced scripts/assets exist
-
-### Anti-features
-
-- Maintaining separate skill formats per harness (anti — the SKILL.md standard is the convergence point; do not build Claude-specific, OpenAI-specific, or Gemini-specific skill schemas in Memroos)
-- Skill execution runtime (anti — Memroos stores and serves skills; execution happens in the consuming harness, not in Memroos)
-- Automated skill translation between formats (anti — the SKILL.md standard makes translation unnecessary; if a harness doesn't support SKILL.md, it is not in scope for portability)
-
-**Complexity:** Low-to-Medium. The SKILL.md format is intentionally minimal (two YAML fields + Markdown). The main work is: migrating the existing skill storage schema to be SKILL.md-aligned, adding import/export UI, and adding compatibility flag tracking. No novel format design required.
-
----
-
-## Feature Dependencies Summary
+The quality gate requires these dependencies be explicit before feature detail:
 
 ```
-HIL edit-and-continue  ←  HIL approve/reject (existing)
-HIL timeout + SLA      ←  HIL approve/reject (existing), scheduler pattern (v1.5), audit log (v1.5)
-Multi-hop retry        ←  A2A hub (v2.0), LangGraph orchestration (v2.0)
-Memory pluggability    ←  Three-tier memory (v2.0): Qdrant + Neo4j via mem0 + SQLite
-Voice meeting bot      ←  Pipecat voice server (v1.5)
-LLM recall scoring     ←  BM25/QMD (v1.x), Qdrant Cloud (v2.0)
-Cross-project recall   ←  contextMatchSignal (v1.7), Qdrant (v2.0)
-True behavioral W-lift ←  SEAL substrate (v2.5), modeled W-lift (v2.5), LangGraph (v2.0)
-Skills portability     ←  Agent registry (v2.0), skill management (v1.2)
+MEMSEC-02 (label schema design)
+  └── blocks MEMSEC-01 (raw vault — needs labels at write time)
+  └── blocks MEMSEC-03 (ingestion classification — classifies into label schema)
+  └── blocks MEMSEC-04 (retrieval gate — enforces label policy)
+  └── blocks MEMSEC-05 (safe indexes — filters by indexable label)
+  └── blocks MEMSEC-06 (multimodal — embeddings inherit source label)
+  └── blocks MEMSEC-07 (encryption — key id stored alongside label metadata)
+  └── blocks MEMSEC-08 (regression tests — tests reference label values)
+
+MEMSEC-01..08 (Memory Security Foundation)
+  └── blocks any recall expansion (UX-FOLLOWUP-02 memory search surface)
+  └── enables Harness Control Plane evidence bundles (bundles need vault provenance)
+
+AUTH-FOLLOWUP-01..03 (Auth Hardening)
+  └── must ship before introducing new roles or role-specific surfaces
+  └── parallelizable with MEMSEC but must complete before new role claims are made in NOC
+
+CTX-FOLLOWUP-01..02 + CRON-HEALTH-01..05 (Source Reliability + Cron Health)
+  └── blocks NOC pulse-strip truthfulness for any cron-sourced metric
+  └── blocks Schedules Console (console reads from the job registry those requirements define)
+
+NOC Real-Data (NOC-01..14 + OPS-AUDIT-01..04)
+  └── depends on Source Reliability + Cron Health telemetry streams
+  └── depends on Auth Hardening for role-aware panel visibility
 ```
+
+**Recommended phase order:** Memory Security → Auth Hardening (parallel) → Source Reliability + Cron Health + Schedules Console → NOC Real-Data + Ops Audit → Harness Control Plane + Evidence
+
+---
+
+## Feature 1: Memory Security Foundation (MEMSEC-01..08 + CTX-FOLLOWUP-03)
+
+### Table Stakes
+
+These are non-negotiable for a system trusted with organizational memory containing legal,
+finance, HR, credentials, and personal data:
+
+| Feature | Why Expected | Complexity |
+|---------|--------------|------------|
+| Encryption at rest for sensitive artifacts | Industry baseline; any compliance conversation requires it | Medium |
+| Role-based access control on memory retrieval | Expected wherever RBAC auth exists (v3.0 shipped RBAC) | Medium |
+| Audit log of memory access decisions | Already established for actions; memory reads must follow the same pattern | Low |
+| Retention policy per artifact | Legal and HR teams expect data to expire | Medium |
+| Content classification at ingestion | Required before multi-user or customer exposure | High |
+
+### Differentiators
+
+MemroOS-specific — not commoditized in competing agent hubs:
+
+| Feature | Value Proposition | Complexity |
+|---------|-------------------|------------|
+| Classification-aware safe indexes | Restricted content silently omitted from FTS/vector/graph rather than relying on prompt-layer guards | High |
+| Two-gateway model (ingestion + retrieval) | Both ingest-time classification AND retrieval-time authorization — most systems only enforce one | High |
+| Redacted projections with vault provenance | Restricted content can still answer low-sensitivity questions via approved redacted summaries; not a binary allow/deny | High |
+| Deterministic detectors before LLM adjudication | LLM hallucination risk eliminated for the hard cases (PII, credentials, legal markers) by running regex/NER/source-path gates first | Medium |
+| Human review queue as a first-class release valve | Uncertain and conflicting cases route to human review rather than blocking recall entirely — prevents over-classification paralysis | Medium |
+| Label schema with independent dimensions | Visibility / domain / sensitivity / policy tracked independently, not a single overloaded enum; label combinations compose correctly | Medium |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Freeform LLM-only classifier for sensitive labels | High hallucination risk on legal, finance, HR decisions; no evidence spans; cannot be audited | Deterministic detectors first, constrained LLM adjudicator (strict JSON with evidence spans + abstention) second |
+| Whole-database encryption as the primary leak-prevention boundary | Process-level decryption gives app-layer recall full access — encryption does not prevent recall leaks after unlock | Classification at ingestion + authorization at retrieval is the correct primary boundary; encryption is defense-in-depth |
+| Raw binary media in SQLite as long-term source | SQLite rows bloat; no content-addressed deduplication; no compression; no replay | Binary media in raw vault (append-only compressed artifacts); SQLite holds metadata only |
+| Automatic public promotion from emails/meetings/DMs/finance/legal sources | No evidence = no promotion; these sources are private by default | Require positive approval evidence with human review for any public visibility transition |
+| Embedding sensitive raw content by default | Embeddings in Qdrant/vector store inherit the sensitivity of source; restricted content must not reach vector indexes | Only embed where `indexable=true`; use approved redacted projections otherwise |
+| Over-classifying everything private so recall returns nothing | Fail-closed means private-by-default, not private-forever; the system must have a promotion path | Default private + deterministic promotion rules + human review queue + redacted projection paths |
+| Blocking recall on all restricted content without a redacted-projection path | Binary deny makes the system unusable for mixed-sensitivity content | Return redacted snippet or omit restricted fields; log the redaction decision for audit |
+
+### Feature Dependencies
+
+```
+Existing RBAC (v3.0) → retrieval authorization gate (actors have roles to check against)
+Existing content scanner (v1.5, 18 patterns) → deterministic detectors (generalizes scanner to ingestion gate)
+Existing audit log (v1.5) → memory access audit events (extend existing log)
+Existing MemoryAdapter interface (v4.0) → classification-aware writes (adapters check labels before indexing)
+```
+
+**Complexity:** HIGH. Schema migration touches messages / audit / recall logs / memory writes / vector metadata / graph facts. Envelope encryption with rotation. Cascade design (deterministic → LLM adjudicator → human review queue). Negative regression tests are load-bearing.
+
+---
+
+## Feature 2: Auth Hardening (AUTH-FOLLOWUP-01..03)
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity |
+|---------|--------------|------------|
+| Password reset via email | Every auth system ships this; absence blocks legitimate use and signals security immaturity | Low |
+| Email verification | Required before trusting an address for notifications or MFA | Low |
+| Email invitations for team members | Required for any multi-user deployment; manual credential sharing is insecure | Low |
+| OAuth/SSO login | Expected in any enterprise-adjacent product; teams use Google/GitHub/OIDC | Medium |
+| Login lockout and refresh telemetry | NIST 800-63B baseline; rate limiting on credential attacks | Low-Medium |
+| Role-aware UI gating (hide/disable before click-through) | UX expectation once RBAC exists — operators should not see and then be denied | Medium |
+| Tenant settings management | Expected once tenants are a concept | Medium |
+| API key rotation UI | Required for any API-key-based integration surface | Low |
+
+### Differentiators
+
+| Feature | Value Proposition | Complexity |
+|---------|-------------------|------------|
+| User lifecycle management with audit trail | Beyond basic CRUD — identity events (invite, activate, deactivate, role change) written to immutable audit log | Medium |
+| Migration of legacy audit actor fields to authenticated identity | Audit rows written before RBAC landed reference raw actor strings; linking them to real identities improves incident response | Medium |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Introducing new roles before AUTH-FOLLOWUP-01..03 ships | Retrofitting role checks is the documented failure mode; role UI surfaces without complete auth is a half-gate | Complete auth hardening first, then add roles |
+| Full MFA (TOTP/FIDO2) in this milestone | Adds significant implementation surface; lockout telemetry and SSO cover the immediate risk | Defer TOTP/FIDO2 to v5.1; ship lockout telemetry and SSO as the v5.0 floor |
+| Building a custom OAuth2 authorization server | Unnecessary complexity; MemroOS consumes OAuth (delegates to provider), it does not need to be a provider | Use next-auth or a well-supported OAuth consumer library |
+
+### Feature Dependencies
+
+```
+Existing JWT + RBAC (v3.0) → OAuth/SSO (same session machinery, new provider)
+Existing audit log (v1.5) → user lifecycle audit events
+Existing email delivery (none yet) → email invitations + password reset (net new dependency: transactional email)
+```
+
+**Complexity:** MEDIUM. Well-trodden patterns. Email delivery integration (transactional email provider) is the main novel piece. OAuth/SSO requires choosing a library (next-auth is the established Next.js option) and configuring providers. Role-aware UI gating requires a systematic pass through all nav and action surfaces.
+
+---
+
+## Feature 3: Context Source Reliability + Cron Health + Schedules Console
+(CTX-FOLLOWUP-01..02, CRON-HEALTH-01..05, UX-FOLLOWUP-03)
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity |
+|---------|--------------|------------|
+| All source families declare ingest/index/freshness/safe-answer/repair contracts | The source-contract pattern was introduced in v3.1 for a starter set; operators expect consistency across all configured sources | Medium |
+| Cron job heartbeat monitoring (job checks in; alert if missed) | Industry standard (Cronitor, Healthchecks.io, Honeybadger); expected for any scheduled task system | Low-Medium |
+| Caught-up vs running-behind status per job | Beyond heartbeat — show whether the job is keeping up with its backlog | Medium |
+| Warning/critical signals with configurable thresholds | Without thresholds, "missed heartbeat" is binary; operators need graduation (warning = 1 miss, critical = 3 consecutive misses) | Medium |
+| Pause/resume/stop controls per job | Standard in every cron monitoring product; required during maintenance/migrations | Low |
+| Declarative job registry (all scheduled work in one place) | Operators should not have to grep source code to find what runs on a schedule | Medium |
+| Schedules console UI showing all recurring jobs | Expected visibility; if it runs on a schedule, it should be visible in the console | Medium |
+
+### Differentiators
+
+| Feature | Value Proposition | Complexity |
+|---------|-------------------|------------|
+| Source-to-QMD indexing proof (visible in the UI) | Operators can verify that a source they configured actually contributed to the QMD index | Medium |
+| Standing delegations and approval-required automations in the console | Beyond cron jobs — shows which agent automations run on a schedule and which require approval before execution | Medium |
+| Memory degradation paths visible (queued writes, retry backlog, stale recall) | Most systems only show "service reachable"; MemroOS shows whether memory is actually current and usable | Medium |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Broad rewrite of context-source ingestion before source-contract gaps are understood | Over-engineering without knowing the gap scope | Audit existing sources against the contract template first (CTX-FOLLOWUP-01), then fill gaps incrementally |
+| External cron monitoring SaaS dependency (Cronitor, Healthchecks.io) | Adds an external dependency and privacy surface for an internal scheduling system | Implement heartbeat + caught-up status as first-class internal telemetry written to existing SQLite audit/health infrastructure |
+| Embedding the Schedules Console into the NOC home | NOC home is a summary view; schedules detail belongs in its own dedicated page | Dedicated `/schedules` route with NOC summary strip pulling from it |
+
+### Feature Dependencies
+
+```
+Existing context source contracts (v3.1) → source-contract extension to new families
+Existing scheduler pattern (v1.5, instrumentation.ts) → declarative job registry (all crons become declared entries)
+Existing health/audit tables (SQLite, v1.5) → heartbeat + caught-up telemetry written here
+Source reliability (CTX-FOLLOWUP-01..02) → Schedules Console (console reads from job registry those requirements define)
+```
+
+**Complexity:** MEDIUM. The source-contract pattern exists; this is coverage extension. The declarative job registry pattern is established (instrumentation.ts); formalizing it is mechanical. Net-new work: caught-up vs running-behind logic, configurable warning/critical thresholds, pause/resume API, and the Schedules Console UI.
+
+---
+
+## Feature 4: NOC Real-Data + Operations Audit (NOC-01..14, OPS-AUDIT-01..04)
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity |
+|---------|--------------|------------|
+| All 14 NOC panels backed by live data, not mock constants | The NOC home is presented as an operational truth surface; mock data is a trust violation once the system is in production use | Medium |
+| Per-panel provenance: source, lastUpdated, window, status (live/empty/degraded/missing) | Without provenance, operators cannot tell whether a number is stale, fabricated, or genuinely zero | Medium |
+| Every NOC control is actionable (navigate, mutate, explain missing-backend) | Inert buttons on a control plane surface signal incomplete work and erode operator trust | Medium |
+| Date-range/time-window controls propagate to live-backed panels | Standard for any time-series dashboard; without it, operators cannot correlate events | Medium |
+| Honest empty/degraded states instead of fabricated metrics | Missing-telemetry checklist for unbuilt signals; degraded indicator for partial data | Low |
+
+### Differentiators
+
+| Feature | Value Proposition | Complexity |
+|---------|-------------------|------------|
+| Efficiency signals (retrieval calls before useful work, same-source re-read count, raw-context ingest token share, operator re-ask redundancy, rediscovered-fact rate) | These are MemroOS-unique intelligence signals that expose agent inefficiency patterns not visible in any other dashboard | HIGH — require new telemetry instrumentation before they can be shown |
+| Unified `/api/operations/noc` contract (per-panel provenance, degraded states) | Consumers (mobile, future integrations) get a single normalized endpoint rather than assembling from 10+ APIs | Medium |
+| Security classification coverage visible in NOC governance strip | How many ingested items are classified, how many are in the human review queue, classification throughput | Medium (depends on MEMSEC) |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Inline NOC engagement/chat controls | NOC-13 is explicit: engagement belongs on `/dispatch`; inline console creates a second partial implementation of chat/dispatch | Remove inline console from NOC; link to `/dispatch` from agent panel |
+| Visual redesign or navigation restructure in this phase | Out of scope per NOC requirements note; this is a data-wiring corrective phase | Wire existing panels to live data; defer visual redesign to Paperclip design-system completion (UX-FOLLOWUP-05) |
+| Showing efficiency signals with sample/placeholder numbers until telemetry exists | Fabricated metrics on a live dashboard are the exact failure mode being fixed | Show missing-telemetry checklist until the event streams are instrumented |
+| A new unified endpoint before panels are individually wired | Building a complex aggregation endpoint before knowing which panels need what data is premature abstraction | Wire panels to existing hooks first; extract the unified endpoint once the normalization surface is clear |
+
+### Feature Dependencies
+
+```
+Source Reliability + Cron Health (CTX-FOLLOWUP-01..02, CRON-HEALTH-01..05) → cron-sourced NOC metrics
+Auth Hardening (AUTH-FOLLOWUP-01..03) → role-aware panel visibility and governance strip accuracy
+Memory Security (MEMSEC) → classification coverage metrics in governance strip
+Existing live APIs (agents, hive, activity, tokens, memory-stats, model-routing, audit-log, security/report) → most NOC panels can wire now
+New efficiency telemetry streams (NOC-10) → efficiency panel (net-new instrumentation required)
+```
+
+**Complexity:** MEDIUM-HIGH. Most panels have live API sources to wire; 14 panels is breadth, not depth. The efficiency telemetry streams (NOC-10) are net-new instrumentation, which is the hardest part. Every NOC control being actionable requires a systematic audit sweep.
+
+---
+
+## Feature 5: Harness Control Plane + Evidence Bundles
+
+### Table Stakes
+
+| Feature | Why Expected | Complexity |
+|---------|--------------|------------|
+| Task-level Plan-Execute-Verify timeline | Once task evidence bundles exist (v4.0 SEAL-06 shipped a first slice for eval/skill work), operators expect this for all dispatched tasks | High |
+| Evidence bundle on every agent output (sources, memories, tools, checks, assumptions, residual risks, replay handle) | v4.0 shipped evidence bundles for SEAL proposals; v5.0 makes this universal — expected consistency | High |
+| Shared harness state with read/write sets | Operators expect to see what context an agent assembled before acting; surprises during action are a trust failure | High |
+| Explicit assumptions and version dependencies in task state | Required for incident root cause; "agent assumed X was true" must be inspectable after the fact | Medium |
+
+### Differentiators
+
+| Feature | Value Proposition | Complexity |
+|---------|-------------------|------------|
+| Conflict policy for overlapping read/write sets | Detects when two concurrent tasks could produce inconsistent state before they execute | High |
+| Stale belief / context drift surfacing | Shows when a task's assembled context is based on information that has been superseded — before the task acts | High |
+| Verifier obligations in task state | Each task declares what checks must pass before its output is accepted; harness enforces these, not downstream consumers | High |
+| Replay/rollback handles on every evidence bundle | Universal replay enables incident reproduction and regression test construction from real production task runs | High |
+| Vault provenance in evidence bundles (artifact IDs from raw vault) | Bundles cite the raw evidence they were assembled from — not just summaries | Medium (depends on MEMSEC raw vault) |
+
+### Anti-Features
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| Building universal evidence bundles before the raw vault and label schema exist | Evidence bundles without vault provenance are orphaned summaries with no audit chain | Ship MEMSEC raw vault first; evidence bundles reference artifact IDs |
+| Over-engineering shared harness state into a distributed coordination protocol | This is a single-operator system; shared state is a SQLite table with declared read/write sets, not a distributed lock manager | Declare read/write sets as metadata; detect conflicts in application logic, not a separate coordination service |
+| Exposing full internal graph state to operators via the evidence bundle UI | Security + UX footgun (same anti-pattern as HIL full-state editor) | Expose declared fields and evidence spans; raw internal state stays internal |
+
+### Feature Dependencies
+
+```
+MEMSEC raw vault + label schema (MEMSEC-01..02) → evidence bundle vault provenance
+v4.0 SEAL evidence bundles (SEAL-06) → universal evidence bundle (generalize existing pattern)
+v4.0 LangGraph orchestration + lineage (ORCH-08..10) → Plan-Execute-Verify timeline data source
+Existing audit log (v1.5) → verification run outcomes written as audit events
+```
+
+**Complexity:** HIGH. Universal evidence bundles require touching every dispatched task path. Shared harness state with read/write sets and conflict detection is new architecture. Context drift surfacing depends on having fresh source contracts (CTX-FOLLOWUP-01..02) to compare against. This is the most architecturally novel work in v5.0.
+
+---
+
+## Feature Dependencies Graph (v5.0)
+
+```
+MEMSEC-02 (label schema)
+  ├── MEMSEC-01 (raw vault)
+  │     └── Harness Control Plane evidence bundle provenance
+  ├── MEMSEC-03 (ingestion classification)
+  │     └── CTX-FOLLOWUP-03 (privacy classification policy)
+  ├── MEMSEC-04 (retrieval gate)
+  │     └── MEMSEC-05 (safe indexes) → blocks UX-FOLLOWUP-02 (memory search surface)
+  ├── MEMSEC-06 (multimodal)
+  ├── MEMSEC-07 (encryption)
+  └── MEMSEC-08 (regression tests)
+
+AUTH-FOLLOWUP-01 (email invitations + password reset + OAuth/SSO)
+  └── AUTH-FOLLOWUP-02 (role-aware UI gating)
+        └── AUTH-FOLLOWUP-03 (tenant settings + API-key rotation + user lifecycle)
+
+CTX-FOLLOWUP-01 (source contracts coverage)
+  └── CTX-FOLLOWUP-02 (runtime health: degradation paths)
+        └── CRON-HEALTH-01..05 (heartbeat + caught-up + controls + registry)
+              └── UX-FOLLOWUP-03 (Schedules Console)
+                    └── NOC-01..14 (cron-sourced NOC metrics unblock)
+
+NOC-01..14 (real data wiring) ← Auth Hardening complete, Source Reliability complete
+OPS-AUDIT-01..04 ← all live APIs wired
+```
+
+---
 
 ## Complexity Summary
 
-| Feature | Complexity | Primary risk |
-|---------|-----------|-------------|
-| HIL edit-and-continue | Medium | UI form generation from declared editable fields |
-| HIL timeout + SLA | Medium | No LangGraph native timeout — external scheduler required |
-| Multi-hop retry + rollback | High | Every agent action needs a declared compensating action |
-| Memory backend pluggability | Medium | mem0 HTTP-only constraint shapes adapter interface |
-| Voice meeting bot | High | Pipecat meeting transport is not native — requires Recall.ai or Meeting BaaS |
-| LLM recall scoring | Medium | Embedding pipeline + RRF fusion layered on existing BM25 |
-| Cross-project recall | Medium | repo_id scoping + cross-repo query path |
-| True behavioral W-lift | High | Deterministic task replay harness is the hard engineering surface |
-| Skills portability | Low-Medium | SKILL.md is minimal — mostly schema migration + import/export UI |
+| Feature Group | Complexity | Primary Risk |
+|--------------|-----------|-------------|
+| Memory Security Foundation | HIGH | Schema migration scope (messages/audit/recall/vector metadata/graph facts); cascade design; regression test authoring |
+| Auth Hardening | MEDIUM | Transactional email delivery is the net-new dependency; OAuth requires provider configuration; role-aware UI pass is breadth |
+| Source Reliability + Cron Health + Schedules | MEDIUM | Caught-up vs running-behind logic is novel; coverage extension of existing source-contract pattern is mechanical |
+| NOC Real-Data + Ops Audit | MEDIUM-HIGH | 14 panels is breadth; efficiency telemetry (NOC-10) is the hard net-new instrumentation; actionable controls requires sweep |
+| Harness Control Plane + Evidence | HIGH | Universal coverage is invasive; shared harness state model is new architecture; vault provenance dependency on MEMSEC |
+
+---
+
+## MVP Recommendation
+
+Prioritize in this order, respecting hard dependencies:
+
+1. **MEMSEC-02** (label schema) — no other security work can start without it; design-first, implement immediately
+2. **MEMSEC-01, 03, 04, 07** (raw vault + ingestion gate + retrieval gate + encryption) — core security chain; ship as a unit
+3. **MEMSEC-05, 06, 08** (safe indexes + multimodal + regression tests) — follow-on security hardening in same phase
+4. **AUTH-FOLLOWUP-01** (email invitations + password reset + OAuth/SSO) — parallelize with MEMSEC; unblocks team onboarding
+5. **AUTH-FOLLOWUP-02, 03** (UI gating + tenant management) — depends on 01 for role foundations
+6. **CTX-FOLLOWUP-01..02 + CRON-HEALTH-01..05** (source reliability + cron health) — unblocks NOC and Schedules Console
+7. **UX-FOLLOWUP-03** (Schedules Console) — depends on CRON-HEALTH job registry
+8. **NOC-01..11** (real data wiring) — most panels wire now; efficiency telemetry (NOC-10) is the long pole
+9. **NOC-12..14 + OPS-AUDIT-01..04** (actionable controls + ops audit sweep) — cleanup pass after data wiring
+10. **Harness Control Plane + Evidence** — ship last; depends on raw vault provenance from MEMSEC
+
+Defer to v5.1: UX-FOLLOWUP-02 (memory search surface — depends on MEMSEC retrieval gate being stable), TOTP/FIDO2 MFA, full efficiency telemetry if instrumentation scope grows.
+
+---
 
 ## Sources
 
-- LangGraph interrupt / Command(resume) / RetryPolicy / TimeoutPolicy: https://docs.langchain.com/oss/python/langgraph/
-- LangGraph fault tolerance patterns: https://docs.langchain.com/oss/python/langgraph/fault-tolerance
-- Recall.ai meeting bot API: https://www.recall.ai/product/meeting-bot-api
-- Pipecat + Recall.ai multi-participant transcript: https://github.com/pipecat-ai/pipecat/issues/3272
-- Meeting BaaS + Pipecat speaking bots: https://github.com/Meeting-Baas/speaking-meeting-bot
-- SagaLLM — Saga pattern for multi-agent LLM systems: https://arxiv.org/html/2503.11951v3
-- Hybrid BM25 + dense retrieval + RRF: https://optyxstack.com/rag-reliability/hybrid-search-reranking-playbook
-- SKILL.md open standard: https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills
-- SKILL.md adoption breadth: https://www.paperclipped.de/en/blog/agent-skills-open-standard-interoperability/
-- mem0 pluggable backends: https://github.com/mem0ai/mem0
-- Cross-repo semantic code recall: https://arxiv.org/html/2510.04905v1
+- Memory security two-gateway model and label schema: `.planning/notes/memory-security-storage-spike.md`
+- Privacy classification cascade design: `.planning/notes/privacy-classification-policy-spike.md`
+- NOC real-data requirements and mock-data inventory: `.planning/notes/operations-noc-real-data-requirements.md`
+- Active v5.0 requirements: `.planning/REQUIREMENTS.md` (MEMSEC-01..08, CTX-FOLLOWUP-01..03, CRON-HEALTH-01..05, NOC-01..14, OPS-AUDIT-01..04, AUTH-FOLLOWUP-01..03)
+- Cron job heartbeat monitoring patterns: [Healthchecks.io](https://healthchecks.io/), [Cronitor](https://cronitor.io/cron-job-monitoring), [Honeybadger](https://www.honeybadger.io/tour/cron-job-heartbeat-monitoring/)
+- OpenTelemetry GenAI agent observability: [OTel AI Agent blog](https://opentelemetry.io/blog/2025/ai-agent-observability/)
+- OpenInference conventions for LLM + tool tracing: [MintMCP OpenTelemetry agents](https://www.mintmcp.com/blog/opentelemetry-ai-agents)
+- NIST 800-63B (lockout telemetry baseline for auth hardening): NIST Digital Identity Guidelines
