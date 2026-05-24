@@ -18,21 +18,21 @@
 - ✅ **v3.0 Compliance Platform + Finance Vertical** — Phases 63-68 (shipped 2026-05-17)
 - ✅ **v3.1 Context Reliability + Runtime Resilience** — Phase 69 (shipped 2026-05-17)
 - ✅ **v4.0 Orchestration Depth + Intelligence Uplift** — Phases 70-73 (completed 2026-05-21; milestone audit/closeout next)
-- 🚧 **v5.0 Memory Trust + Operational Intelligence** — Phases 74-82 (in progress, started 2026-05-23)
+- ✅ **v5.0 Memory Trust + Operational Intelligence** — Phases 74-82 (MVP phase closeout completed 2026-05-24)
 
 ## Phases
 
-### Current v5.0 Memory Trust + Operational Intelligence Summary — IN PROGRESS
+### Current v5.0 Memory Trust + Operational Intelligence Summary — COMPLETE
 
-- [ ] **Phase 74: Security Label Schema + Raw Vault** — MEMSEC-01, MEMSEC-02; first link in critical path
-- [ ] **Phase 75: Classification Cascade + Ingestion Gate** — MEMSEC-03, CTX-FOLLOWUP-03; deterministic-first cascade with human-review queue
-- [ ] **Phase 76: Retrieval Authorization Gate** — MEMSEC-04; fail-closed policy decision on every recall/export/dispatch path
-- [ ] **Phase 77: Safe Index Projections + Envelope Encryption** — MEMSEC-05, MEMSEC-06, MEMSEC-07; classification-aware FTS/vector/graph + AES-GCM key rotation
-- [ ] **Phase 78: Security Regression Tests** — MEMSEC-08; phase-close gate for the entire security chain
-- [ ] **Phase 79: NOC Telemetry + Real-Data Wiring** — NOC-01..14, OPS-AUDIT-01..04; replace mock NOC with live data + provenance
-- [ ] **Phase 80: Cron Health Registry + Schedules Console** — CTX-FOLLOWUP-01, CTX-FOLLOWUP-02, CRON-HEALTH-01..05, UX-FOLLOWUP-03
-- [ ] **Phase 81: Universal Evidence Bundles + Harness Control Plane** — HARN-01, HARN-02, HARN-03
-- [ ] **Phase 82: Auth Hardening** — AUTH-FOLLOWUP-01, AUTH-FOLLOWUP-02, AUTH-FOLLOWUP-03; email invites, password reset, OAuth/SSO
+- [x] **Phase 74: Security Label Schema + Raw Vault** — MEMSEC-01, MEMSEC-02; completed 2026-05-24
+- [x] **Phase 75: Classification Cascade + Ingestion Gate** — MEMSEC-03, CTX-FOLLOWUP-03; completed 2026-05-24
+- [x] **Phase 76: Retrieval Authorization Gate** — MEMSEC-04; completed 2026-05-24
+- [x] **Phase 77: Safe Index Projections + Envelope Encryption** — MEMSEC-05, MEMSEC-06, MEMSEC-07; completed 2026-05-24
+- [x] **Phase 78: Security Regression Tests** — MEMSEC-08; completed 2026-05-24
+- [x] **Phase 79: NOC Telemetry + Real-Data Wiring** — NOC-01..14, OPS-AUDIT-01..04; completed 2026-05-24
+- [x] **Phase 80: Cron Health Registry + Schedules Console** — CTX-FOLLOWUP-01, CTX-FOLLOWUP-02, CRON-HEALTH-01..05, UX-FOLLOWUP-03; completed 2026-05-24
+- [x] **Phase 81: Universal Evidence Bundles + Harness Control Plane** — HARN-01, HARN-02, HARN-03; completed 2026-05-24
+- [x] **Phase 82: Auth Hardening** — AUTH-FOLLOWUP-01, AUTH-FOLLOWUP-02, AUTH-FOLLOWUP-03; completed 2026-05-24
 
 Full v5.0 detail in the `## v5.0 Memory Trust + Operational Intelligence` section below.
 
@@ -649,7 +649,7 @@ Plans:
   4. An operator triggers the `qmd update` pipeline from the UI with SSE progress streaming, and the Library page shows QMD index recency vs latest file mtime per collection as context freshness evidence
   5. An operator imports a SKILL.md file, it is normalized into the `skill_registry` table with its source harness plus governed contract fields (preconditions, allowed tools, risk tier, verification checks, owner, rollback behavior), the A2A dispatcher looks up the registry before per-agent instruction fallback, and the Skills UI shows all registered skills with source harness, dispatch status, and contract completeness
 **Research flag**: yes — `--research-phase` when planning (SEAL-04..06 sandbox mechanism, async eval runner, and token budget all need detailed design)
-**Plans**: TBD
+**Plans**: 1/1 complete
 **UI hint**: yes
 
 ### Phase 73: Operator UI Truth + Phase Parity
@@ -691,7 +691,7 @@ Plans:
   2. Every label-bearing table can express `visibility` (private/internal/public_safe/public_approved), `domain` (legal/finance/hr/client/personal/engineering), `sensitivity` (pii/secret/credential/privileged/contract/payment/health), and `policy` (indexable/agent_visible/requires_redaction/requires_human_review/sealed) independently, and existing rows default to `visibility=private`, `policy=sealed`.
   3. Operators can list vault artifacts for a tenant and replay a specific artifact id back to its original content (decompressed, hash-verified) via an admin endpoint.
   4. Migration runs idempotently on the production SQLite database without locking writers or losing rows.
-**Plans**: TBD
+**Plans**: 1/1 complete
 
 ### Phase 75: Classification Cascade + Ingestion Gate
 **Goal**: Every ingested artifact is classified through a fail-closed, deterministic-first cascade that stamps the correct label dimensions before the content is allowed to leave the raw vault, with uncertain or high-stakes cases routed to a human review queue.
@@ -708,7 +708,7 @@ Plans:
   2. Deterministic detectors (scanner + Presidio + metadata) run before the LLM adjudicator on every artifact; only artifacts the deterministic layer marked low-confidence reach the LLM.
   3. Public-promotion, legal, finance, HR, credential, payment, privileged, and sealed cases land in a visible human review queue with reviewer, decision, evidence span, and timestamp recorded.
   4. The review queue surfaces per-artifact evidence spans and abstention reasons, and a reviewer can promote, deny, or redact-and-promote a label with the decision written to `audit_log`.
-**Plans**: TBD
+**Plans**: 1/1 complete
 **UI hint**: yes
 
 ### Phase 76: Retrieval Authorization Gate
@@ -724,7 +724,7 @@ Plans:
   2. Default-labeled (`visibility=private`, `policy=sealed`) artifacts cannot surface through any retrieval path — recall, multi-search, context-pack, ChatGPT Action, export, summarization, A2A dispatch, or FTS/vector/graph index write — until a classification promotes the label.
   3. Every gate decision (allow, deny, redact, review-required) appears in `audit_log` with actor identity, role, tenant/project, purpose, label snapshot, and decision reason.
   4. mem0 HTTP-written content is classified at retrieval time and gated by the same policy decision as TypeScript-ingested content.
-**Plans**: TBD
+**Plans**: 1/1 complete
 
 ### Phase 77: Safe Index Projections + Envelope Encryption
 **Goal**: Derived indexes (FTS5, Qdrant, Neo4j, qmd) only contain content cleared as `indexable=true`, text-first embeddings carry full provenance, and sensitive raw artifacts use app-level envelope encryption with a working key rotation path.
@@ -739,7 +739,7 @@ Plans:
   2. Every embedding row records artifact id, source span, modality, model name/version, dimension, label version, and creation timestamp, and inherits the source security label unless an approved redaction promoted it.
   3. Operators can rotate the key-encryption key, re-wrap data keys, and replay a vault artifact written under both old and new key ids with byte-equal output.
   4. A backup-and-restore drill restores the vault on a fresh machine using the documented key restore path and replays a sample artifact end-to-end.
-**Plans**: TBD
+**Plans**: 1/1 complete
 
 ### Phase 78: Security Regression Tests
 **Goal**: An automated negative-fixture suite proves restricted memory cannot leak through any recall, export, summarization, A2A dispatch, audit search, or derived index path before the security chain is declared shippable.
@@ -754,7 +754,7 @@ Plans:
   2. Every restricted category (legal, finance, HR, credential, payment, privileged, personal, confidential, public-promotion) has at least one negative fixture with an expected `deny` or `redact` outcome.
   3. A documented runbook lets an operator extend the fixture corpus with a new restricted category and have CI enforce it.
   4. Phase 74-77 are considered incomplete until this suite passes green on the main branch.
-**Plans**: TBD
+**Plans**: 1/1 complete
 
 ### Phase 79: NOC Telemetry + Real-Data Wiring
 **Goal**: Every panel on the Operations NOC and every operations page renders live data with explicit per-panel provenance (source, lastUpdated, window, status, warnings), and missing-telemetry surfaces are labeled honestly rather than backed by mock constants.
@@ -771,7 +771,7 @@ Plans:
   3. Every NOC control either navigates to a real owner surface, mutates visible UI state, triggers an implemented API, or renders an explicit missing-backend explanation; no inert controls remain.
   4. Ledger, Business Ops, Skills, Agents, Memory, Governance, Improve, Workflow Map, and Dispatch each expose a date-range/time-window control, source/provenance state, loading and error states, and an over-time view when the data supports it; Ledger distinguishes live/empty/unavailable/failed states for RTK, Claude model logs, and model-routing telemetry instead of rendering zeros.
   5. CI fails any commit where a production Operations component imports `noc-mock-data`, and a Playwright suite verifies the live, empty, and degraded NOC states render correctly.
-**Plans**: TBD
+**Plans**: 1/1 complete
 **UI hint**: yes
 
 ### Phase 80: Cron Health Registry + Schedules Console
@@ -787,7 +787,7 @@ Plans:
   2. An operator can pause, resume, or stop an individual cron job from the dashboard without restarting the MemroOS runtime; jobs that are not caught up emit a warning-level health signal that appears in the NOC and operator notification surface.
   3. Every operator source family (Drive, Slack, Gmail/Spark, local folders, qmd, mem0, future connectors) declares its ingest, index, freshness, safe-answer, and repair behavior with no silent unindexed lanes.
   4. Runtime health surfaces queued writes, retry backlog, stale semantic recall, replay verification, and source-to-QMD indexing proof to operators and evals — not just service reachability.
-**Plans**: TBD
+**Plans**: 1/1 complete
 **UI hint**: yes
 
 ### Phase 81: Universal Evidence Bundles + Harness Control Plane
@@ -804,7 +804,7 @@ Plans:
   2. An operator opening any agent output can see sources used, memories consumed, tools/commands run, checks passed, unverified assumptions, residual risks, and a working replay/rollback handle.
   3. Tasks declaring overlapping write sets or version dependencies surface a stale-belief or context-drift warning before dispatch — not after a failed run.
   4. Evidence bundle writes are asynchronous and never block the task response path, verified by an instrumented latency test.
-**Plans**: TBD
+**Plans**: 1/1 complete
 **UI hint**: yes
 
 ### Phase 82: Auth Hardening
@@ -821,19 +821,19 @@ Plans:
   3. A tenant admin can rotate API keys, edit tenant settings, deactivate or reactivate users, and see legacy audit rows correctly attributed to authenticated user identities.
   4. A2A API-key routes, MCP gateway routes, and the Python proxy continue to authenticate via API key — OAuth middleware does not wrap them and machine-facing smoke tests stay green.
   5. Login and refresh lockout telemetry is recorded and visible to operators after a configurable failure threshold.
-**Plans**: TBD
+**Plans**: 1/1 complete
 **UI hint**: yes
 
 ### v5.0 Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|----------|---------------|--------|-----------|
-| 74 | v5.0 | 0/0 | Not started | - |
-| 75 | v5.0 | 0/0 | Not started | - |
-| 76 | v5.0 | 0/0 | Not started | - |
-| 77 | v5.0 | 0/0 | Not started | - |
-| 78 | v5.0 | 0/0 | Not started | - |
-| 79 | v5.0 | 0/0 | Not started | - |
-| 80 | v5.0 | 0/0 | Not started | - |
-| 81 | v5.0 | 0/0 | Not started | - |
-| 82 | v5.0 | 0/0 | Not started | - |
+| 74 | v5.0 | 1/1 | Complete | 2026-05-24 |
+| 75 | v5.0 | 1/1 | Complete | 2026-05-24 |
+| 76 | v5.0 | 1/1 | Complete | 2026-05-24 |
+| 77 | v5.0 | 1/1 | Complete | 2026-05-24 |
+| 78 | v5.0 | 1/1 | Complete | 2026-05-24 |
+| 79 | v5.0 | 1/1 | Complete | 2026-05-24 |
+| 80 | v5.0 | 1/1 | Complete | 2026-05-24 |
+| 81 | v5.0 | 1/1 | Complete | 2026-05-24 |
+| 82 | v5.0 | 1/1 | Complete | 2026-05-24 |

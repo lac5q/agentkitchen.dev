@@ -1,7 +1,13 @@
 import type { NextRequest } from "next/server";
+import {
+  buildAgentContext,
+  chatRuntimeStatus,
+  resolveChatRuntimePlan,
+  type ChatRuntimeCandidate,
+} from "@/app/api/chat/chat-runtime";
 import { getRemoteAgents, listRegisteredAgents } from "@/lib/agent-registry";
 import { selectAdapter } from "@/lib/dispatch/adapter-factory";
-import type { AgentPlatform, RegisteredAgent, RemoteAgentConfig } from "@/types";
+import type { RegisteredAgent, RemoteAgentConfig } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +20,12 @@ interface AgentEngagementCheck {
   chat: {
     status: CheckStatus;
     runner: "anthropic" | "opencode";
+    model: string;
+    source: string;
+    fallbackRunner: "anthropic" | "opencode" | null;
+    fallbackModel: string | null;
     detail: string;
+    lastError?: string;
   };
   dispatch: {
     status: CheckStatus;
@@ -26,8 +37,6 @@ interface AgentEngagementCheck {
     detail: string;
   };
 }
-
-const OPENCODE_PLATFORMS = new Set<AgentPlatform>(["qwen", "gemini", "opencode"]);
 
 function toDispatchConfig(agent: RegisteredAgent, remote?: RemoteAgentConfig): RemoteAgentConfig {
   if (remote) return remote;
@@ -55,30 +64,35 @@ function toDispatchConfig(agent: RegisteredAgent, remote?: RemoteAgentConfig): R
   };
 }
 
-function chatCheck(agent: RegisteredAgent): AgentEngagementCheck["chat"] {
-  const usesOpenCode =
-    OPENCODE_PLATFORMS.has(agent.platform) ||
-    /qwen|gemini|opencode/i.test(`${agent.role} ${agent.name}`);
+async function chatCheck(agent: RegisteredAgent): Promise<AgentEngagementCheck["chat"]> {
+  const context = await buildAgentContext(agent.id);
+  const plan = await resolveChatRuntimePlan(agent.id, context);
+  const primary = plan.primary;
+  const primaryStatus = chatRuntimeStatus(primary);
+  const fallback = plan.candidates
+    .slice(1)
+    .find((candidate) => chatRuntimeStatus(candidate).status !== "blocked") ?? null;
+  const status = primaryStatus.status === "blocked" && fallback ? "warning" : primaryStatus.status;
+  const fallbackDetail = fallback
+    ? ` Fallback ready: ${runtimeLabel(fallback)}.`
+    : plan.candidates.length > 1
+      ? " No ready fallback is currently available."
+      : "";
 
-  if (usesOpenCode) {
-    const enabled = process.env.MEMROOS_ENABLE_OPENCODE === "true";
-    return {
-      status: enabled ? "ready" : "blocked",
-      runner: "opencode",
-      detail: enabled
-        ? "OpenCode runner is enabled for this agent."
-        : "OpenCode runner is disabled. Set MEMROOS_ENABLE_OPENCODE=true for live chat.",
-    };
-  }
-
-  const configured = Boolean(process.env.ANTHROPIC_API_KEY);
   return {
-    status: configured ? "ready" : "blocked",
-    runner: "anthropic",
-    detail: configured
-      ? "Anthropic chat is configured. Provider quota can still reject a live response."
-      : "ANTHROPIC_API_KEY is missing.",
+    status,
+    runner: primary.runner,
+    model: primary.model,
+    source: primary.source,
+    fallbackRunner: fallback?.runner ?? null,
+    fallbackModel: fallback?.model ?? null,
+    detail: `${runtimeLabel(primary)} via ${primary.source}. ${primaryStatus.detail}${fallbackDetail}`,
+    lastError: primaryStatus.lastError,
   };
+}
+
+function runtimeLabel(runtime: Pick<ChatRuntimeCandidate, "runner" | "model">): string {
+  return `${runtime.runner}/${runtime.model}`;
 }
 
 function voiceCheck(): AgentEngagementCheck["voice"] {
@@ -114,14 +128,14 @@ export async function POST(req: NextRequest | Request) {
 
   return Response.json({
     ok: true,
-    results: agents.map((agent): AgentEngagementCheck => ({
+    results: await Promise.all(agents.map(async (agent): Promise<AgentEngagementCheck> => ({
       agentId: agent.id,
       name: agent.name,
       status: agent.status,
-      chat: chatCheck(agent),
+      chat: await chatCheck(agent),
       dispatch: dispatchCheck(agent, remotes.get(agent.id)),
       voice: voiceCheck(),
-    })),
+    }))),
     timestamp: new Date().toISOString(),
   });
 }

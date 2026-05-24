@@ -2,26 +2,41 @@
 
 import { AreaStack } from "@/components/shared/charts";
 import { useMemoryStats, useTimeSeries } from "@/lib/api-client";
+import { nocWindowLabel, nocWindowToTimeSeriesWindow, type NocFilters } from "@/lib/noc-filters";
 import { NOC } from "@/lib/noc-theme";
 import { NocCard, NocPanelHeader, Eyebrow, Mono, Delta, Legend } from "./noc-primitives";
 
-function lastSevenLabels() {
-  return Array.from({ length: 7 }, (_, i) => {
-    const date = new Date(Date.now() - (6 - i) * 24 * 60 * 60 * 1000);
+function labelsForWindow(window: NocFilters["window"]) {
+  if (window === "24h") {
+    const now = new Date();
+    return Array.from({ length: 24 }, (_, i) => {
+      const date = new Date(now.getTime() - (23 - i) * 60 * 60 * 1000);
+      return `${date.toISOString().slice(11, 13)}:00`;
+    });
+  }
+
+  const days = window === "7d" ? 7 : 30;
+  return Array.from({ length: days }, (_, i) => {
+    const date = new Date(Date.now() - (days - 1 - i) * 24 * 60 * 60 * 1000);
     return date.toISOString().slice(5, 10);
   });
 }
 
 function valuesForLabels(labels: string[], points?: Array<{ bucket: string; value: number }>) {
-  const byDay = new Map((points ?? []).map((p) => [p.bucket.slice(5, 10), p.value]));
+  const byDay = new Map((points ?? []).map((p) => [p.bucket.includes("-") ? p.bucket.slice(5, 10) : p.bucket, p.value]));
   return labels.map((label) => byDay.get(label) ?? 0);
 }
 
-export function MemoryConsumption() {
-  const memory = useMemoryStats();
-  const writes = useTimeSeries("memory_writes", "week");
-  const recalls = useTimeSeries("recall_queries", "week");
-  const labels = lastSevenLabels();
+interface MemoryConsumptionProps {
+  filters: NocFilters;
+}
+
+export function MemoryConsumption({ filters }: MemoryConsumptionProps) {
+  const timeWindow = nocWindowToTimeSeriesWindow(filters.window);
+  const memory = useMemoryStats({ window: timeWindow, workspace: filters.workspace });
+  const writes = useTimeSeries("memory_writes", timeWindow);
+  const recalls = useTimeSeries("recall_queries", timeWindow);
+  const labels = labelsForWindow(filters.window);
   const writeValues = valuesForLabels(labels, writes.data?.points);
   const recallValues = valuesForLabels(labels, recalls.data?.points);
   const totalTierCount = memory.data?.tierStats.reduce((sum, tier) => sum + tier.count, 0) ?? 0;
@@ -34,7 +49,7 @@ export function MemoryConsumption() {
   return (
     <NocCard pad={16}>
       <NocPanelHeader
-        title="Memory activity · last 7 days"
+        title={`Memory activity · ${nocWindowLabel(filters.window)}`}
         hint="Live writes and recall queries from /api/time-series, with current tier inventory from /api/memory-stats."
         right={
           <div style={{ display: "flex", gap: 10, fontSize: 11, color: NOC.muted }}>
@@ -59,7 +74,7 @@ export function MemoryConsumption() {
       />
       {noPoints && !sourceError && (
         <div style={{ fontSize: 11.5, color: NOC.soft, marginTop: 6 }}>
-          No memory write or recall buckets recorded in the last 7 days.
+          No memory write or recall buckets recorded in the {nocWindowLabel(filters.window)}.
         </div>
       )}
       <div

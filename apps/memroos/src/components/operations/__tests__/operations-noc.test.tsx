@@ -1,17 +1,18 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OperationsNoc } from "../index";
 
-vi.mock("@/lib/api-client", () => ({
-  useHiveFeed: () => ({ data: { actions: [] }, isError: false }),
-  useDelegations: () => ({ data: { delegations: [] }, isError: false }),
-  useMemoryStats: () => ({
+const api = vi.hoisted(() => ({
+  useMemoryStats: vi.fn(() => ({
     data: { lastRun: null, pendingUnconsolidated: 0, tierStats: [], sources: [], recentFailures24h: 0, timestamp: "2026-05-21T12:00:00Z" },
     isError: false,
-  }),
-  useMemoryTierHealth: () => ({ data: { tiers: [], timestamp: "2026-05-21T12:00:00Z" }, isError: false }),
-  useModelUsage: () => ({
+  })),
+  useTimeSeries: vi.fn((metric: string, window: string) => ({
+    data: { points: [], metric, window, timestamp: "2026-05-21T12:00:00Z" },
+    isError: false,
+  })),
+  useModelUsage: vi.fn(() => ({
     data: {
       usage: {
         models: [],
@@ -21,8 +22,16 @@ vi.mock("@/lib/api-client", () => ({
     },
     isLoading: false,
     isError: false,
-  }),
-  useTimeSeries: () => ({ data: { points: [], metric: "memory_writes", window: "week", timestamp: "2026-05-21T12:00:00Z" }, isError: false }),
+  })),
+}));
+
+vi.mock("@/lib/api-client", () => ({
+  useHiveFeed: () => ({ data: { actions: [] }, isError: false }),
+  useDelegations: () => ({ data: { delegations: [] }, isError: false }),
+  useMemoryStats: api.useMemoryStats,
+  useMemoryTierHealth: () => ({ data: { tiers: [], timestamp: "2026-05-21T12:00:00Z" }, isError: false }),
+  useModelUsage: api.useModelUsage,
+  useTimeSeries: api.useTimeSeries,
   useAgentPeers: () => ({ data: { peers: [], window_minutes: 1440, timestamp: "2026-05-21T12:00:00Z" }, isError: false }),
   useAgents: () => ({ data: { agents: [] }, isError: false }),
   useSealProposals: () => ({ data: { proposals: [], timestamp: "2026-05-21T12:00:00Z" }, isError: false }),
@@ -43,6 +52,12 @@ vi.mock("@/lib/api-client", () => ({
 }));
 
 describe("OperationsNoc", () => {
+  beforeEach(() => {
+    api.useMemoryStats.mockClear();
+    api.useTimeSeries.mockClear();
+    api.useModelUsage.mockClear();
+  });
+
   it("labels live telemetry honestly without sample-backed claims", () => {
     render(<OperationsNoc />);
 
@@ -58,5 +73,26 @@ describe("OperationsNoc", () => {
 
     expect(screen.queryByText(/^Engage$/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/chat, voice, or push a directive/i)).not.toBeInTheDocument();
+  });
+
+  it("applies the date range filter to live-backed NOC panels", async () => {
+    render(<OperationsNoc />);
+
+    fireEvent.change(screen.getByLabelText(/noc date range/i), { target: { value: "30d" } });
+
+    expect(await screen.findByText(/memory activity . last 30 days/i)).toBeInTheDocument();
+    expect(await screen.findByText(/model tokens . 30d/i)).toBeInTheDocument();
+    expect(api.useTimeSeries).toHaveBeenCalledWith("memory_writes", "month");
+    expect(api.useTimeSeries).toHaveBeenCalledWith("recall_queries", "month");
+    expect(api.useMemoryStats).toHaveBeenCalledWith({ window: "month", workspace: "all" });
+    expect(api.useModelUsage).toHaveBeenCalledWith(expect.stringMatching(/T.*Z$/));
+  });
+
+  it("applies the workspace filter to memory-backed NOC panels", () => {
+    render(<OperationsNoc />);
+
+    fireEvent.change(screen.getByLabelText(/noc workspace/i), { target: { value: "local" } });
+
+    expect(api.useMemoryStats).toHaveBeenCalledWith({ window: "day", workspace: "local" });
   });
 });

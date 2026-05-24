@@ -1,5 +1,11 @@
 import { CLAUDE_MEMORY_PATH } from "@/lib/constants";
+import { getDb } from "@/lib/db";
 import { queryGraphMemory, searchVectorMemory } from "@/lib/memory/backends";
+import {
+  extractMemoryLabelSnapshot,
+  filterAuthorizedMemoryItems,
+  type MemoryUseActor,
+} from "@/lib/memory/policy-gate";
 import { parseClaudeMemory } from "@/lib/parsers";
 import type { MemoryEntry } from "@/types";
 
@@ -141,6 +147,12 @@ export async function GET(request: Request) {
 
   const tiers: TierResult[] = [];
   const results: NormalizedMemoryResult[] = [];
+  const db = getDb();
+  const actor: MemoryUseActor = {
+    id: "api:memory-multi-search",
+    role: "operator",
+    capability: "memory_search",
+  };
 
   const [vector, graph, episodic]: SearchOutcome[] = await Promise.all([
     searchVectorMemory(query, limit)
@@ -167,13 +179,21 @@ export async function GET(request: Request) {
   ]);
 
   for (const tier of [vector, graph, episodic]) {
+    const authorizedItems = filterAuthorizedMemoryItems(
+      db,
+      tier.items,
+      actor,
+      "multi-search",
+      (item) => extractMemoryLabelSnapshot(item.metadata),
+      (item) => `${item.tier}:${item.id}`
+    );
     tiers.push({
       tier: tier.tier,
       ok: !tier.error,
-      count: tier.items.length,
+      count: authorizedItems.length,
       error: tier.error,
     });
-    results.push(...tier.items);
+    results.push(...authorizedItems);
   }
 
   return Response.json({

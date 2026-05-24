@@ -2,6 +2,8 @@ import type Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { CLAUDE_MEMORY_PATH, QWEN_MEMORY_PATH, HERMES_MEMORY_PATH, CODEX_MEMORY_PATH } from './constants';
+import { classifyVaultArtifact } from './classification/cascade';
+import { writeVaultArtifact } from './vault/writer';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -172,6 +174,7 @@ export function ingestFile(
 
   const raw = fs.readFileSync(filePath, 'utf-8');
   const lines = raw.split('\n').filter((l) => l.trim());
+  const vaultRows: Record<string, unknown>[] = [];
 
   let inserted = 0;
 
@@ -202,11 +205,35 @@ export function ingestFile(
         entry.gitBranch ?? null,
         entry.requestId ?? null
       );
-      inserted += Number(info.changes);
+      if (Number(info.changes) > 0) {
+        inserted += Number(info.changes);
+        vaultRows.push({
+          session_id: sessionId,
+          project,
+          agent_id: agentId,
+          role,
+          content,
+          timestamp: entry.timestamp ?? null,
+          cwd: entry.cwd ?? null,
+          git_branch: entry.gitBranch ?? null,
+          request_id: entry.requestId ?? null,
+        });
+      }
     }
   });
 
   runInserts();
+  if (vaultRows.length > 0) {
+    const artifact = writeVaultArtifact(db, {
+      sourceType: "messages",
+      sourceId: sessionId,
+      sessionId,
+      project,
+      body: vaultRows.map((row) => JSON.stringify(row)).join("\n") + "\n",
+      replayMetadata: { filePath, projectDirName, agentId },
+    });
+    classifyVaultArtifact(db, artifact.id);
+  }
   return inserted;
 }
 
@@ -236,6 +263,7 @@ export function ingestHermesFile(
 
   const raw = fs.readFileSync(filePath, 'utf-8');
   const lines = raw.split('\n').filter((l) => l.trim());
+  const vaultRows: Record<string, unknown>[] = [];
   let inserted = 0;
 
   const run = db.transaction(() => {
@@ -254,10 +282,34 @@ export function ingestHermesFile(
         entry.timestamp ?? new Date().toISOString(),
         null, null, null
       );
-      inserted += Number(info.changes);
+      if (Number(info.changes) > 0) {
+        inserted += Number(info.changes);
+        vaultRows.push({
+          session_id: sessionId,
+          project,
+          agent_id: agentId,
+          role,
+          content,
+          timestamp: entry.timestamp ?? null,
+          cwd: null,
+          git_branch: null,
+          request_id: null,
+        });
+      }
     }
   });
   run();
+  if (vaultRows.length > 0) {
+    const artifact = writeVaultArtifact(db, {
+      sourceType: "messages",
+      sourceId: sessionId,
+      sessionId,
+      project,
+      body: vaultRows.map((row) => JSON.stringify(row)).join("\n") + "\n",
+      replayMetadata: { filePath, agentId },
+    });
+    classifyVaultArtifact(db, artifact.id);
+  }
   return inserted;
 }
 
@@ -294,6 +346,7 @@ export function ingestQwenFile(
 
   const raw = fs.readFileSync(filePath, 'utf-8');
   const lines = raw.split('\n').filter((l) => l.trim());
+  const vaultRows: Record<string, unknown>[] = [];
   let inserted = 0;
 
   const run = db.transaction(() => {
@@ -318,10 +371,34 @@ export function ingestQwenFile(
         entry.timestamp ?? new Date().toISOString(),
         entry.cwd ?? null, entry.gitBranch ?? null, null
       );
-      inserted += Number(info.changes);
+      if (Number(info.changes) > 0) {
+        inserted += Number(info.changes);
+        vaultRows.push({
+          session_id: sessionId,
+          project,
+          agent_id: agentId,
+          role,
+          content,
+          timestamp: entry.timestamp ?? null,
+          cwd: entry.cwd ?? null,
+          git_branch: entry.gitBranch ?? null,
+          request_id: null,
+        });
+      }
     }
   });
   run();
+  if (vaultRows.length > 0) {
+    const artifact = writeVaultArtifact(db, {
+      sourceType: "messages",
+      sourceId: sessionId,
+      sessionId,
+      project,
+      body: vaultRows.map((row) => JSON.stringify(row)).join("\n") + "\n",
+      replayMetadata: { filePath, projectDirName, agentId },
+    });
+    classifyVaultArtifact(db, artifact.id);
+  }
   return inserted;
 }
 
@@ -358,6 +435,7 @@ export function ingestCodexFile(
 
   const raw = fs.readFileSync(filePath, 'utf-8');
   const lines = raw.split('\n').filter((l) => l.trim());
+  const vaultRows: Record<string, unknown>[] = [];
   let inserted = 0;
 
   const run = db.transaction(() => {
@@ -386,10 +464,34 @@ export function ingestCodexFile(
         entry.timestamp ?? new Date().toISOString(),
         null, null, null
       );
-      inserted += Number(info.changes);
+      if (Number(info.changes) > 0) {
+        inserted += Number(info.changes);
+        vaultRows.push({
+          session_id: sessionId,
+          project,
+          agent_id: agentId,
+          role,
+          content,
+          timestamp: entry.timestamp ?? null,
+          cwd: null,
+          git_branch: null,
+          request_id: null,
+        });
+      }
     }
   });
   run();
+  if (vaultRows.length > 0) {
+    const artifact = writeVaultArtifact(db, {
+      sourceType: "messages",
+      sourceId: sessionId,
+      sessionId,
+      project,
+      body: vaultRows.map((row) => JSON.stringify(row)).join("\n") + "\n",
+      replayMetadata: { filePath, agentId },
+    });
+    classifyVaultArtifact(db, artifact.id);
+  }
   return inserted;
 }
 

@@ -8,6 +8,14 @@
 
 import type Database from "better-sqlite3";
 
+export interface EmbeddingProvenance {
+  artifactId?: string | null;
+  sourceSpan?: string | null;
+  modality?: string;
+  modelVersion?: string | null;
+  labelVersion?: number;
+}
+
 /**
  * Pack a number[] into a Float32Array BLOB (Buffer).
  * Each element occupies 4 bytes in little-endian IEEE 754 format.
@@ -35,18 +43,36 @@ export function upsertEmbedding(
   db: Database.Database,
   messageId: number,
   vector: number[],
-  model: string
+  model: string,
+  provenance: EmbeddingProvenance = {}
 ): void {
   const blob = packVector(vector);
   db.prepare(
-    `INSERT INTO message_embeddings(message_id, model, dim, vector)
-     VALUES (?, ?, ?, ?)
+    `INSERT INTO message_embeddings(
+       message_id, model, dim, vector, artifact_id, source_span, modality, model_version, label_version
+     )
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(message_id) DO UPDATE SET
        model  = excluded.model,
        dim    = excluded.dim,
        vector = excluded.vector,
+       artifact_id = excluded.artifact_id,
+       source_span = excluded.source_span,
+       modality = excluded.modality,
+       model_version = excluded.model_version,
+       label_version = excluded.label_version,
        created_at = strftime('%Y-%m-%dT%H:%M:%SZ','now')`
-  ).run(messageId, model, vector.length, blob);
+  ).run(
+    messageId,
+    model,
+    vector.length,
+    blob,
+    provenance.artifactId ?? null,
+    provenance.sourceSpan ?? null,
+    provenance.modality ?? "text",
+    provenance.modelVersion ?? model,
+    provenance.labelVersion ?? 1
+  );
 }
 
 /**
@@ -82,6 +108,8 @@ export function messagesNeedingEmbedding(
        FROM messages m
        LEFT JOIN message_embeddings e ON e.message_id = m.id
        WHERE e.message_id IS NULL
+         AND m.policy = 'indexable'
+         AND m.visibility IN ('internal','public_safe','public_approved')
        ORDER BY m.id DESC
        LIMIT ?`
     )

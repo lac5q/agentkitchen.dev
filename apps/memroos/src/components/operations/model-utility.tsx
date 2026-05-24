@@ -2,6 +2,7 @@
 
 import { NOC, NOC_FONT_MONO } from "@/lib/noc-theme";
 import { useModelUsage } from "@/lib/api-client";
+import { nocWindowToSinceIso, type NocFilters } from "@/lib/noc-filters";
 import { NocCard, NocPanelHeader, Mono, PillBtn } from "./noc-primitives";
 
 function formatTokens(value: number): string {
@@ -10,8 +11,12 @@ function formatTokens(value: number): string {
   return String(value);
 }
 
-export function ModelUtility() {
-  const { data, isLoading, isError } = useModelUsage();
+interface ModelUtilityProps {
+  filters: NocFilters;
+}
+
+export function ModelUtility({ filters }: ModelUtilityProps) {
+  const { data, isLoading, isError } = useModelUsage(nocWindowToSinceIso(filters.window));
   const models = data?.usage.models.slice(0, 5) ?? [];
   const totalTokens =
     (data?.usage.total.inputTokens ?? 0) + (data?.usage.total.outputTokens ?? 0);

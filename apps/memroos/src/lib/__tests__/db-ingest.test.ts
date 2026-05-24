@@ -32,6 +32,7 @@ let recallByKeyword: (
   query: string,
   limit?: number
 ) => unknown[];
+let rebuildMessageFtsProjection: (db: import('better-sqlite3').Database) => void;
 
 /** Helper: write a JSONL file with given entries */
 function writeJsonl(filePath: string, entries: unknown[]): void {
@@ -160,8 +161,10 @@ describe('db-ingest: ingestAllSessions and recallByKeyword', () => {
     db = getDb();
 
     const m = await import('../db-ingest');
+    const schema = await import('../db-schema');
     ingestAllSessions = m.ingestAllSessions;
     recallByKeyword = m.recallByKeyword;
+    rebuildMessageFtsProjection = schema.rebuildMessageFtsProjection;
   });
 
   afterAll(() => {
@@ -229,6 +232,10 @@ describe('db-ingest: ingestAllSessions and recallByKeyword', () => {
     writeJsonl(sessionFile, [makeUserEntry(`This message contains ${uniqueWord} for recall`, 'req-recall-01')]);
 
     ingestAllSessions(db);
+    db.prepare(
+      "UPDATE messages SET visibility = 'public_approved', policy = 'indexable' WHERE content LIKE ?"
+    ).run(`%${uniqueWord}%`);
+    rebuildMessageFtsProjection(db);
 
     const results = recallByKeyword(db, uniqueWord) as Array<{
       snippet: string;
@@ -255,6 +262,10 @@ describe('db-ingest: ingestAllSessions and recallByKeyword', () => {
     ]);
 
     ingestAllSessions(db);
+    db.prepare(
+      "UPDATE messages SET visibility = 'public_approved', policy = 'indexable' WHERE content LIKE '%quick brown fox%'"
+    ).run();
+    rebuildMessageFtsProjection(db);
 
     // Phrase match should find exact phrase
     const results = recallByKeyword(db, 'quick brown fox') as Array<{ snippet: string }>;

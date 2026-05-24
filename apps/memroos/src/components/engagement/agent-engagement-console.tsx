@@ -40,7 +40,16 @@ type AgentCheck = {
   agentId: string;
   name: string;
   status: RegisteredAgent["status"];
-  chat: { status: "ready" | "blocked" | "warning"; runner: string; detail: string };
+  chat: {
+    status: "ready" | "blocked" | "warning";
+    runner: string;
+    model?: string;
+    source?: string;
+    fallbackRunner?: string | null;
+    fallbackModel?: string | null;
+    detail: string;
+    lastError?: string;
+  };
   dispatch: { status: "ready" | "blocked" | "warning"; adapter: string; detail: string };
   voice: { status: "ready" | "blocked" | "warning"; detail: string };
 };
@@ -125,9 +134,20 @@ function agentGroup(agent: RegisteredAgent): AgentGroup {
 }
 
 function defaultModelLabel(agent: RegisteredAgent): string {
-  const path = agent.metadata?.path;
-  if (typeof path === "string" && path.includes("/PMO/agents/")) return "PMO default";
   return DEFAULT_MODEL_BY_PLATFORM[agent.platform] ?? "registered default";
+}
+
+function chatModelLabel(agent: RegisteredAgent, check?: AgentCheck): string {
+  if (check?.chat.model) return `${check.chat.runner} / ${check.chat.model}`;
+  return defaultModelLabel(agent);
+}
+
+function chatStatusLine(check?: AgentCheck): string {
+  if (!check) return "Not tested";
+  const fallback = check.chat.fallbackRunner && check.chat.fallbackModel
+    ? ` -> ${check.chat.fallbackRunner}/${check.chat.fallbackModel}`
+    : "";
+  return `${check.dispatch.adapter} / ${check.chat.runner}${fallback}`;
 }
 
 function sortAgents(a: RegisteredAgent, b: RegisteredAgent): number {
@@ -485,13 +505,13 @@ export function AgentEngagementConsole() {
           <span className="min-w-0">
             <span className="block truncate text-sm font-semibold text-slate-950">{agent.name}</span>
             <span className="mt-0.5 block truncate text-xs text-stone-500">{PLATFORM_LABELS[agent.platform] ?? agent.platform} - {agent.role}</span>
-            <span className="mt-1 block truncate text-[11px] text-stone-500">model: {check?.chat.runner ?? defaultModelLabel(agent)}</span>
+            <span className="mt-1 block truncate text-[11px] text-stone-500">model: {chatModelLabel(agent, check)}</span>
           </span>
           <Pill value={agent.status} />
         </button>
         <div className="mt-3 flex items-center justify-between gap-2">
           <span className="text-xs text-stone-500">
-            {check ? `${check.dispatch.adapter} / ${check.chat.runner}` : "Not tested"}
+            {chatStatusLine(check)}
           </span>
           <div className="flex gap-1.5">
             <button
@@ -930,6 +950,10 @@ export function AgentEngagementConsole() {
                           {check ? (
                             <div className="space-y-1.5">
                               <p><Pill value={check.chat.status} /> <span className="ml-1 text-stone-500">chat: {check.chat.detail}</span></p>
+                              <p className="text-stone-500">model: {check.chat.runner}/{check.chat.model ?? "unknown"}{check.chat.source ? ` via ${check.chat.source}` : ""}</p>
+                              {check.chat.fallbackRunner && check.chat.fallbackModel ? (
+                                <p className="text-stone-500">fallback: {check.chat.fallbackRunner}/{check.chat.fallbackModel}</p>
+                              ) : null}
                               <p><Pill value={check.dispatch.status} /> <span className="ml-1 text-stone-500">dispatch: {check.dispatch.detail}</span></p>
                               <p><Pill value={check.voice.status} /> <span className="ml-1 text-stone-500">voice: {check.voice.detail}</span></p>
                             </div>

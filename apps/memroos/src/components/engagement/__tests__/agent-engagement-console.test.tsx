@@ -138,7 +138,14 @@ describe("AgentEngagementConsole", () => {
           agentId: "claude-sonnet-engineer",
           name: "Claude Sonnet Engineer",
           status: "active",
-          chat: { status: "ready", runner: "anthropic", detail: "ready" },
+          chat: {
+            status: "warning",
+            runner: "opencode",
+            model: "bailian/qwen3.5-plus",
+            source: "pmo-routing",
+            fallbackRunner: "anthropic",
+            detail: "Primary blocked; Anthropic fallback is configured.",
+          },
           dispatch: { status: "ready", adapter: "hive-poll", detail: "queued" },
           voice: { status: "warning", detail: "missing key" },
         }],
@@ -152,7 +159,8 @@ describe("AgentEngagementConsole", () => {
       expect(fetch).toHaveBeenCalledWith("/api/engagement/test", expect.objectContaining({ method: "POST" }));
       const [, init] = vi.mocked(fetch).mock.calls[0];
       expect(String(init?.body)).not.toContain("paperclip");
-      expect(screen.getByText(/chat: ready/)).toBeInTheDocument();
+      expect(screen.getByText(/chat: Primary blocked; Anthropic fallback is configured./)).toBeInTheDocument();
+      expect(screen.getByText(/model: opencode \/ bailian\/qwen3.5-plus/)).toBeInTheDocument();
     });
   });
 

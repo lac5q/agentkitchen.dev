@@ -2,6 +2,13 @@ import crypto from "crypto";
 import { CLAUDE_MEMORY_PATH, MEM0_URL } from "@/lib/constants";
 import { getDb } from "@/lib/db";
 import { queryGraphMemory, searchVectorMemory } from "@/lib/memory/backends";
+import {
+  authorizeMemoryUse,
+  extractMemoryLabelSnapshot,
+  filterAuthorizedMemoryItems,
+  type MemoryLabelSnapshot,
+  type MemoryUseActor,
+} from "@/lib/memory/policy-gate";
 import { buildTieredMemoryPayload, resolveMemoryTier } from "@/lib/memory/tiers";
 import { parseClaudeMemory } from "@/lib/parsers";
 import { responseCache } from "@/lib/response-cache";
@@ -28,6 +35,7 @@ export interface ChatGptActionResult {
   source: string;
   score?: number;
   metadata?: Record<string, unknown>;
+  label?: MemoryLabelSnapshot;
 }
 
 interface EncodedActionResult {
@@ -36,6 +44,7 @@ interface EncodedActionResult {
   tier: SearchTier;
   source: string;
   score?: number;
+  label?: MemoryLabelSnapshot;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -147,24 +156,37 @@ export function decodeChatGptActionResult(id: string): EncodedActionResult {
   if (!title || !text || (tier !== "vector" && tier !== "graph" && tier !== "episodic")) {
     throw new Error("Invalid MemRoOS result payload");
   }
+  const label = extractMemoryLabelSnapshot(decoded.label);
+  const decision = authorizeMemoryUse({
+    actor: { id: CHATGPT_ACTIONS_AGENT_ID, role: "agent", capability: "chatgpt-action" },
+    purpose: "chatgpt-action",
+    label: label ?? {},
+  });
+  if (decision.decision !== "allow") {
+    throw new Error("MemRoOS result is not authorized for ChatGPT action fetch");
+  }
   return {
     title,
     text,
     tier,
     source,
     score: typeof decoded.score === "number" ? decoded.score : undefined,
+    label,
   };
 }
 
 function toActionResult(result: Omit<ChatGptActionResult, "id">): ChatGptActionResult {
+  const label = result.label ?? extractMemoryLabelSnapshot(result.metadata);
   return {
     ...result,
+    label,
     id: encodeResult({
       title: result.title,
       text: result.text,
       tier: result.tier,
       source: result.source,
       score: result.score,
+      label,
     }),
   };
 }
@@ -275,9 +297,22 @@ export async function searchMemroosForChatGpt(query: string, limit: number): Pro
   ]);
 
   const outcomes = [vector, graph, episodic];
+  const db = getDb();
+  const actor: MemoryUseActor = { id: CHATGPT_ACTIONS_AGENT_ID, role: "agent", capability: "chatgpt-action" };
+  const authorizedOutcomes = outcomes.map((outcome) => ({
+    ...outcome,
+    items: filterAuthorizedMemoryItems(
+      db,
+      outcome.items,
+      actor,
+      "chatgpt-action",
+      (item) => item.label ?? extractMemoryLabelSnapshot(item.metadata),
+      (item) => `chatgpt-action:${item.tier}:${item.source}:${item.title}`
+    ),
+  }));
   return {
-    results: outcomes.flatMap((outcome) => outcome.items).slice(0, limit * 3),
-    tiers: outcomes.map((outcome) => ({
+    results: authorizedOutcomes.flatMap((outcome) => outcome.items).slice(0, limit * 3),
+    tiers: authorizedOutcomes.map((outcome) => ({
       tier: outcome.tier,
       ok: !outcome.error,
       count: outcome.items.length,

@@ -24,10 +24,10 @@ afterAll(() => {
   testDb.close();
 });
 
-function seedMessage(sessionSuffix: string, consolidated = 0) {
+function seedMessage(sessionSuffix: string, consolidated = 0, agentId = 'agent', timestamp = '2024-01-01T00:00:00Z') {
   const id = testDb.prepare(
     "INSERT INTO messages(session_id, project, agent_id, role, content, timestamp, consolidated) VALUES(?,?,?,?,?,?,?)"
-  ).run(`sess-${sessionSuffix}`, 'p1', 'agent', 'user', `msg ${sessionSuffix}`, '2024-01-01T00:00:00Z', consolidated).lastInsertRowid as number;
+  ).run(`sess-${sessionSuffix}`, 'p1', agentId, 'user', `msg ${sessionSuffix}`, timestamp, consolidated).lastInsertRowid as number;
   testDb.prepare('INSERT OR IGNORE INTO memory_salience(message_id, tier) VALUES(?, ?)').run(id, 'mid');
   return id;
 }
@@ -106,5 +106,24 @@ describe('GET /api/memory-stats', () => {
     expect(body.lastRun.status).toBe('failed');
     expect(body.lastRun.error_message).toContain('429');
     expect(body.recentFailures24h).toBe(1);
+  });
+
+  it('filters message inventory by requested window and workspace', async () => {
+    seedMessage('recent-local', 0, 'codex', new Date(Date.now() - 60 * 60 * 1000).toISOString());
+    seedMessage('recent-remote', 0, 'zapier', new Date(Date.now() - 60 * 60 * 1000).toISOString());
+    seedMessage('old-local', 0, 'codex', new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString());
+
+    const { GET } = await import('../route');
+    const localRes = await GET(new Request('http://localhost/api/memory-stats?window=day&workspace=local') as unknown as import('next/server').NextRequest);
+    const localBody = await localRes.json();
+    const remoteRes = await GET(new Request('http://localhost/api/memory-stats?window=day&workspace=remote') as unknown as import('next/server').NextRequest);
+    const remoteBody = await remoteRes.json();
+
+    expect(localBody.pendingUnconsolidated).toBe(1);
+    expect(localBody.sources).toEqual([{ agent_id: 'codex', cnt: 1 }]);
+    expect(localBody.tierStats).toHaveLength(1);
+    expect(localBody.tierStats[0].count).toBe(1);
+    expect(remoteBody.pendingUnconsolidated).toBe(1);
+    expect(remoteBody.sources).toEqual([{ agent_id: 'zapier', cnt: 1 }]);
   });
 });

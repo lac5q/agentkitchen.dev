@@ -47,6 +47,35 @@ describe("memory tier routes", () => {
     expect(outboundUrl.searchParams.get("limit")).toBe("3");
   });
 
+  it("filters vector search payloads through the retrieval policy gate", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      Response.json({
+        ok: true,
+        results: [
+          { id: "private", memory: "unclassified memory" },
+          { id: "visible", memory: "agent visible memory", metadata: { visibility: "internal", policy: "agent_visible" } },
+        ],
+      })
+    );
+    const { GET } = await loadSearchRoute();
+
+    const response = await GET(new Request("http://localhost/api/memory/search?q=agent&limit=3"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.result).toEqual([
+      {
+        id: "visible",
+        content: "agent visible memory",
+        metadata: {
+          id: "visible",
+          memory: "agent visible memory",
+          metadata: { visibility: "internal", policy: "agent_visible" },
+        },
+      },
+    ]);
+  });
+
   it("queries graph memory through Neo4j HTTP with parameterized search", async () => {
     vi.mocked(fetch).mockResolvedValueOnce(
       Response.json({ results: [{ data: [{ row: [{ name: "Luis" }, [], []] }] }] })

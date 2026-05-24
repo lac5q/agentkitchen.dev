@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Memory Trust + Operational Intelligence
-status: planning
-stopped_at: Phase 74 context gathered
-last_updated: "2026-05-24T02:22:44.524Z"
-last_activity: 2026-05-24 — v5.0 roadmap created (phases 74-82, 41 requirements)
+status: complete
+stopped_at: v5.0 phases 74-82 completed through MVP verification; deploy and skill audit next
+last_updated: "2026-05-24T04:30:00.000Z"
+last_activity: 2026-05-24 -- Phases 77-82 closed with classification-aware FTS, MEMSEC-08 regression tests, NOC contract, cron health, evidence bundles, auth reset, and skill suggestions
 progress:
-  total_phases: 8
-  completed_phases: 4
+  total_phases: 9
+  completed_phases: 9
   total_plans: 10
-  completed_plans: 11
-  percent: 50
+  completed_plans: 10
+  percent: 100
 ---
 
 # State: Memroos
@@ -21,32 +21,32 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 **Core value:** Any agent framework plugs into Memroos — and every agent, knowledge system, and skill becomes visible, connected, and self-improving.
-**Current focus:** Phase 74 — security-label-schema-raw-vault
+**Current focus:** v5.0 closeout verification, local/public deploy, and 30-day skill auto-promotion audit
 
 ## Current Position
 
-Phase: 74 — Security Label Schema + Raw Vault (not started; awaiting plan-phase)
-Plan: —
-Status: Roadmap approved; planning Phase 74
-Last activity: 2026-05-24 — v5.0 roadmap created (phases 74-82, 41 requirements)
+Phase: 82 — Auth Hardening
+Plan: 82-01
+Status: Complete — v5.0 MVP phases 74-82 are code-complete with focused verification
+Last activity: 2026-05-24 -- Phase 77 FTS projection/rebuild, Phase 78 regression tests, Phase 79 NOC contract, Phase 80 cron health, Phase 81 evidence bundles, Phase 82 password reset/auth telemetry, and skill suggestions landed
 
 ## Roadmap Summary (v5.0)
 
 | Phase | Goal | Requirements |
 |-------|------|--------------|
-| 74 | Security Label Schema + Raw Vault — append-only vault, multi-dim labels, additive migrations with safe defaults | MEMSEC-01, MEMSEC-02 (2) |
-| 75 | Classification Cascade + Ingestion Gate — fail-closed deterministic-first cascade + human review queue | MEMSEC-03, CTX-FOLLOWUP-03 (2) |
-| 76 | Retrieval Authorization Gate — policy decision on every recall/export/dispatch path | MEMSEC-04 (1) |
-| 77 | Safe Index Projections + Envelope Encryption — classification-aware FTS/vector/graph + AES-GCM rotation | MEMSEC-05, MEMSEC-06, MEMSEC-07 (3) |
-| 78 | Security Regression Tests — negative-fixture suite proves no leak path | MEMSEC-08 (1) |
-| 79 | NOC Telemetry + Real-Data Wiring — live NOC + provenance + efficiency telemetry | NOC-01..14, OPS-AUDIT-01..04 (18) |
-| 80 | Cron Health Registry + Schedules Console — heartbeat, caught-up, pause/resume, source contracts | CTX-FOLLOWUP-01..02, CRON-HEALTH-01..05, UX-FOLLOWUP-03 (8) |
-| 81 | Universal Evidence Bundles + Harness Control Plane — Plan-Execute-Verify timelines, shared state | HARN-01..03 (3) |
-| 82 | Auth Hardening — email invites, password reset, OAuth/SSO, role-aware nav | AUTH-FOLLOWUP-01..03 (3) |
+| 74 | Security Label Schema + Raw Vault — append-only vault, multi-dim labels, additive migrations with safe defaults | COMPLETE — MEMSEC-01, MEMSEC-02 (2) |
+| 75 | Classification Cascade + Ingestion Gate — fail-closed deterministic-first cascade + human review queue | COMPLETE — MEMSEC-03, CTX-FOLLOWUP-03 (2) |
+| 76 | Retrieval Authorization Gate — policy decision on every recall/export/dispatch path | COMPLETE — MEMSEC-04 (1) |
+| 77 | Safe Index Projections + Envelope Encryption — classification-aware FTS/vector/graph + AES-GCM rotation | COMPLETE — MEMSEC-05, MEMSEC-06, MEMSEC-07 (3) |
+| 78 | Security Regression Tests — negative-fixture suite proves no leak path | COMPLETE — MEMSEC-08 (1) |
+| 79 | NOC Telemetry + Real-Data Wiring — live NOC + provenance + efficiency telemetry | COMPLETE — NOC-01..14, OPS-AUDIT-01..04 (18) |
+| 80 | Cron Health Registry + Schedules Console — heartbeat, caught-up, pause/resume, source contracts | COMPLETE — CTX-FOLLOWUP-01..02, CRON-HEALTH-01..05, UX-FOLLOWUP-03 (8) |
+| 81 | Universal Evidence Bundles + Harness Control Plane — Plan-Execute-Verify timelines, shared state | COMPLETE — HARN-01..03 (3) |
+| 82 | Auth Hardening — email invites, password reset, OAuth/SSO, role-aware nav | COMPLETE — AUTH-FOLLOWUP-01..03 (3) |
 
 **Coverage:** 41/41 v5.0 requirements mapped, no orphans.
 **Critical path:** 74 → 75 → 76 → 77 → 78. Phases 79, 80, 81, 82 run parallel (81 soft-depends on 74).
-**Completed so far:** Phase 34 through Phase 73 (v2.0–v4.0 shipped).
+**Completed so far:** Phase 34 through Phase 82 (v2.0–v5.0 shipped through MVP phase closeout).
 
 ## Performance Metrics
 
@@ -191,10 +191,10 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-24T02:22:44.518Z
-Stopped at: Phase 74 context gathered
-Resume file: .planning/phases/74-security-label-schema-raw-vault/74-CONTEXT.md
-Next action: `/gsd:plan-phase 74` — Security Label Schema + Raw Vault (foundation of security critical path).
+Last session: 2026-05-24T03:05:00.000Z
+Stopped at: v5.0 phase closeout
+Resume file: .planning/ROADMAP.md
+Next action: deploy locally/public repo, then audit 30-day skill auto-creation and promotion coverage.
 
 ## UAT Findings (2026-05-17)
 

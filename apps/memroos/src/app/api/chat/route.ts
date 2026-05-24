@@ -3,7 +3,12 @@ import { execFile, spawn } from "child_process";
 import Anthropic from "@anthropic-ai/sdk";
 import {
   buildAgentContext,
+  chatRuntimeStatus,
+  isProviderLimitError,
+  recordChatRuntimeFailure,
+  recordChatRuntimeSuccess,
   resolveChatRuntime,
+  resolveChatRuntimePlan,
   type ChatRuntime,
   type AgentContext,
 } from "./chat-runtime";
@@ -36,10 +41,6 @@ type OpenCodeReservation =
   | { ok: false; error: string };
 
 let activeOpenCodeRuns = 0;
-
-function isProviderLimitError(message: string): boolean {
-  return /rate_limit_error|usage limit exceeded|credit balance is too low|quota|429/i.test(message);
-}
 
 function latestUserMessage(messages: ChatMessage[]): string {
   return [...messages].reverse().find((message) => message.role === "user")?.content ?? "";
@@ -248,6 +249,7 @@ function streamOpenCodeResponse(params: {
     clearTimeout(timeout);
     clearInterval(rssMonitor);
     reservation.release();
+    recordChatRuntimeFailure(runtime, err.message);
     controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: err.message })}\n\n`));
     controller.close();
   });
@@ -258,13 +260,18 @@ function streamOpenCodeResponse(params: {
     reservation.release();
     if (stoppedForMemory) {
       const rssMb = Math.round(OPENCODE_MAX_RSS_BYTES / 1024 / 1024);
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: `OpenCode chat runner exceeded ${rssMb}MB RSS and was stopped.` })}\n\n`));
+      const error = `OpenCode chat runner exceeded ${rssMb}MB RSS and was stopped.`;
+      recordChatRuntimeFailure(runtime, error);
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error })}\n\n`));
     } else if (code === 0) {
+      recordChatRuntimeSuccess(runtime);
       controller.enqueue(encoder.encode("data: [DONE]\n\n"));
     } else {
       const detail = signal ? `chat runner stopped (${signal})` : `chat runner exited with code ${code}`;
       const cleanStderr = stripAnsi(stderr).trim();
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: cleanStderr || detail })}\n\n`));
+      const error = cleanStderr || detail;
+      recordChatRuntimeFailure(runtime, error);
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error })}\n\n`));
     }
     controller.close();
   });
@@ -294,60 +301,69 @@ export async function POST(req: NextRequest) {
     async start(controller) {
       try {
         const context = await buildAgentContext(agentId);
-        const runtime = await resolveChatRuntime(agentId, context);
+        const plan = await resolveChatRuntimePlan(agentId, context);
+        const failures: string[] = [];
 
-        if (runtime.runner === "opencode") {
-          if (!OPENCODE_CHAT_ENABLED) {
-            enqueueText(controller, encoder, buildLocalFallbackResponse({
-              agentId,
-              context,
+        for (const runtime of plan.candidates) {
+          const readiness = chatRuntimeStatus(runtime);
+          if (readiness.status === "blocked") {
+            failures.push(`${runtime.runner}/${runtime.model}: ${readiness.detail}`);
+            continue;
+          }
+
+          if (runtime.runner === "opencode") {
+            if (!OPENCODE_CHAT_ENABLED) {
+              failures.push(`${runtime.runner}/${runtime.model}: OpenCode chat runner is disabled on this machine.`);
+              continue;
+            }
+
+            streamOpenCodeResponse({
+              controller,
+              encoder,
               runtime,
+              systemPrompt: context.systemPrompt,
               messages,
-              reason: "OpenCode chat runner is disabled on this machine.",
-            }));
-            controller.close();
+            });
             return;
           }
-          streamOpenCodeResponse({
-            controller,
-            encoder,
-            runtime,
-            systemPrompt: context.systemPrompt,
-            messages,
-          });
-          return;
-        }
 
-        try {
-          const response = await client.messages.stream({
-            model: runtime.model,
-            max_tokens: 1024,
-            system: context.systemPrompt,
-            messages,
-          });
+          try {
+            const response = await client.messages.stream({
+              model: runtime.model,
+              max_tokens: 1024,
+              system: context.systemPrompt,
+              messages,
+            });
 
-          for await (const chunk of response) {
-            if (
-              chunk.type === "content_block_delta" &&
-              chunk.delta.type === "text_delta"
-            ) {
-              const data = `data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`;
-              controller.enqueue(encoder.encode(data));
+            for await (const chunk of response) {
+              if (
+                chunk.type === "content_block_delta" &&
+                chunk.delta.type === "text_delta"
+              ) {
+                const data = `data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`;
+                controller.enqueue(encoder.encode(data));
+              }
             }
-          }
 
-          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        } catch (error) {
-          const reason = error instanceof Error ? error.message : "provider stream failed";
-          enqueueText(controller, encoder, buildLocalFallbackResponse({
-            agentId,
-            context,
-            runtime,
-            messages,
-            reason,
-          }));
+            recordChatRuntimeSuccess(runtime);
+            controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+            controller.close();
+            return;
+          } catch (error) {
+            const reason = error instanceof Error ? error.message : "provider stream failed";
+            recordChatRuntimeFailure(runtime, reason);
+            failures.push(`${runtime.runner}/${runtime.model}: ${reason}`);
+            if (!isProviderLimitError(reason)) continue;
+          }
         }
 
+        enqueueText(controller, encoder, buildLocalFallbackResponse({
+          agentId,
+          context,
+          runtime: await resolveChatRuntime(agentId, context),
+          messages,
+          reason: failures.join(" | ") || "No chat runtime candidate was ready.",
+        }));
         controller.close();
       } catch (err) {
         const msg = err instanceof Error ? err.message : "stream error";
