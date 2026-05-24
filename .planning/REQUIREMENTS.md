@@ -1,10 +1,86 @@
-# Requirements: Memroos v4.0 — Orchestration Depth + Intelligence Uplift
+# Requirements: Memroos v5.0 — Memory Trust + Operational Intelligence
 
-*Created: 2026-05-17*
+*Created: 2026-05-17 | Updated: 2026-05-23 — v5.0 requirements added*
 
 ---
 
-## v4.0 Requirements
+## v5.0 Requirements
+
+### Memory Security Foundation
+
+- [ ] **MEMSEC-01**: Raw agentic conversations and imported context are stored in an append-only raw evidence vault (`~/.memroos/vault/<tenant>/`), not primarily as large plaintext SQLite rows. The vault supports compressed per-session or per-day artifacts, content hashes, replay metadata, retention policy, tenant/project/source metadata, classification labels, and encryption key ids.
+- [ ] **MEMSEC-02**: Security labels are represented as independent dimensions across `visibility`, `domain`, `sensitivity`, and `policy`, with at least `private/internal/public_safe/public_approved`, `legal/finance/hr/client/personal/engineering`, `pii/secret/credential/privileged/contract/payment/health`, and `indexable/agent_visible/requires_redaction/requires_human_review/sealed` support.
+- [ ] **MEMSEC-03**: Ingestion and classification are fail-closed: raw meetings, emails, DMs, browser history, files, finance, legal, HR, personal, and client sources default to private; deterministic detectors run before constrained LLM adjudication; uncertain, conflicting, public-promotion, legal, finance, HR, credential, payment, privileged, and sealed cases route to human review.
+- [ ] **MEMSEC-04**: Retrieval and use authorization is enforced before every memory search, multi-search, context-pack assembly, ChatGPT action, export, summarization, agent dispatch, FTS/vector/graph index write, and derived evidence bundle. The policy decision checks actor identity, role, capability, tenant/project, purpose, source freshness, and security labels, then returns allow, deny, redact, or review-required.
+- [ ] **MEMSEC-05**: Derived indexes are classification-aware. FTS, semantic embeddings, Qdrant/vector memory, Neo4j/graph facts, qmd projections, and evidence bundles only receive content where `indexable=true`; restricted content remains unindexed or uses an approved redacted projection with provenance back to the raw artifact.
+- [ ] **MEMSEC-06**: Multimodal storage starts with text-first embeddings from transcripts, OCR, captions, and normalized text chunks; original binary media stays in the raw vault. Every embedding stores artifact id, source span, modality, model name/version, dimension, label version, and creation timestamp, and embeddings inherit the source security label unless explicitly redacted and approved.
+- [ ] **MEMSEC-07**: Sensitive raw artifacts and sensitive JSON/detail fields use app-level envelope encryption with key id metadata, rotation path, and backup/restore verification. OS or volume encryption is required for deployment profiles, while SQLCipher or whole-DB page encryption remains an evaluated defense-in-depth option rather than the primary MVP leak-prevention boundary.
+- [ ] **MEMSEC-08**: Security regression tests prove restricted memory cannot leak through recall, multi-search, context packs, ChatGPT Actions, exports, summaries, agent dispatch, audit search, or derived indexes. Negative fixtures must cover legal, finance, HR, credential, payment, privileged, personal, confidential, and public-promotion cases.
+- [ ] **CTX-FOLLOWUP-03**: Privacy classification policy spike: design a governed classifier cascade for meetings, emails, DMs, files, and imported context that defaults raw data to private, separates visibility/domain/sensitivity/policy labels, runs deterministic PII/secret/legal/finance/source-metadata gates before constrained LLM adjudication, requires evidence spans and abstention for uncertain labels, eval-gates public promotion against golden sets, and routes legal/finance/credential/public conflicts to human review.
+
+### Context Source Reliability + Sink Health
+
+- [ ] **CTX-FOLLOWUP-01**: Context-source contract coverage extends beyond the Phase 69 starter set: every configured source family used by operators (including Drive, Slack, Gmail/Spark, local folders, qmd, mem0, and future connectors) declares ingest, index, freshness, safe-answer, and repair behavior with no silent unindexed lanes.
+- [ ] **CTX-FOLLOWUP-02**: Runtime health reports memory degradation paths, not just service reachability: queued writes, retry backlog, stale semantic recall, replay verification, and source-to-QMD indexing proof must be visible to operators and evals.
+- [ ] **CRON-HEALTH-01**: Recurring cron jobs ("sinks") that perform data ingestion, memory writes, or external API polling must expose a health status endpoint or heartbeat that the MemroOS dashboard can consume.
+- [ ] **CRON-HEALTH-02**: The schedules and routines console must surface per-job last-run timestamp, success/failure status, items processed, and any warnings or caught-up status.
+- [ ] **CRON-HEALTH-03**: Jobs that are not caught up must emit a warning-level health signal that appears in the NOC and/or operator notification surface.
+- [ ] **CRON-HEALTH-04**: Operators must be able to pause, resume, or stop individual cron jobs from the dashboard without restarting the entire MemroOS runtime.
+- [ ] **CRON-HEALTH-05**: Job definitions must be declarative (stored in a config or registry) so that the health monitoring surface knows what jobs *should* exist and can detect missing or orphaned schedules.
+- [ ] **UX-FOLLOWUP-03**: Schedules and routines console exposes recurring jobs, cron health, standing delegations, maintenance routines, and approval-required automations.
+
+### Operations NOC Real-Data
+
+- [ ] **NOC-01**: Operations NOC must not render hardcoded sample values for any panel. Production `components/operations/*` panels must consume live data through a unified `/api/operations/noc` contract or existing React Query hooks; mock constants may only remain in tests, development fixtures, or explicitly labeled demos.
+- [ ] **NOC-02**: Operations NOC data contract exposes per-panel provenance: `source`, `lastUpdated`, `window`, `status=live|empty|degraded|missing`, and `warnings`; missing/degraded telemetry must render honestly instead of fabricated metrics.
+- [ ] **NOC-03**: Pulse strip derives tasks completed, active dispatches, memory reads, spend today, savings vs baseline, and wasted work from live `agents`, `hive`, `activity`, `tokens`, `memory`, and `model-routing` sources, with missing-source callouts where telemetry does not exist.
+- [ ] **NOC-04**: Memory consumption and "memory not digested" panels derive from memory consolidation, memory tier health, recall stats/evals, and per-memory access telemetry; if per-memory access telemetry is absent, add it before claiming high-salience memories are unused.
+- [ ] **NOC-05**: Agent workload panel derives agent names, status, current task, heartbeat, dispatch activity, HIL waits, and failure/retry signals from the canonical registry, local runtime detection, hive actions, orchestration/HIL state, and Paperclip fleet data.
+- [ ] **NOC-06**: Model utility panel derives model rows from real model usage and model-routing telemetry, including task count, cost, latency, quality score, success rate, and best-fit recommendation.
+- [ ] **NOC-07**: Skills lifecycle and behavior signals derive from the skills API, contribution history, coverage telemetry status, failure logs, review state, SEAL proposals, model-routing drift, memory evals, and security/audit events; inferred signals must cite source evidence and avoid presenting speculative recommendations as facts.
+- [ ] **NOC-08**: Governance strip derives preflight blocks, HIL approvals, tool denials, audit lines, escalations, and recent governance events from live audit, orchestration, security, and escalation APIs.
+- [ ] **NOC-09**: Engagement console on the NOC home screen uses the canonical agent registry and real chat/dispatch APIs; sending a directive must create a real dispatch/chat action or return a visible error, never a canned interaction.
+- [ ] **NOC-10**: Efficiency signals require new telemetry before being shown as live: retrieval calls before useful work, same-source re-read count, raw-context ingest token share, operator re-ask redundancy, and rediscovered-fact rate. Until those streams exist, the efficiency section must render a missing-telemetry checklist, not sample numbers.
+- [ ] **NOC-11**: Verification proves the NOC is real-data backed: tests fail if production Operations components import `noc-mock-data`; seeded API tests assert metrics match fixture DB/log inputs; Playwright verifies live, empty, and degraded states; authenticated local/public smoke checks confirm `/` renders live NOC data after deployment.
+- [ ] **NOC-12**: Every NOC control is actionable. Buttons must either navigate to a real owner surface, mutate visible UI state, trigger an implemented API, or render an explicit missing-backend explanation; no inert controls remain on the NOC.
+- [ ] **NOC-13**: The NOC home does not embed Engage/chat controls. Engagement belongs on `/dispatch` unless a future requirement wires an inline NOC action to the same real dispatch/chat APIs with full error handling.
+- [ ] **NOC-14**: NOC-level time-window controls propagate to any live-backed panels; sample-backed panels must label the window as preview-only until the unified `/api/operations/noc` contract exists.
+- [ ] **OPS-AUDIT-01**: Every application page that renders performance, usage, health, outcome, cost, quality, or failure metrics has a date-range/time-window control, a source/provenance state, loading and error states, and an over-time view when the underlying data supports it.
+- [ ] **OPS-AUDIT-02**: Ledger, Business Ops, Skills, Agents, Memory, Governance, Improve, Workflow Map, and Dispatch receive a route-by-route audit for mock data, silent zeros, dead controls, slow-loading queries, and missing action explanations.
+- [ ] **OPS-AUDIT-03**: Ledger source availability is explicit: RTK/token stats, Claude model logs, model-routing telemetry, and time-series routes must distinguish live, empty, unavailable, and failed states instead of rendering zeros or blank charts without cause.
+- [ ] **OPS-AUDIT-04**: Business Ops timeline and adapter status expose the selected date range, adapter mode, event counts, last poll, empty-state reason, and failed-load details for `/api/evals/history` and `/api/l3/events`.
+
+### Harness Control Plane + Evidence Governance
+
+- [ ] **HARN-01**: Full Harness Control Plane: every dispatched task exposes a Plan-Execute-Verify timeline showing context assembled, tools exposed, permissions granted, actions taken, verification run, and memory updated. Stored in `task_evidence_bundles` keyed on `a2a_tasks.task_id`.
+- [ ] **HARN-02**: Universal evidence bundles: every agent output can show sources used, memories consumed, tools/commands run, checks passed, unverified assumptions, residual risks, and replay/rollback artifacts. Bundles are written asynchronously (fire-and-forget) so agent execution is never blocked.
+- [ ] **HARN-03**: Shared harness state: tasks declare read/write sets, assumptions, version dependencies, verifier obligations, and conflict policy; stale belief/context drift is surfaced before action.
+
+### Auth + Team Hardening
+
+- [ ] **AUTH-FOLLOWUP-01**: Team auth hardening adds email invitation delivery, password reset, email change/verification, OAuth/SSO login (Google, GitHub), and login/refresh lockout telemetry.
+- [ ] **AUTH-FOLLOWUP-02**: Role-aware UI gating hides or disables unauthorized nav/actions before click-through while keeping API/page-level 403 enforcement.
+- [ ] **AUTH-FOLLOWUP-03**: Tenant/admin management includes API-key rotation, tenant settings, user lifecycle management, and migration of legacy audit actor fields to authenticated user identity.
+
+---
+
+## Traceability
+
+| Phase | Requirements |
+|-------|-------------|
+| Phase 74 | MEMSEC-01, MEMSEC-02 |
+| Phase 75 | MEMSEC-03, CTX-FOLLOWUP-03 |
+| Phase 76 | MEMSEC-04 |
+| Phase 77 | MEMSEC-05, MEMSEC-06, MEMSEC-07 |
+| Phase 78 | MEMSEC-08 |
+| Phase 79 | NOC-01..14, OPS-AUDIT-01..04 |
+| Phase 80 | CTX-FOLLOWUP-01, CTX-FOLLOWUP-02, CRON-HEALTH-01..05, UX-FOLLOWUP-03 |
+| Phase 81 | HARN-01, HARN-02, HARN-03 |
+| Phase 82 | AUTH-FOLLOWUP-01, AUTH-FOLLOWUP-02, AUTH-FOLLOWUP-03 |
+
+---
+
+## v4.0 Requirements (Completed)
 
 ### HIL Enhancements
 
