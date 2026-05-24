@@ -1,6 +1,6 @@
 # Project: Memroos
 
-*Last updated: 2026-05-17 — v3.1 shipped; v4.0 Orchestration Depth + Intelligence Uplift starting*
+*Last updated: 2026-05-23 — v4.0 shipped; v5.0 Memory Trust + Operational Intelligence starting*
 
 ---
 
@@ -12,21 +12,22 @@ See `.planning/GOAL.md` for the full development goal and workflow loop.
 
 ---
 
-## Current Milestone: v4.0 Orchestration Depth + Intelligence Uplift
+## Current Milestone: v5.0 Memory Trust + Operational Intelligence
 
-**Goal:** Deepen the orchestration runtime with smarter HIL semantics, multi-hop resilience, and LLM-powered recall; add voice meeting participation and memory/recall pluggability; close the behavioral W-lift gap in SEAL.
+**Goal:** Make MemroOS safe to trust with sensitive organizational memory, replace mock operations panels with live data, expose governed task evidence, and harden team authentication before expanding agent autonomy.
 
 **Target features:**
-- HIL edit-and-continue — modify task state mid-graph before resuming
-- HIL timeout + escalation policies — SLA-driven auto-escalation
-- Multi-hop retry + rollback compensation — durable failure recovery across multi-agent chains
-- Memory backend pluggability — swap/add backends beyond mem0 + Qdrant + Neo4j
-- Voice meeting bot — Pipecat as active meeting participant
-- Flow trigger button — `qmd update` from the UI
-- Library freshness indicator — QMD index recency vs file mtime in UI
-- LLM-powered recall scoring — embedding-based upgrade over BM25
-- Cross-project recall — similar-task recommendations across repos
-- True behavioral W-lift — SEAL instruction/skill proposals with real agent re-execution eval
+- Memory Security Foundation — raw evidence vault (append-only, compressed, encrypted), fail-closed privacy/legal/finance/HR classification cascade, retrieval authorization gate, classification-aware safe indexes, envelope encryption with key rotation (MEMSEC-01..08, CTX-FOLLOWUP-03)
+- Context Source Reliability + Sink Health — source contracts for all operator source families (Drive, Slack, Gmail), cron sink health with heartbeat/caught-up/warning/pause controls, schedules/routines console (CTX-FOLLOWUP-01..02, CRON-HEALTH-01..05, UX-FOLLOWUP-03)
+- Operations NOC Real-Data — live dashboards with provenance/degraded states for all NOC panels, efficiency telemetry streams, operational audit sweep across all pages (NOC-01..14, OPS-AUDIT-01..04)
+- Harness Control Plane + Evidence — task-level Plan-Execute-Verify timelines, universal evidence bundles (sources, memories, tools, checks, assumptions, residual risks, replay handles), shared harness state with read/write sets
+- Auth + Team Hardening — email invitations, password reset, OAuth/SSO, role-aware navigation gating, tenant settings, API-key rotation (AUTH-FOLLOWUP-01..03)
+
+---
+
+## Previous Milestone: v4.0 Orchestration Depth + Intelligence Uplift — SHIPPED 2026-05-21
+
+**What shipped:** Phases 70-73 — HIL edit-and-continue (operator edits task payload mid-graph before resume, full audit trail), HIL SLA countdown + auto-escalation (configurable deadlines, 60s scheduler, traffic-light dashboard), multi-hop retry + declarative rollback compensation (per-hop RetryPolicy, lineage rows, granular failure status), memory backend pluggability (MemoryAdapter interface + registry, all backends wrapped as concrete adapters), LLM-powered semantic/hybrid recall (Ollama nomic-embed-text + BM25 via RRF, background embedding job), Daily.co meeting bot (Pipecat DailyTransport, per-speaker transcripts, recording consent gate), cross-project recall (opt-in with explicit allowed_project_ids, semantic similarity + source annotation), true behavioral W-lift (BehavioralEvalService dispatches real agent re-execution via A2A hub against sandboxed profile), qmd flow trigger + library freshness UI (SSE progress streaming, recency vs file mtime), cross-harness skills registry (SKILL.md import, governed contracts, A2A dispatcher integration, Skills UI), operator UI truth + phase parity gate (NOC header corrected, HIL edit panel wired into live approvals, UI representation gate for phase close). 4 phases, 18 plans.
 
 ---
 
