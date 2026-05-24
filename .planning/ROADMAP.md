@@ -20,6 +20,7 @@
 - ✅ **v4.0 Orchestration Depth + Intelligence Uplift** — Phases 70-73 (completed 2026-05-21; milestone audit/closeout next)
 - ✅ **v5.0 Memory Trust + Operational Intelligence** — Phases 74-82 (MVP phase closeout completed 2026-05-24)
 - ✅ **v5.1 Memory Inventory Clarity** — Phase 83 (shipped 2026-05-24)
+- ✅ **v5.2 Competitive Memory Target Architecture** — Phase 84 (shipped 2026-05-24)
 
 ## Phases
 
@@ -42,6 +43,12 @@ Full v5.0 detail in the `## v5.0 Memory Trust + Operational Intelligence` sectio
 - [x] **Phase 83: Memory Inventory + Listing Clarity** — MEMLIST-01..05; completed 2026-05-24
 
 Full v5.1 detail in the `## v5.1 Memory Inventory Clarity` section below.
+
+### Current v5.2 Competitive Memory Target Architecture Summary — COMPLETE
+
+- [x] **Phase 84: Competitive Memory Target Architecture** — MEMTARGET-01; completed 2026-05-24
+
+Full v5.2 detail in the `## v5.2 Competitive Memory Target Architecture` section below.
 
 ### Previous v4.0 Orchestration Depth + Intelligence Uplift Summary — COMPLETE
 
@@ -870,3 +877,28 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|----------|---------------|--------|-----------|
 | 83 | v5.1 | 1/1 | Complete | 2026-05-24 |
+
+## v5.2 Competitive Memory Target Architecture
+
+### Phase 84: Competitive Memory Target Architecture
+**Goal**: MemRoOS carries a reproducible target architecture for enterprise agentic memory, compares current/target MemRoOS against public alternatives, and proves the local recall path is not underperforming before making competitive claims.
+**Depends on**: Phase 57 (eval engine), Phase 77 (safe index projections), Phase 83 (memory inventory clarity)
+**Requirements**: MEMTARGET-01
+**Prerequisite tasks**:
+  - Add a public-evidence marketplace benchmark dataset and runner that scores MemRoOS current, MemRoOS target, and real alternatives without claiming black-box API results for closed vendors.
+  - Document the target architecture and the hard recommendation: governed multi-agent memory plus hot-path retrieval, temporal invalidation, public benchmark proof, retrieval traces, and enterprise control boundaries.
+  - Harden live memory recall evals so vector backend normalization and episodic FTS projection do not create false negatives.
+  - Verify the target with unit tests, marketplace eval output, Next build, launchd restart, and an authenticated live full recall run.
+**Success Criteria** (what must be TRUE):
+  1. `npm run eval:marketplace-memory` regenerates a ranked comparison and persists the latest result under `evals/marketplace-agentic-memory/results/latest.json`.
+  2. The benchmark ranks MemRoOS current against real alternatives and separately scores a MemRoOS competitive target profile so architecture gaps are explicit.
+  3. The live full memory recall eval passes locally with `passRate=1.0`, no tier failures, and p95 latency below 500ms after restart.
+  4. The documented recommendation does not overclaim black-box superiority; it distinguishes public-evidence architecture scoring from live MemRoOS runtime evals.
+**Plans**: 1/1 complete
+**UI hint**: no
+
+### v5.2 Progress
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|----------|---------------|--------|-----------|
+| 84 | v5.2 | 1/1 | Complete | 2026-05-24 |

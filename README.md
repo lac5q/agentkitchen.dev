@@ -14,6 +14,7 @@
   <a href="#who-this-is-for">Who This Is For</a> ·
   <a href="#quickstart">Quickstart</a> ·
   <a href="#video-demo">Video Demo</a> ·
+  <a href="#competitive-benchmark">Benchmark</a> ·
   <a href="#screenshots">Screenshots</a> ·
   <a href="#architecture">Architecture</a> ·
   <a href="#security-model">Security</a> ·
@@ -27,6 +28,7 @@
   <img alt="A2A ready" src="https://img.shields.io/badge/A2A-ready-7a2a1e.svg">
   <img alt="Local first" src="https://img.shields.io/badge/local--first-yes-4a4a45.svg">
   <img alt="Security" src="https://img.shields.io/badge/security-operator--gated-a8392c.svg">
+  <img alt="Benchmark target: #1" src="https://img.shields.io/badge/benchmark_target-%231_agentic_memory-a8392c.svg">
 </p>
 
 ---
@@ -62,6 +64,29 @@ MemroOS is the operating layer that gives agents a memory and governance plane:
 - **Improve:** review, edit, approve, and promote repeated successful workflows into durable governed skills and playbooks.
 
 The repository began as `memroos.dev`; some internal package names, paths, and environment variables still use `memroos` for compatibility. The public product and positioning are now MemroOS.
+
+## Competitive Benchmark
+
+MemroOS now has a public-evidence benchmark for enterprise agentic memory and a passing live recall gate for the local target architecture.
+
+Latest local results from May 24, 2026:
+
+| Rank | Provider | Score | Note |
+| ---: | --- | ---: | --- |
+| 1 | MemRoOS competitive target | 84.06 | Governed multi-agent memory with hot-path recall, proof surfaces, and public evals. |
+| 2 | MemRoOS current | 74.36 | Source-available memory/control plane with strong governance and workflow fit. |
+| 3 | Letta | 70.58 | Strong stateful-agent memory platform. |
+| 4 | Mem0 Platform | 70.44 | Strong memory engine baseline. |
+| 5 | Zep | 68.64 | Strong temporal knowledge-graph memory. |
+
+The benchmark compares public architecture evidence, governance depth, multi-agent workflow fit, retrieval design, interop, and proof surfaces. It does not claim private latency or accuracy for closed products without API access. See [the benchmark methodology and results](docs/marketplace/agentic-memory-benchmark-2026-05-24.md).
+
+Live recall gate after target-architecture hardening:
+
+- Full suite: `8/8` cases passed.
+- Pass rate: `1.0`.
+- p95 recall latency: `313 ms`.
+- Tier failures: none.
 
 ## Video Demo
 
@@ -181,11 +206,12 @@ The current release includes:
 
 ## Current Roadmap Focus
 
-The active GSD milestone is `v4.0: Orchestration Depth + Intelligence Uplift`. It is intentionally narrower than "do everything with agents":
+The active GSD milestone is `v5.2: Competitive Memory Target Architecture`. It keeps the product focused on measurable memory advantage instead of generic agent breadth:
 
-- **Phase 70: Foundation + Engine Core** - in progress. MemoryAdapter is complete; remaining work is multi-hop retry/rollback and the authenticated TypeScript HIL edit route/client/UI.
-- **Phase 71: Recall + HIL SLA + Voice** - planned. Semantic recall and HIL SLA escalation deepen operator control; voice is treated as a governed memory-ingestion channel, not a standalone product pillar.
-- **Phase 72: Cross-project memory + evidence** - planned. Cross-project recall, behavioral eval, qmd freshness, cross-harness skills, evidence bundles, and governed skill contracts become the next proof layer.
+- **Phase 84: Competitive memory target architecture** - complete locally. The marketplace benchmark ranks the target architecture first, and the live recall suite passes 8/8 after vector write hardening.
+- **Next focus: hot-path retrieval** - make the benchmark advantage visible in day-to-day runtime latency, cache prewarm, and context-pack assembly.
+- **Next focus: temporal invalidation** - close the remaining Zep-style temporal memory gap without weakening MemRoOS governance, audit, or source proof.
+- **Next focus: public benchmark proof** - keep the methodology, fixtures, and results reproducible so public claims stay defensible.
 
 ## What MemroOS Does
 
@@ -592,6 +618,7 @@ memroos/
 - [Install profiles](docs/install-profiles.md)
 - [REST API reference](docs/rest-api.md)
 - [Memory architecture](docs/memory-architecture.md)
+- [Agentic memory benchmark](docs/marketplace/agentic-memory-benchmark-2026-05-24.md)
 - [Claude Code integration](docs/integrations/claude-code.md)
 - [Google ADK integration](docs/integrations/google-adk.md)
 - [LangGraph integration](docs/integrations/langgraph.md)

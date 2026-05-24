@@ -1,6 +1,6 @@
 # Project: Memroos
 
-*Last updated: 2026-05-23 — v4.0 shipped; v5.0 Memory Trust + Operational Intelligence starting*
+*Last updated: 2026-05-24 — v5.2 Competitive Memory Target Architecture shipped*
 
 ---
 
@@ -12,16 +12,26 @@ See `.planning/GOAL.md` for the full development goal and workflow loop.
 
 ---
 
-## Current Milestone: v5.0 Memory Trust + Operational Intelligence
+## Current Milestone: v5.2 Competitive Memory Target Architecture
 
-**Goal:** Make MemroOS safe to trust with sensitive organizational memory, replace mock operations panels with live data, expose governed task evidence, and harden team authentication before expanding agent autonomy.
+**Goal:** Prove MemRoOS is competitive as enterprise agentic memory infrastructure with reproducible marketplace scoring, a target architecture profile, and live recall evals that pass against the local runtime.
 
 **Target features:**
-- Memory Security Foundation — raw evidence vault (append-only, compressed, encrypted), fail-closed privacy/legal/finance/HR classification cascade, retrieval authorization gate, classification-aware safe indexes, envelope encryption with key rotation (MEMSEC-01..08, CTX-FOLLOWUP-03)
-- Context Source Reliability + Sink Health — source contracts for all operator source families (Drive, Slack, Gmail), cron sink health with heartbeat/caught-up/warning/pause controls, schedules/routines console (CTX-FOLLOWUP-01..02, CRON-HEALTH-01..05, UX-FOLLOWUP-03)
-- Operations NOC Real-Data — live dashboards with provenance/degraded states for all NOC panels, efficiency telemetry streams, operational audit sweep across all pages (NOC-01..14, OPS-AUDIT-01..04)
-- Harness Control Plane + Evidence — task-level Plan-Execute-Verify timelines, universal evidence bundles (sources, memories, tools, checks, assumptions, residual risks, replay handles), shared harness state with read/write sets
-- Auth + Team Hardening — email invitations, password reset, OAuth/SSO, role-aware navigation gating, tenant settings, API-key rotation (AUTH-FOLLOWUP-01..03)
+- Competitive marketplace benchmark — public-evidence scoring for MemRoOS current, MemRoOS target, and real agentic memory alternatives (MEMTARGET-01)
+- Live recall hardening — vector metadata identity matching, deterministic episodic FTS projection, expected-fact fan-out, and full-suite runtime verification (MEMTARGET-01)
+- Target architecture documentation — hard recommendation for governed multi-agent memory, hot-path retrieval, temporal invalidation, public benchmark proof, retrieval traces, and enterprise control boundaries (MEMTARGET-01)
+
+---
+
+## Previous Milestone: v5.1 Memory Inventory Clarity — SHIPPED 2026-05-24
+
+**What shipped:** Phase 83 — source-backed memory inventory counts, category/provenance rows, filters, and degraded-state explanations across vector memories, ingested messages, consolidated insights, episodic writes, graph facts, and knowledge files.
+
+---
+
+## Previous Milestone: v5.0 Memory Trust + Operational Intelligence — SHIPPED 2026-05-24
+
+**What shipped:** Phases 74-82 — memory security foundation, classification cascade, retrieval authorization, safe index projections, envelope encryption, security regression tests, live NOC data wiring, cron health registry, universal evidence bundles, and auth hardening.
 
 ---
 
@@ -132,23 +142,9 @@ Any agent framework plugs into Memroos — and every agent, knowledge system, an
 - ✓ SQLite audit_log table + AuditLogPanel — v1.5 (SEC-02/03, DASH-03)
 - ✓ Usage analytics (6 metrics, 3 windows) on Ledger/Library/Cookbooks — v1.5 (ANA-01/02/03/04)
 
-### Active (v5.0)
+### Active (v5.2)
 
-- [ ] Memory security raw vault — append-only, compressed, encrypted evidence vault with retention and classification labels (MEMSEC-01)
-- [ ] Security label dimensions — visibility/domain/sensitivity/policy independent dimensions (MEMSEC-02)
-- [ ] Fail-closed ingestion classification — private-default, deterministic detectors before LLM adjudication, human review routing (MEMSEC-03, CTX-FOLLOWUP-03)
-- [ ] Retrieval authorization gate — policy check before every recall, context assembly, export, or agent dispatch (MEMSEC-04)
-- [ ] Classification-aware safe indexes — restricted content excluded from FTS/vector/graph/qmd unless redacted and approved (MEMSEC-05)
-- [ ] Multimodal storage — text-first embeddings from transcripts/OCR, binary media in vault, embedding provenance (MEMSEC-06)
-- [ ] Envelope encryption — app-level key encryption with rotation path and backup/restore verification (MEMSEC-07)
-- [ ] Security regression tests — negative fixtures proving restricted memory cannot leak through any recall or export path (MEMSEC-08)
-- [ ] Context source reliability — all operator source families declare ingest/index/freshness/safe-answer/repair contracts (CTX-FOLLOWUP-01..02)
-- [ ] Cron job health monitoring — heartbeat, caught-up status, warning signals, pause/resume/stop controls, declarative job registry (CRON-HEALTH-01..05)
-- [ ] Schedules and routines console — visible recurring jobs, cron health, standing delegations, maintenance routines, approval-required automations (UX-FOLLOWUP-03)
-- [ ] NOC real-data wiring — all 14 NOC panels backed by live data, provenance/degraded states, no mock imports in production (NOC-01..14)
-- [ ] Operations page audit — date-range controls, source provenance, loading/error states, over-time views across all ops pages (OPS-AUDIT-01..04)
-- [ ] Harness Control Plane — task-level Plan-Execute-Verify timelines, universal evidence bundles, shared harness state with read/write sets
-- [ ] Auth hardening — email invitations, password reset, OAuth/SSO, role-aware navigation gating (AUTH-FOLLOWUP-01..03)
+- [x] Competitive memory target architecture — reproducible marketplace benchmark, target profile, live recall hardening, and documented recommendation (MEMTARGET-01)
 
 ### Recent Milestones
 

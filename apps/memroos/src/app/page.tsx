@@ -90,6 +90,32 @@ const proofPoints = [
   { value: "3", label: "interop paths", detail: "Local agents, REST shims, and A2A-style agent cards can feed the same governed context plane." },
 ];
 
+const competitiveProofs = [
+  {
+    value: "84.06",
+    label: "target score",
+    detail: "MemRoOS competitive target ranked first in the public-evidence agentic-memory benchmark.",
+  },
+  {
+    value: "8/8",
+    label: "live recall gate",
+    detail: "The full local recall suite passed across vector, graph, episodic, and qmd tiers.",
+  },
+  {
+    value: "313 ms",
+    label: "live p95 recall",
+    detail: "Latest authenticated full eval run completed with no tier failures after vector write hardening.",
+  },
+];
+
+const competitorScores = [
+  { name: "MemRoOS target", score: "84.06", detail: "Governed multi-agent memory plus hot-path recall and public eval proof." },
+  { name: "MemRoOS current", score: "74.36", detail: "Source-available memory and control plane with strong governance shape." },
+  { name: "Letta", score: "70.58", detail: "Strong stateful-agent memory platform; less focused on enterprise memory governance." },
+  { name: "Mem0 Platform", score: "70.44", detail: "Strong memory engine baseline; less differentiated on workflow proof and control." },
+  { name: "Zep", score: "68.64", detail: "Strong temporal KG memory; narrower than a governed agent operating layer." },
+];
+
 const operatorSurfaces = [
   {
     label: "Operations NOC",
@@ -301,19 +327,19 @@ const completedRoadmap = [
 
 const currentRoadmap = [
   {
-    phase: "Phase 70",
-    label: "Foundation + Engine Core",
-    detail: "MemoryAdapter is complete; remaining work is multi-hop retry/rollback plus the auth-guarded HIL edit route, client, and UI.",
+    phase: "Phase 84",
+    label: "Competitive memory target architecture",
+    detail: "Marketplace evals rank the target architecture first, and the live recall suite passes 8/8 after vector write hardening.",
   },
   {
-    phase: "Phase 71",
-    label: "Recall + HIL SLA + Voice",
-    detail: "Semantic recall and SLA escalation move memory from passive search to timed operator control; voice is treated as one ingestion channel.",
+    phase: "Next",
+    label: "Hot-path retrieval",
+    detail: "Make the benchmark advantage visible in runtime latency, cache prewarm, context-pack assembly, and day-to-day operator workflows.",
   },
   {
-    phase: "Phase 72",
-    label: "Cross-project memory + evidence",
-    detail: "Cross-project recall, behavioral eval, qmd freshness, cross-harness skills, evidence bundles, and governed skill contracts become the next proof layer.",
+    phase: "Next",
+    label: "Temporal invalidation + proof",
+    detail: "Close the strongest temporal-memory competitor gap while keeping benchmark methodology, source notes, and live recall gates reproducible.",
   },
 ];
 
@@ -370,6 +396,12 @@ function LandingPage() {
               Features
             </Link>
             <Link
+              href="#competitive-benchmark"
+              className="hidden rounded border border-transparent px-4 py-2 text-sm font-semibold text-[#4a4a45] transition hover:border-[#c9c9c2] hover:bg-white hover:text-[#0f0f0e] lg:inline-flex"
+            >
+              Benchmark
+            </Link>
+            <Link
               href="#memory-loop"
               className="inline-flex items-center gap-2 bg-[#0f0f0e] px-4 py-2 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[#a8392c]"
             >
@@ -412,6 +444,7 @@ function LandingPage() {
               <span className="font-semibold text-[#0f0f0e]">Agentic knowledge retention</span>
               <span className="border-l border-[#c9c9c2] pl-6">MCP/A2A-friendly interop</span>
               <span className="border-l border-[#c9c9c2] pl-6">HIL, evidence, skills workflow</span>
+              <span className="border-l border-[#c9c9c2] pl-6">#1 target architecture benchmark</span>
             </div>
           </div>
 
@@ -505,6 +538,44 @@ function LandingPage() {
               </article>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section id="competitive-benchmark" className="border-b border-[#1f1f1c] bg-[#171715] text-white">
+        <div className="mx-auto max-w-[1180px] px-5 py-16 sm:px-8 lg:py-20">
+          <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
+            <div>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#e7b6a8]">Competitive benchmark</p>
+              <h2 className="mt-3 text-[42px] font-semibold leading-tight tracking-normal text-white">
+                The target architecture now beats the agentic-memory field on governed enterprise readiness.
+              </h2>
+            </div>
+            <p className="text-[17px] leading-8 text-[#d8d4cb]">
+              The benchmark compares public architecture evidence, governance depth, multi-agent workflow fit, retrieval design, interop, and proof surfaces. It does not claim private latency or accuracy for closed products without API access.
+            </p>
+          </div>
+          <div className="mt-8 grid gap-px bg-[#4a4a45] md:grid-cols-3">
+            {competitiveProofs.map((proof) => (
+              <article key={proof.label} className="bg-[#0f0f0e] p-6">
+                <p className="text-[46px] font-semibold leading-none text-[#e7b6a8]">{proof.value}</p>
+                <h3 className="mt-5 text-[18px] font-semibold text-white">{proof.label}</h3>
+                <p className="mt-3 text-[15px] leading-7 text-[#d8d4cb]">{proof.detail}</p>
+              </article>
+            ))}
+          </div>
+          <div className="mt-8 divide-y divide-[#4a4a45] border-y border-[#4a4a45]">
+            {competitorScores.map((competitor, index) => (
+              <article key={competitor.name} className="grid gap-4 py-5 md:grid-cols-[80px_180px_110px_1fr] md:items-center">
+                <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#e7b6a8]">#{index + 1}</p>
+                <h3 className="text-[19px] font-semibold text-white">{competitor.name}</h3>
+                <p className="text-[28px] font-semibold leading-none text-[#e7b6a8]">{competitor.score}</p>
+                <p className="text-[15px] leading-7 text-[#d8d4cb]">{competitor.detail}</p>
+              </article>
+            ))}
+          </div>
+          <p className="mt-5 text-[13px] leading-6 text-[#bdb8ad]">
+            Methodology and source notes live in docs/marketplace/agentic-memory-benchmark-2026-05-24.md.
+          </p>
         </div>
       </section>
 
@@ -773,10 +844,10 @@ function LandingPage() {
           <div className="max-w-[760px]">
             <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#7a2a1e]">Build direction</p>
             <h2 className="mt-3 text-[42px] font-semibold leading-tight tracking-normal text-[#0f0f0e]">
-              The roadmap is narrowing around governed agent work.
+              The roadmap is narrowing around provable memory advantage.
             </h2>
             <p className="mt-4 text-[17px] leading-8 text-[#4a4a45]">
-              The public preview already includes the operator shell, memory surfaces, skills workflow, registry, dispatch, and trust hooks. Current work deepens the pieces that make agent work safer to delegate.
+              The public preview already includes the operator shell, memory surfaces, skills workflow, registry, dispatch, and trust hooks. Current work turns that architecture into measured recall, faster context assembly, and defensible competitive proof.
             </p>
           </div>
           <div className="mt-9 grid gap-px bg-[#c9c9c2] md:grid-cols-3">

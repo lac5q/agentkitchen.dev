@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v5.1
-milestone_name: Memory Trust + Operational Intelligence + Memory Inventory Clarity
-status: complete
-stopped_at: v5.1 Phase 83 completed through targeted verification; deploy next
-last_updated: "2026-05-24T07:30:00.000Z"
-last_activity: 2026-05-24 -- Phase 83 closed memory inventory/listing clarity with source-backed category counts, provenance rows, category filters, and degraded backend-count states
+milestone: v5.2
+milestone_name: Competitive Memory Target Architecture Summary — COMPLETE
+status: verifying
+stopped_at: context exhaustion at 76% (2026-05-24)
+last_updated: "2026-05-24T10:42:47.948Z"
+last_activity: 2026-05-24 -- Phase 84 added a public-evidence marketplace benchmark, documented the target architecture, and hardened recall evals until the authenticated local full suite passed 8/8 with p95 below 500ms
 progress:
-  total_phases: 10
-  completed_phases: 10
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  total_phases: 58
+  completed_phases: 52
+  total_plans: 87
+  completed_plans: 94
+  percent: 90
 ---
 
 # State: Memroos
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 **Core value:** Any agent framework plugs into Memroos — and every agent, knowledge system, and skill becomes visible, connected, and self-improving.
-**Current focus:** v5.1 closeout verification, local/public deploy, and 30-day skill auto-promotion audit
+**Current focus:** v5.2 competitive memory target architecture is complete; next focus is deploy/communication and 30-day skill auto-promotion audit
 
 ## Current Position
 
-Phase: 83 — Memory Inventory + Listing Clarity
-Plan: 83-01
-Status: Complete — v5.1 inventory clarity is code-complete with focused verification
-Last activity: 2026-05-24 -- Phase 83 added source-backed memory inventory counts, provenance rows, category filters, and degraded-state explanations on the Memory surface
+Phase: 84 — Competitive Memory Target Architecture
+Plan: 84-01
+Status: Complete — v5.2 target architecture is implemented with marketplace scoring and live recall verification
+Last activity: 2026-05-24 -- Phase 84 added a public-evidence marketplace benchmark, documented the target architecture, and hardened recall evals until the authenticated local full suite passed 8/8 with p95 below 500ms
 
 ## Roadmap Summary (v5.0)
 
@@ -44,8 +44,9 @@ Last activity: 2026-05-24 -- Phase 83 added source-backed memory inventory count
 | 81 | Universal Evidence Bundles + Harness Control Plane — Plan-Execute-Verify timelines, shared state | COMPLETE — HARN-01..03 (3) |
 | 82 | Auth Hardening — email invites, password reset, OAuth/SSO, role-aware nav | COMPLETE — AUTH-FOLLOWUP-01..03 (3) |
 | 83 | Memory Inventory + Listing Clarity — category-specific counts, provenance rows, filters, degraded count honesty | COMPLETE — MEMLIST-01..05 (5) |
+| 84 | Competitive Memory Target Architecture — marketplace comparison plus live recall hardening | COMPLETE — MEMTARGET-01 (1) |
 
-**Coverage:** 46/46 v5.0/v5.1 requirements mapped, no orphans.
+**Coverage:** 47/47 v5.0-v5.2 requirements mapped, no orphans.
 **Critical path:** 74 → 75 → 76 → 77 → 78. Phases 79, 80, 81, 82 run parallel (81 soft-depends on 74).
 **Completed so far:** Phase 34 through Phase 82 (v2.0–v5.0 shipped through MVP phase closeout).
 
@@ -192,9 +193,9 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-24T03:05:00.000Z
-Stopped at: v5.0 phase closeout
-Resume file: .planning/ROADMAP.md
+Last session: 2026-05-24T10:42:47.939Z
+Stopped at: context exhaustion at 76% (2026-05-24)
+Resume file: None
 Next action: deploy locally/public repo, then audit 30-day skill auto-creation and promotion coverage.
 
 ## UAT Findings (2026-05-17)

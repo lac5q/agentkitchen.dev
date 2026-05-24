@@ -98,6 +98,20 @@
 
 ---
 
+## v5.2 Requirements (Completed)
+
+### Competitive Memory Target Architecture
+
+- [x] **MEMTARGET-01**: MemRoOS must carry a reproducible competitive memory target architecture that can be evaluated against public alternatives and verified against the live MemRoOS recall path. The target architecture requires: a public-evidence marketplace benchmark with scored current/target MemRoOS profiles and real alternatives; a documented hard recommendation for the architecture gap; live recall eval hardening for backend-normalized vector IDs, indexable episodic fixtures, deterministic FTS projection, and non-brittle expected-fact retrieval; an npm command that regenerates the marketplace comparison; and a live full-suite recall gate that passes with `passRate=1.0`, no tier failures, and p95 latency below 500ms on the local operator deployment. Verified Phase 84.
+
+### Traceability
+
+| Phase | Requirements |
+|-------|-------------|
+| Phase 84 | MEMTARGET-01 |
+
+---
+
 ## v4.0 Requirements (Completed)
 
 ### HIL Enhancements

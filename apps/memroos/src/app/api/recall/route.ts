@@ -4,6 +4,7 @@ import { recallByKeyword, type RecallResult } from '@/lib/db-ingest';
 import { embedText } from '@/lib/embeddings/provider';
 import { hybridRecall, semanticRecall } from '@/lib/embeddings/recall';
 import { filterAuthorizedMessageRows, type MemoryUseActor } from '@/lib/memory/policy-gate';
+import { authorizeRegistryWrite } from '@/lib/operator-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,10 +19,10 @@ function safeLimit(value: number): number {
   return Number.isFinite(value) ? Math.min(Math.max(1, value), 100) : 20;
 }
 
-function recallActor(agentId: string | null): MemoryUseActor {
-  return agentId
-    ? { id: `agent:${agentId}`, role: "agent", capability: "recall" }
-    : { id: "anonymous", role: "anonymous", capability: "recall" };
+function recallActor(agentId: string | null, authorized: boolean): MemoryUseActor {
+  if (authorized && agentId) return { id: `agent:${agentId}`, role: "agent", capability: "recall" };
+  if (authorized) return { id: "system:recall", role: "operator", capability: "recall" };
+  return { id: "anonymous", role: "anonymous", capability: "recall" };
 }
 
 /**
@@ -111,6 +112,10 @@ export async function GET(req: NextRequest) {
   const mode = normalizeMode(url.searchParams.get('mode'));
   const timestamp = new Date().toISOString();
 
+  // Only loopback callers or those presenting the operator API key may assume an agent identity.
+  // Unauthenticated callers are treated as anonymous — policy-gate denies non-public content.
+  const authorized = authorizeRegistryWrite(req);
+
   // Parse cross-project scope (RECALL-03)
   const { scope, allowedProjectIds, validationError } = parseCrossProjectScope(url);
 
@@ -133,7 +138,7 @@ export async function GET(req: NextRequest) {
       id: number; session_id: string; project: string; agent_id: string;
       role: string; content: string; timestamp: string;
     }>;
-    const results = filterAuthorizedMessageRows(db, rows, recallActor(agentId), "recall");
+    const results = filterAuthorizedMessageRows(db, rows, recallActor(agentId, authorized), "recall");
     return Response.json({ results, agent_id: agentId, timestamp, recall_scope: scope });
   }
 
@@ -144,7 +149,7 @@ export async function GET(req: NextRequest) {
 
   const db = getDb();
   const limit = safeLimit(limitParam);
-  const actor = recallActor(agentId);
+  const actor = recallActor(agentId, authorized);
 
   const bm25Results = (): Array<RecallResult & { source_project: string }> => {
     const rawResults = recallByKeyword(db, q, limit);

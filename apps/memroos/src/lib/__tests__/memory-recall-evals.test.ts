@@ -60,6 +60,33 @@ describe("memory recall eval scoring", () => {
     expect(score.failures).not.toContain("no expected memory found in top k");
   });
 
+  it("accepts fixture ids preserved inside backend metadata", () => {
+    const results: NormalizedRecallResult[] = [
+      {
+        id: "backend-generated-id",
+        tier: "vector",
+        content: "Mem0 normalized this memory and changed the wording.",
+        latencyMs: 100,
+        metadata: {
+          metadata: {
+            eval_id: "mem-1",
+          },
+        },
+      },
+      {
+        id: "row-2",
+        tier: "episodic",
+        content: "Decision: do not scale spend yet",
+        latencyMs: 20,
+      },
+    ];
+    const trace: MemoryRecallTraceEvent[] = [{ action: "memory_recall", timing: "before_plan", timestamp: "2026-05-15T00:00:00.000Z" }];
+    const score = scoreMemoryRecallCase(baseCase, results, trace, 5);
+
+    expect(score.metrics.recallAtK).toBe(1);
+    expect(score.failures).not.toContain("no expected memory found in top k");
+  });
+
   it("fails right-time scenarios when recall happens too late", () => {
     const trace: MemoryRecallTraceEvent[] = [{ action: "memory_recall", timing: "before_final", timestamp: "2026-05-15T00:00:00.000Z" }];
 

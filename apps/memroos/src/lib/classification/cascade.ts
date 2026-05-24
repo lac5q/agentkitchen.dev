@@ -124,7 +124,7 @@ export function classifyText(input: ClassificationInput): ClassificationResult {
     scan.blocked ||
     scan.matches.length > 0 ||
     publicPromotionCandidate(input) ||
-    (highRiskDomain(domain) && input.sourceType !== "messages");
+    highRiskDomain(domain);
 
   const label: NormalizedLabel = {
     visibility: "private",
@@ -159,10 +159,16 @@ function appendArtifactLabel(db: Database.Database, artifactId: string, label: N
 
 function stampSourceRows(db: Database.Database, artifact: RawArtifactRow, label: NormalizedLabel): void {
   if (artifact.source_type === "messages" && artifact.session_id) {
+    // Only stamp rows that are still at their default unclassified values.
+    // Rows already promoted by a reviewer (e.g. visibility='public_safe') or
+    // explicitly sealed by a prior classification are left untouched to prevent
+    // a later artifact in the same session from downgrading an approved label.
     db.prepare(
       `UPDATE messages
        SET visibility = ?, domain = ?, sensitivity = ?, policy = ?
-       WHERE session_id = ?`
+       WHERE session_id = ?
+         AND (visibility IS NULL OR visibility = 'private')
+         AND (policy IS NULL OR policy = 'sealed' OR policy = 'requires_human_review')`
     ).run(label.visibility, label.domain, label.sensitivity, label.policy, artifact.session_id);
   }
 }

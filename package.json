@@ -20,6 +20,7 @@
     "test": "npm --prefix apps/memroos run test --",
     "eval:context-sources": "node scripts/run-context-source-evals.mjs",
     "eval:memory-degradation": "bash scripts/run-memory-degradation-checks.sh",
+    "eval:marketplace-memory": "node scripts/run-marketplace-memory-evals.mjs",
     "check:knowledge-indexing": "node scripts/check-knowledge-indexing.mjs",
     "install:runtime-services": "node scripts/install-runtime-services.mjs install",
     "setup:multica-memroos": "node scripts/setup-multica-memroos.mjs",

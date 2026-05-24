@@ -1,0 +1,618 @@
+{
+  "id": "marketplace-agentic-memory-2026-05-24",
+  "name": "Marketplace Agentic Memory Benchmark",
+  "methodology": "Public-evidence architecture benchmark. Scores are 0-5 by criterion, adjusted by source confidence. This does not claim black-box latency or accuracy for closed products without API access.",
+  "criteria": [
+    {
+      "id": "recall_quality_evals",
+      "weight": 20,
+      "label": "Recall quality and eval maturity"
+    },
+    {
+      "id": "governed_memory_audit_permissions",
+      "weight": 18,
+      "label": "Governed memory, audit, and permissions"
+    },
+    {
+      "id": "memory_model_depth_typed_multitier",
+      "weight": 15,
+      "label": "Memory model depth and typed tiers"
+    },
+    {
+      "id": "agent_workflow_integration_orchestration",
+      "weight": 15,
+      "label": "Agent workflow integration and orchestration"
+    },
+    {
+      "id": "enterprise_deployment_data_control",
+      "weight": 12,
+      "label": "Enterprise deployment and data control"
+    },
+    {
+      "id": "performance_latency_cost_path",
+      "weight": 10,
+      "label": "Performance, latency, and cost path"
+    },
+    {
+      "id": "observability_self_improvement",
+      "weight": 7,
+      "label": "Observability and self-improvement"
+    },
+    {
+      "id": "portability_open_exits",
+      "weight": 3,
+      "label": "Portability and open exits"
+    }
+  ],
+  "providers": [
+    {
+      "id": "memroos-current",
+      "name": "MemRoOS current",
+      "category": "source-available agent memory/control plane",
+      "shortAssessment": "Strongest governance-plus-workflow shape, but public benchmark proof and hot-path retrieval need to catch up.",
+      "sources": [
+        "docs/memory-architecture.md",
+        "docs/architecture.md",
+        "evals/memory-recall/cases.json"
+      ],
+      "scores": {
+        "recall_quality_evals": {
+          "score": 3.6,
+          "confidence": 0.85,
+          "rationale": "Has seeded recall evals with recall, precision, MRR, tier coverage, false-positive rate, and latency, but no external LOCOMO/DMR/LongMemEval-style benchmark yet."
+        },
+        "governed_memory_audit_permissions": {
+          "score": 4.4,
+          "confidence": 0.85,
+          "rationale": "Operator auth, per-agent write paths, audit-like episodic rows, dispatch governance, and security/planning surfaces are central to the product."
+        },
+        "memory_model_depth_typed_multitier": {
+          "score": 4.2,
+          "confidence": 0.8,
+          "rationale": "Vector, graph, episodic, qmd, knowledge, and skill surfaces create a deeper operating memory model than pure conversation stores."
+        },
+        "agent_workflow_integration_orchestration": {
+          "score": 4.5,
+          "confidence": 0.8,
+          "rationale": "A2A, REST shim, MCP, LangGraph delegation, HIL, skills, and registry make memory part of agent operations rather than a detached API."
+        },
+        "enterprise_deployment_data_control": {
+          "score": 4,
+          "confidence": 0.8,
+          "rationale": "Self-hosted/private-network-first posture is strong; enterprise compliance packaging remains immature."
+        },
+        "performance_latency_cost_path": {
+          "score": 2.8,
+          "confidence": 0.7,
+          "rationale": "Has caching/performance work, but current eval path is not marketed around sub-10ms memory reads or GPU/cache economics."
+        },
+        "observability_self_improvement": {
+          "score": 4.4,
+          "confidence": 0.85,
+          "rationale": "Eval engine, SEAL loop, policy lab, ledger, flow, and dashboard concepts are a clear differentiator."
+        },
+        "portability_open_exits": {
+          "score": 4.2,
+          "confidence": 0.85,
+          "rationale": "Source-controlled, framework-agnostic interfaces and local-first posture give strong exits."
+        }
+      }
+    },
+    {
+      "id": "memroos-target",
+      "name": "MemRoOS competitive target",
+      "category": "target architecture profile",
+      "shortAssessment": "Winning target if hot memory, temporal invalidation, and public benchmark harness ship without weakening governance.",
+      "sources": [
+        "docs/memory-architecture.md",
+        "evals/marketplace-agentic-memory/providers.json"
+      ],
+      "scores": {
+        "recall_quality_evals": {
+          "score": 4.7,
+          "confidence": 0.75,
+          "rationale": "Target adds external memory benchmarks, failure fixtures, and public reports to the existing eval substrate."
+        },
+        "governed_memory_audit_permissions": {
+          "score": 4.7,
+          "confidence": 0.8,
+          "rationale": "Target keeps governed memory as the primary wedge and adds policy-backed memory promotion/retention."
+        },
+        "memory_model_depth_typed_multitier": {
+          "score": 4.6,
+          "confidence": 0.75,
+          "rationale": "Target adds temporal invalidation, hot summary/context blocks, and entity/version reconciliation on top of existing tiers."
+        },
+        "agent_workflow_integration_orchestration": {
+          "score": 4.8,
+          "confidence": 0.8,
+          "rationale": "Target keeps A2A/REST/MCP/LangGraph/HIL and makes retrieved context packs observable per run."
+        },
+        "enterprise_deployment_data_control": {
+          "score": 4.4,
+          "confidence": 0.75,
+          "rationale": "Target adds explicit tenant isolation, export, retention, and compliance checklist docs."
+        },
+        "performance_latency_cost_path": {
+          "score": 4.5,
+          "confidence": 0.65,
+          "rationale": "Target introduces hot context cache, async consolidation, tier fan-out, reranking, and benchmark latency budgets."
+        },
+        "observability_self_improvement": {
+          "score": 4.8,
+          "confidence": 0.8,
+          "rationale": "Target ties every retrieval to eval traces, drift checks, and operator-approved memory self-edits."
+        },
+        "portability_open_exits": {
+          "score": 4.5,
+          "confidence": 0.8,
+          "rationale": "Target keeps source-controlled, self-hostable, framework-neutral interfaces."
+        }
+      }
+    },
+    {
+      "id": "agenticmemory-ai",
+      "name": "AgenticMemory.ai",
+      "category": "closed hosted memory API",
+      "shortAssessment": "Likely the closest small closed competitor from the X signal: fast, simple, API-first, but less proven for governed enterprise workflows.",
+      "sources": [
+        "https://agenticmemory.ai/"
+      ],
+      "scores": {
+        "recall_quality_evals": {
+          "score": 2.6,
+          "confidence": 0.55,
+          "rationale": "Claims semantic search and auto summaries, but public benchmark methodology was not found."
+        },
+        "governed_memory_audit_permissions": {
+          "score": 3.4,
+          "confidence": 0.65,
+          "rationale": "Public page claims tenant-isolated spaces, scoped API keys, TTL, and no training on customer data."
+        },
+        "memory_model_depth_typed_multitier": {
+          "score": 3.8,
+          "confidence": 0.8,
+          "rationale": "Messages, threads, context, state, entities, entries, scratchpad, shared world memory, semantic search, and webhooks are documented primitives."
+        },
+        "agent_workflow_integration_orchestration": {
+          "score": 3.7,
+          "confidence": 0.8,
+          "rationale": "REST, MCP, OpenClaw, LangChain, CrewAI, OpenAI Agents, AutoGen, Cursor, Semantic Kernel, Bedrock, and Vercel AI integrations are advertised."
+        },
+        "enterprise_deployment_data_control": {
+          "score": 2.3,
+          "confidence": 0.6,
+          "rationale": "Hosted service with enterprise plan; no clear self-hosted/private-network deployment evidence found."
+        },
+        "performance_latency_cost_path": {
+          "score": 4.2,
+          "confidence": 0.55,
+          "rationale": "Claims sub-millisecond hot-cache reads; not independently measured here."
+        },
+        "observability_self_improvement": {
+          "score": 2.5,
+          "confidence": 0.5,
+          "rationale": "Usage analytics and memory events are suggested, but no eval/self-improvement control plane is visible."
+        },
+        "portability_open_exits": {
+          "score": 3,
+          "confidence": 0.6,
+          "rationale": "REST/MCP lowers integration lock-in, but persistence is in a closed hosted service."
+        }
+      }
+    },
+    {
+      "id": "worldflow-ai",
+      "name": "WorldFlow AI",
+      "category": "closed enterprise memory/cache platform",
+      "shortAssessment": "Performance-first memory layer; stronger threat to latency/cost narrative than to governed agentic memory.",
+      "sources": [
+        "https://worldflowai.com/"
+      ],
+      "scores": {
+        "recall_quality_evals": {
+          "score": 2.1,
+          "confidence": 0.5,
+          "rationale": "Public evidence emphasizes caching and acceleration more than recall accuracy benchmarks."
+        },
+        "governed_memory_audit_permissions": {
+          "score": 3.2,
+          "confidence": 0.55,
+          "rationale": "Claims edge PII detection, GDPR compliance, and SOC 2 planned."
+        },
+        "memory_model_depth_typed_multitier": {
+          "score": 3.2,
+          "confidence": 0.6,
+          "rationale": "Four pillars cover gateway cache, KV-cache acceleration, long-term memory, and cost optimization."
+        },
+        "agent_workflow_integration_orchestration": {
+          "score": 3,
+          "confidence": 0.55,
+          "rationale": "Works with any LLM provider by base URL changes, but orchestration/HIL/multi-agent governance is not the main surface."
+        },
+        "enterprise_deployment_data_control": {
+          "score": 2.7,
+          "confidence": 0.5,
+          "rationale": "Enterprise demo positioning is clear; deployment/control model is not deeply public."
+        },
+        "performance_latency_cost_path": {
+          "score": 4.8,
+          "confidence": 0.55,
+          "rationale": "Claims sub-10ms cache hits, 2-12x TTFT speedup, and 40-70% cost reduction."
+        },
+        "observability_self_improvement": {
+          "score": 3.5,
+          "confidence": 0.55,
+          "rationale": "AI observability and cost analytics are advertised."
+        },
+        "portability_open_exits": {
+          "score": 2.2,
+          "confidence": 0.5,
+          "rationale": "Zero-code base URL swap helps adoption, but the platform appears closed."
+        }
+      }
+    },
+    {
+      "id": "tytan-tao",
+      "name": "Tytan TAO / Cortex",
+      "category": "closed enterprise agentic OS",
+      "shortAssessment": "Most enterprise-sounding governed memory competitor, but public technical proof is thin.",
+      "sources": [
+        "https://www.tytantech.com/"
+      ],
+      "scores": {
+        "recall_quality_evals": {
+          "score": 2.2,
+          "confidence": 0.45,
+          "rationale": "No public memory benchmark methodology found."
+        },
+        "governed_memory_audit_permissions": {
+          "score": 4.5,
+          "confidence": 0.6,
+          "rationale": "Public page claims SOC 2 Type II, HMAC-notarized memory, RBAC/ABAC, HIL, and complete audit trails."
+        },
+        "memory_model_depth_typed_multitier": {
+          "score": 4.1,
+          "confidence": 0.55,
+          "rationale": "Cortex is described as persistent, governed, notarized memory across six layers."
+        },
+        "agent_workflow_integration_orchestration": {
+          "score": 4.4,
+          "confidence": 0.55,
+          "rationale": "Public page claims durable DAG workflows, model routing, agent types, tool registry, and MCP enterprise adapters."
+        },
+        "enterprise_deployment_data_control": {
+          "score": 3.4,
+          "confidence": 0.45,
+          "rationale": "Enterprise posture is strong, but self-host/export details were not clear from public docs."
+        },
+        "performance_latency_cost_path": {
+          "score": 2.8,
+          "confidence": 0.4,
+          "rationale": "No clear public latency or cost benchmark found."
+        },
+        "observability_self_improvement": {
+          "score": 4.3,
+          "confidence": 0.55,
+          "rationale": "Executive intelligence, audit trails, and decision explainability are central claims."
+        },
+        "portability_open_exits": {
+          "score": 2,
+          "confidence": 0.4,
+          "rationale": "Closed agentic OS positioning implies lock-in risk unless proven otherwise."
+        }
+      }
+    },
+    {
+      "id": "axme",
+      "name": "AXME",
+      "category": "agent orchestration plus coding memory",
+      "shortAssessment": "Strong orchestration/governance competitor; memory appears narrower and coding-agent focused.",
+      "sources": [
+        "https://axme.ai/"
+      ],
+      "scores": {
+        "recall_quality_evals": {
+          "score": 2.3,
+          "confidence": 0.55,
+          "rationale": "AI coding memory is claimed, but public memory quality benchmarks were not found."
+        },
+        "governed_memory_audit_permissions": {
+          "score": 4.2,
+          "confidence": 0.7,
+          "rationale": "Fleet governance, quarantine, policy guardrails, audit trail, and multi-tenancy are explicit platform claims."
+        },
+        "memory_model_depth_typed_multitier": {
+          "score": 2.8,
+          "confidence": 0.6,
+          "rationale": "Persistent coding memory is visible, but broader typed enterprise memory tiers are not the main claim."
+        },
+        "agent_workflow_integration_orchestration": {
+          "score": 4.8,
+          "confidence": 0.75,
+          "rationale": "Durable execution, scheduling, time-travel replay, fleet observability, and open protocol are the core product."
+        },
+        "enterprise_deployment_data_control": {
+          "score": 4.5,
+          "confidence": 0.75,
+          "rationale": "Public comparison claims self-host or hosted deployment and full portability."
+        },
+        "performance_latency_cost_path": {
+          "score": 3.1,
+          "confidence": 0.55,
+          "rationale": "Durable execution and replay reduce wasted work, but memory latency proof is not public."
+        },
+        "observability_self_improvement": {
+          "score": 4.6,
+          "confidence": 0.75,
+          "rationale": "Fleet-wide traces, logs, metrics, replay, quarantine, and policy visibility are strong."
+        },
+        "portability_open_exits": {
+          "score": 4.5,
+          "confidence": 0.75,
+          "rationale": "Open protocol and self-host/hosted positioning are explicit."
+        }
+      }
+    },
+    {
+      "id": "evermind-evermemos",
+      "name": "EverMind / EverMemOS",
+      "category": "memory OS plus cloud API",
+      "shortAssessment": "Important benchmark-oriented memory competitor; needs direct verification beyond press claims.",
+      "sources": [
+        "https://www.prnewswire.com/news-releases/end-agentic-amnesia-evermind-launches-a-memory-platform-and-an-80-000-global-competition-as-evermemos-sets-new-sota-results-across-multiple-benchmarks-302678025.html"
+      ],
+      "scores": {
+        "recall_quality_evals": {
+          "score": 4.5,
+          "confidence": 0.55,
+          "rationale": "Press release claims SOTA accuracy across four major memory benchmarks."
+        },
+        "governed_memory_audit_permissions": {
+          "score": 3.2,
+          "confidence": 0.45,
+          "rationale": "Enterprise-grade security is claimed, but audit/permission mechanics were not clear in public evidence."
+        },
+        "memory_model_depth_typed_multitier": {
+          "score": 4.3,
+          "confidence": 0.65,
+          "rationale": "Episodic trace formation, semantic consolidation, and reconstructive recollection are explicit architectural primitives."
+        },
+        "agent_workflow_integration_orchestration": {
+          "score": 2.9,
+          "confidence": 0.45,
+          "rationale": "Memory platform focus is clear; multi-agent workflow/governance integration is less visible."
+        },
+        "enterprise_deployment_data_control": {
+          "score": 3.2,
+          "confidence": 0.45,
+          "rationale": "Cloud API and open-source system are claimed, but enterprise deployment specifics need verification."
+        },
+        "performance_latency_cost_path": {
+          "score": 3.8,
+          "confidence": 0.55,
+          "rationale": "Claims higher accuracy with a fraction of full-context compute cost."
+        },
+        "observability_self_improvement": {
+          "score": 3,
+          "confidence": 0.45,
+          "rationale": "Self-organizing memory is core, but operator eval/audit workflow details are unclear."
+        },
+        "portability_open_exits": {
+          "score": 3.8,
+          "confidence": 0.55,
+          "rationale": "Open-source EverMemOS improves exit posture, assuming license and implementation are acceptable."
+        }
+      }
+    },
+    {
+      "id": "mem0",
+      "name": "Mem0 Platform",
+      "category": "managed plus OSS memory engine",
+      "shortAssessment": "Strong production memory layer and benchmark baseline; less differentiated on workflow governance.",
+      "sources": [
+        "https://docs.mem0.ai/platform/overview",
+        "https://docs.mem0.ai/migration/oss-v2-to-v3",
+        "https://arxiv.org/abs/2504.19413"
+      ],
+      "scores": {
+        "recall_quality_evals": {
+          "score": 4.2,
+          "confidence": 0.75,
+          "rationale": "Public docs and paper describe production memory and benchmark evaluation; graph/entity behavior has changed in OSS v3."
+        },
+        "governed_memory_audit_permissions": {
+          "score": 4,
+          "confidence": 0.75,
+          "rationale": "Managed platform claims audit logs and workspace governance by default."
+        },
+        "memory_model_depth_typed_multitier": {
+          "score": 3.7,
+          "confidence": 0.8,
+          "rationale": "Platform has graph memory, multimodal, categories, filters, async, rerankers; OSS v3 removed explicit graph store support in favor of entity linking."
+        },
+        "agent_workflow_integration_orchestration": {
+          "score": 4.2,
+          "confidence": 0.8,
+          "rationale": "Connectors and framework integrations are broad, including MCP, LangChain, CrewAI, and Vercel AI SDK."
+        },
+        "enterprise_deployment_data_control": {
+          "score": 3.6,
+          "confidence": 0.8,
+          "rationale": "Managed and open-source paths exist; managed platform is the enterprise path."
+        },
+        "performance_latency_cost_path": {
+          "score": 3.8,
+          "confidence": 0.7,
+          "rationale": "Production-scale managed service and new algorithm focus on fewer LLM calls and hybrid retrieval."
+        },
+        "observability_self_improvement": {
+          "score": 3.3,
+          "confidence": 0.65,
+          "rationale": "Dashboard and activity management are present; full operator-approved self-improvement loop is not the core product."
+        },
+        "portability_open_exits": {
+          "score": 3.6,
+          "confidence": 0.75,
+          "rationale": "OSS path helps, but platform features and graph behavior differ from self-hosted OSS."
+        }
+      }
+    },
+    {
+      "id": "zep",
+      "name": "Zep",
+      "category": "temporal knowledge graph memory",
+      "shortAssessment": "Probably the strongest pure memory-quality competitor because temporal invalidation is product-native.",
+      "sources": [
+        "https://help.getzep.com/concepts",
+        "https://arxiv.org/abs/2501.13956"
+      ],
+      "scores": {
+        "recall_quality_evals": {
+          "score": 4.4,
+          "confidence": 0.75,
+          "rationale": "Temporal KG architecture and DMR benchmark claims are public."
+        },
+        "governed_memory_audit_permissions": {
+          "score": 3.6,
+          "confidence": 0.7,
+          "rationale": "Context engineering primitives are strong; enterprise governance posture is less central than memory quality."
+        },
+        "memory_model_depth_typed_multitier": {
+          "score": 4.5,
+          "confidence": 0.8,
+          "rationale": "Knowledge graph, facts, entities, episodes, summaries, observations, user summaries, custom edge/entity types, and fact invalidation are explicit."
+        },
+        "agent_workflow_integration_orchestration": {
+          "score": 3.8,
+          "confidence": 0.8,
+          "rationale": "Agentic tool use and graph/context APIs are strong, but full orchestration is not the primary product."
+        },
+        "enterprise_deployment_data_control": {
+          "score": 3.2,
+          "confidence": 0.65,
+          "rationale": "Commercial platform exists; self-host/export posture needs deeper review."
+        },
+        "performance_latency_cost_path": {
+          "score": 3.5,
+          "confidence": 0.65,
+          "rationale": "Context block assembly is optimized, but public latency/cost claims are less aggressive than cache-first competitors."
+        },
+        "observability_self_improvement": {
+          "score": 3.5,
+          "confidence": 0.65,
+          "rationale": "Temporal graph facts are inspectable; eval/self-improvement workflow is not the main surface."
+        },
+        "portability_open_exits": {
+          "score": 3.2,
+          "confidence": 0.65,
+          "rationale": "API abstraction helps, but KG semantics may be sticky."
+        }
+      }
+    },
+    {
+      "id": "letta",
+      "name": "Letta",
+      "category": "stateful agent platform",
+      "shortAssessment": "Deep agent memory and learning architecture; closer to stateful agents than an enterprise memory control plane.",
+      "sources": [
+        "https://docs.letta.com/guides/core-concepts/stateful-agents",
+        "https://www.letta.com/"
+      ],
+      "scores": {
+        "recall_quality_evals": {
+          "score": 4.1,
+          "confidence": 0.75,
+          "rationale": "Letta has memory-first architecture and public eval/leaderboard surfaces."
+        },
+        "governed_memory_audit_permissions": {
+          "score": 3.5,
+          "confidence": 0.7,
+          "rationale": "Persistent state, runs/steps, tools, and RBAC docs exist, but governed enterprise memory is not the main wedge."
+        },
+        "memory_model_depth_typed_multitier": {
+          "score": 4.6,
+          "confidence": 0.85,
+          "rationale": "Core memory blocks, shared blocks, archival memory, recall memory, messages, tools, context hierarchy, and self-editing memory are central."
+        },
+        "agent_workflow_integration_orchestration": {
+          "score": 3.8,
+          "confidence": 0.75,
+          "rationale": "Stateful agent runs/steps, tools, MCP, HIL, multi-agent patterns, and APIs are present."
+        },
+        "enterprise_deployment_data_control": {
+          "score": 4,
+          "confidence": 0.75,
+          "rationale": "Docker server and API platform exist; full enterprise data-control posture still needs verification."
+        },
+        "performance_latency_cost_path": {
+          "score": 3.2,
+          "confidence": 0.65,
+          "rationale": "Focus is context management quality more than latency/cache economics."
+        },
+        "observability_self_improvement": {
+          "score": 4,
+          "confidence": 0.75,
+          "rationale": "Runs/steps, eval docs, continual learning, background memory agents, and memory palace support strong observability."
+        },
+        "portability_open_exits": {
+          "score": 4.2,
+          "confidence": 0.8,
+          "rationale": "BYO API keys, local/server options, and memory portability across models are public claims."
+        }
+      }
+    },
+    {
+      "id": "gbrain",
+      "name": "GBrain",
+      "category": "open personal/agent knowledge brain",
+      "shortAssessment": "Relevant to the X links, but not really a closed enterprise competitor yet.",
+      "sources": [
+        "https://x.com/garrytan/status/2042497872114090069",
+        "https://www.agenticbrew.ai/news/5e699314-0849-415e-8f0f-2bd3d60b85b7/garry-tan-gbrain-open-source-personal-ai-agent-platform"
+      ],
+      "scores": {
+        "recall_quality_evals": {
+          "score": 3.6,
+          "confidence": 0.5,
+          "rationale": "Public discussion includes high recall claims, but independent/reproducible benchmark framing is disputed."
+        },
+        "governed_memory_audit_permissions": {
+          "score": 2.2,
+          "confidence": 0.4,
+          "rationale": "Personal memory/knowledge brain positioning, not an enterprise governance layer."
+        },
+        "memory_model_depth_typed_multitier": {
+          "score": 3.6,
+          "confidence": 0.6,
+          "rationale": "Persistent searchable knowledge, entity detection, enrichment, and compiled truth are reported."
+        },
+        "agent_workflow_integration_orchestration": {
+          "score": 3.8,
+          "confidence": 0.7,
+          "rationale": "Strong fit for OpenClaw/Hermes community and agent-native workflows."
+        },
+        "enterprise_deployment_data_control": {
+          "score": 4.2,
+          "confidence": 0.6,
+          "rationale": "MIT/open-source posture is strong for control, but enterprise compliance is not the focus."
+        },
+        "performance_latency_cost_path": {
+          "score": 3.4,
+          "confidence": 0.45,
+          "rationale": "Scalability concerns for enterprise-scale deployments are noted in public analysis."
+        },
+        "observability_self_improvement": {
+          "score": 2.5,
+          "confidence": 0.4,
+          "rationale": "Not enough public evidence of governed eval/observability loops."
+        },
+        "portability_open_exits": {
+          "score": 4.5,
+          "confidence": 0.7,
+          "rationale": "Open-source, OpenClaw/Hermes oriented setup gives strong portability."
+        }
+      }
+    }
+  ]
+}

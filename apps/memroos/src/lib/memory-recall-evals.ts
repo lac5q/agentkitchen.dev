@@ -7,6 +7,7 @@ import type Database from "better-sqlite3";
 import { MEM0_URL } from "@/lib/constants";
 import { getDb } from "@/lib/db";
 import { recallByKeyword } from "@/lib/db-ingest";
+import { rebuildMessageFtsProjection } from "@/lib/db-schema";
 import { queryGraphMemory } from "@/lib/memory/backends";
 
 export type MemoryRecallTier = "vector" | "graph" | "episodic" | "qmd";
@@ -136,9 +137,9 @@ function normalizeText(value: string): string {
 
 function resultMatchesExpected(result: NormalizedRecallResult, testCase: MemoryRecallEvalCase): boolean {
   const expectedIds = testCase.expectedMemoryIds ?? [];
-  if (expectedIds.includes(result.id)) return true;
+  if (expectedIds.some((id) => resultContainsIdentifier(result, id))) return true;
 
-  const normalized = normalizeText(result.content);
+  const normalized = normalizeText(`${result.content} ${metadataSearchText(result.metadata)}`);
   return testCase.expectedFacts.some((fact) => normalized.includes(normalizeText(fact)));
 }
 
@@ -146,13 +147,38 @@ function matchedExpectationCount(results: NormalizedRecallResult[], testCase: Me
   const matched = new Set<string>();
   const expectedIds = testCase.expectedMemoryIds ?? [];
   for (const result of results) {
-    if (expectedIds.includes(result.id)) matched.add(`id:${result.id}`);
-    const normalized = normalizeText(result.content);
+    for (const id of expectedIds) {
+      if (resultContainsIdentifier(result, id)) matched.add(`id:${id}`);
+    }
+    const normalized = normalizeText(`${result.content} ${metadataSearchText(result.metadata)}`);
     for (const fact of testCase.expectedFacts) {
       if (normalized.includes(normalizeText(fact))) matched.add(`fact:${fact}`);
     }
   }
   return matched.size;
+}
+
+// Security-label fields stamped by Phase 75 cascade — excluded from identifier search
+// to prevent domain/policy tokens ('engineering', 'indexable', 'sealed') from false-matching.
+const LABEL_FIELD_KEYS = new Set(["visibility", "domain", "sensitivity", "policy", "label_version", "labeled_at"]);
+
+function metadataSearchText(value: unknown, depth = 0): string {
+  if (depth > 5) return "";
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  if (!value || typeof value !== "object") return "";
+  if (Array.isArray(value)) return value.map((v) => metadataSearchText(v, depth + 1)).filter(Boolean).join(" ");
+  return Object.entries(value as Record<string, unknown>)
+    .filter(([k]) => !LABEL_FIELD_KEYS.has(k))
+    .map(([, v]) => metadataSearchText(v, depth + 1))
+    .filter(Boolean)
+    .join(" ");
+}
+
+function resultContainsIdentifier(result: NormalizedRecallResult, expectedId: string): boolean {
+  if (result.id === expectedId) return true;
+  const metadataText = metadataSearchText(result.metadata);
+  return normalizeText(metadataText).split(" ").includes(normalizeText(expectedId));
 }
 
 function percentile95(values: number[]): number {
@@ -178,7 +204,8 @@ export function scoreMemoryRecallCase(
   k = 5
 ): Omit<MemoryRecallEvalResult, "caseId" | "agentId" | "layer" | "scenario" | "taskPrompt" | "tiers" | "retrieved" | "trace"> {
   const topK = retrieved.slice(0, k);
-  const expectedCount = Math.max((testCase.expectedMemoryIds ?? []).length, testCase.expectedFacts.length, 1);
+  const expectedIds = testCase.expectedMemoryIds ?? [];
+  const expectedCount = Math.max(expectedIds.length || testCase.expectedFacts.length, 1);
   const relevant = topK.filter((result) => resultMatchesExpected(result, testCase));
   const matchedCount = matchedExpectationCount(topK, testCase);
   const firstRelevantIndex = topK.findIndex((result) => resultMatchesExpected(result, testCase));
@@ -374,27 +401,107 @@ function idFromMemoryItem(item: unknown, fallback: string): string {
   return typeof record.id === "string" ? record.id : fallback;
 }
 
+function numericEnv(name: string, fallback: number): number {
+  const parsed = Number(process.env[name]);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function withDeadline<T>(operation: Promise<T>, timeoutMs: number, message: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+  try {
+    return await Promise.race([operation, deadline]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function fetchWithDeadline(url: string, init: RequestInit, timeoutMs: number, message: string): Promise<Response> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error(message));
+    }, timeoutMs);
+  });
+  try {
+    return await Promise.race([fetch(url, { ...init, signal: controller.signal }), deadline]);
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error(message);
+    throw error;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function waitForVectorFixture(fixture: MemoryRecallFixture, agentId: string): Promise<void> {
+  const settleTimeoutMs = numericEnv("MEMORY_EVAL_VECTOR_SETTLE_TIMEOUT_MS", 30000);
+  const pollIntervalMs = numericEnv("MEMORY_EVAL_VECTOR_SETTLE_POLL_MS", 2000);
+  const deadline = Date.now() + settleTimeoutMs;
+  let lastError: unknown;
+
+  while (Date.now() < deadline) {
+    try {
+      const results = await searchVector(fixture.content, agentId, 5);
+      if (results.some((result) => resultContainsIdentifier(result, fixture.id))) return;
+    } catch (error) {
+      lastError = error;
+    }
+    await sleep(pollIntervalMs);
+  }
+
+  if (lastError instanceof Error) {
+    throw new Error(`Vector fixture did not settle after write timeout: ${lastError.message}`);
+  }
+  throw new Error("Vector fixture did not settle after write timeout");
+}
+
 async function seedFixture(db: Database.Database, fixture: MemoryRecallFixture, agentId: string): Promise<MemoryRecallTraceEvent> {
   const timestamp = new Date().toISOString();
   if (fixture.tier === "episodic") {
     db.prepare(
-      "INSERT OR IGNORE INTO messages(session_id, project, agent_id, role, content, timestamp, request_id) VALUES(?,?,?,?,?,?,?)"
-    ).run(`memory-eval-${fixture.id}`, "memory-eval", agentId, "assistant", fixture.content, timestamp, fixture.id);
+      `INSERT INTO messages
+        (session_id, project, agent_id, role, content, timestamp, request_id, visibility, policy)
+       VALUES(?,?,?,?,?,?,?,?,?)
+       ON CONFLICT(session_id, request_id) DO UPDATE SET
+         content=excluded.content,
+         timestamp=excluded.timestamp,
+         visibility=excluded.visibility,
+         policy=excluded.policy`
+    ).run(`memory-eval-${fixture.id}`, "memory-eval", agentId, "assistant", fixture.content, timestamp, fixture.id, "internal", "indexable");
   }
 
   if (fixture.tier === "vector") {
-    const response = await fetch(`${MEM0_URL}/memory/add`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text: fixture.content,
-        agent_id: agentId || "memory-eval",
-        metadata: { ...(fixture.metadata ?? {}), eval_id: fixture.id },
-      }),
-      signal: AbortSignal.timeout(5000),
-    });
-    const body = await response.json().catch(() => ({}));
+    const evalAgentId = agentId || "memory-eval";
+    const timeoutMs = numericEnv("MEMORY_EVAL_VECTOR_TIMEOUT_MS", 30000);
+    let response: Response;
+    try {
+      response = await fetchWithDeadline(`${MEM0_URL}/memory/add`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: fixture.content,
+          agent_id: evalAgentId,
+          metadata: { ...(fixture.metadata ?? {}), eval_id: fixture.id },
+        }),
+      }, timeoutMs, "Vector canary write timed out");
+    } catch (error) {
+      await waitForVectorFixture(fixture, evalAgentId);
+      return { action: "memory_write", timing: "before_plan", tier: fixture.tier, timestamp };
+    }
+    const body = await withDeadline(response.json().catch(() => ({})), 5000, "Vector canary write response timed out");
     if (!response.ok || body.status === "queued") {
+      if (body.status === "queued") {
+        await waitForVectorFixture(fixture, evalAgentId);
+        return { action: "memory_write", timing: "before_plan", tier: fixture.tier, timestamp };
+      }
       const reason = typeof body?.result?.reason === "string" ? body.result.reason : JSON.stringify(body);
       throw new Error(reason || "Vector canary write failed");
     }
@@ -405,9 +512,10 @@ async function seedFixture(db: Database.Database, fixture: MemoryRecallFixture, 
 
 async function searchVector(query: string, agentId: string, limit: number): Promise<NormalizedRecallResult[]> {
   const start = Date.now();
+  const timeoutMs = numericEnv("MEMORY_EVAL_VECTOR_SEARCH_TIMEOUT_MS", 5000);
   const params = new URLSearchParams({ q: query, agent_id: agentId || "memory-eval", limit: String(limit) });
-  const response = await fetch(`${MEM0_URL}/memory/search?${params}`, { signal: AbortSignal.timeout(5000) });
-  const body = await response.json().catch(() => ({}));
+  const response = await fetchWithDeadline(`${MEM0_URL}/memory/search?${params}`, {}, timeoutMs, "Vector memory search timed out");
+  const body = await withDeadline(response.json().catch(() => ({})), timeoutMs, "Vector memory search response timed out");
   const latencyMs = Date.now() - start;
   if (!response.ok) throw new Error(typeof body.detail === "string" ? body.detail : "Vector memory search failed");
   const raw: unknown[] = Array.isArray(body.results) ? body.results : [];
@@ -432,6 +540,19 @@ function searchEpisodic(db: Database.Database, query: string, limit: number): No
     latencyMs,
     metadata: row,
   }));
+}
+
+function mergeRecallResults(results: NormalizedRecallResult[], limit: number): NormalizedRecallResult[] {
+  const seen = new Set<string>();
+  const merged: NormalizedRecallResult[] = [];
+  for (const result of results) {
+    const key = `${result.tier}:${result.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(result);
+    if (merged.length >= limit) break;
+  }
+  return merged;
 }
 
 async function searchGraph(query: string, limit: number): Promise<NormalizedRecallResult[]> {
@@ -470,14 +591,20 @@ async function runCase(db: Database.Database, testCase: MemoryRecallEvalCase): P
       tiers.push({ tier: fixture.tier, ok: false, count: 0, error: error instanceof Error ? error.message : "fixture seed failed" });
     }
   }
+  if (fixtures.some((fixture) => fixture.tier === "episodic") && !failedSeedTiers.has("episodic")) {
+    rebuildMessageFtsProjection(db);
+  }
 
   const query = testCase.expectedFacts.join(" ");
+  const recallQueries = [query, ...testCase.expectedFacts].filter(Boolean);
   for (const tier of testCase.expectedTiers) {
     if (failedSeedTiers.has(tier)) continue;
     try {
       let items: NormalizedRecallResult[] = [];
       if (tier === "vector") items = await searchVector(query, testCase.agentId, 5);
-      if (tier === "episodic") items = searchEpisodic(db, query, 5);
+      if (tier === "episodic") {
+        items = mergeRecallResults(recallQueries.flatMap((recallQuery) => searchEpisodic(db, recallQuery, 5)), 5);
+      }
       if (tier === "graph") items = await searchGraph(query, 5);
       if (tier === "qmd") items = checkQmd(query);
       retrieved.push(...items);

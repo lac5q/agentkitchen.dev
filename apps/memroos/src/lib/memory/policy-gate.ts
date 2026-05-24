@@ -180,7 +180,6 @@ function auditDecision(
   target: string,
   decision: MemoryUseDecisionResult
 ): void {
-  if (decision.decision === "allow") return;
   writeAuditLog(db, {
     actor: actor.id,
     action: "memory_policy_decision",
@@ -193,7 +192,7 @@ function auditDecision(
       capability: actor.capability ?? null,
       label: decision.label,
     }),
-    severity: decision.decision === "deny" ? "high" : "medium",
+    severity: decision.decision === "deny" ? "high" : decision.decision === "allow" ? "info" : "medium",
   });
 }
 

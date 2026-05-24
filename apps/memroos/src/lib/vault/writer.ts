@@ -96,7 +96,7 @@ export function writeVaultArtifact(
 ): WrittenVaultArtifact {
   const now = input.now ?? new Date();
   const createdAt = now.toISOString();
-  const tenantId = input.tenantId ?? "default-tenant";
+  const tenantId = safePathSegment(input.tenantId ?? "default-tenant");
   const id = crypto.randomUUID();
   const bodyBuffer = Buffer.from(input.body, "utf8");
   const contentHash = sha256Hex(bodyBuffer);
@@ -114,41 +114,52 @@ export function writeVaultArtifact(
   const absolutePath = path.join(vaultRoot(), tenantId, relativePath);
   const artifactUri = `vault://${tenantId}/${relativePath.split(path.sep).join("/")}`;
 
+  // Write to a temp path first; commit atomically after the DB transaction succeeds.
+  // This prevents orphaned ciphertext files if the DB insert fails.
+  const tmpPath = `${absolutePath}.tmp`;
   fs.mkdirSync(path.dirname(absolutePath), { recursive: true });
-  fs.writeFileSync(absolutePath, compressed, { flag: "wx" });
+  fs.writeFileSync(tmpPath, compressed, { flag: "w" });
 
-  db.transaction(() => {
-    db.prepare(
-      `INSERT INTO raw_artifacts
-        (id, tenant_id, project, source_type, source_id, session_id, artifact_uri, artifact_path,
-         content_hash, compression, key_id, uncompressed_size, compressed_size, replay_state,
-         replay_metadata, retention_until, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'complete', ?, ?, ?)`
-    ).run(
-      id,
-      tenantId,
-      input.project ?? null,
-      input.sourceType,
-      input.sourceId ?? null,
-      input.sessionId ?? null,
-      artifactUri,
-      relativePath.split(path.sep).join("/"),
-      contentHash,
-      compression,
-      keyId,
-      bodyBuffer.byteLength,
-      compressed.byteLength,
-      JSON.stringify(input.replayMetadata ?? {}),
-      input.retentionUntil ?? null,
-      createdAt
-    );
+  try {
+    db.transaction(() => {
+      db.prepare(
+        `INSERT INTO raw_artifacts
+          (id, tenant_id, project, source_type, source_id, session_id, artifact_uri, artifact_path,
+           content_hash, compression, key_id, uncompressed_size, compressed_size, replay_state,
+           replay_metadata, retention_until, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'complete', ?, ?, ?)`
+      ).run(
+        id,
+        tenantId,
+        input.project ?? null,
+        input.sourceType,
+        input.sourceId ?? null,
+        input.sessionId ?? null,
+        artifactUri,
+        relativePath.split(path.sep).join("/"),
+        contentHash,
+        compression,
+        keyId,
+        bodyBuffer.byteLength,
+        compressed.byteLength,
+        JSON.stringify(input.replayMetadata ?? {}),
+        input.retentionUntil ?? null,
+        createdAt
+      );
 
-    db.prepare(
-      `INSERT INTO artifact_labels
-        (artifact_id, visibility, domain, sensitivity, policy, label_version, labeled_at)
-       VALUES (?, ?, ?, ?, ?, 1, ?)`
-    ).run(id, label.visibility, label.domain, label.sensitivity, label.policy, createdAt);
-  })();
+      db.prepare(
+        `INSERT INTO artifact_labels
+          (artifact_id, visibility, domain, sensitivity, policy, label_version, labeled_at)
+         VALUES (?, ?, ?, ?, ?, 1, ?)`
+      ).run(id, label.visibility, label.domain, label.sensitivity, label.policy, createdAt);
+    })();
+  } catch (err) {
+    try { fs.unlinkSync(tmpPath); } catch { /* best-effort cleanup */ }
+    throw err;
+  }
+
+  // DB committed — rename temp file to final path (atomic on same filesystem)
+  fs.renameSync(tmpPath, absolutePath);
 
   return {
     id,
@@ -181,7 +192,7 @@ export function readVaultArtifact(
   const row = readArtifactRow(db, artifactId);
   if (!row) throw new Error(`Vault artifact not found: ${artifactId}`);
 
-  const absolutePath = path.join(vaultRoot(), row.tenant_id, row.artifact_path);
+  const absolutePath = path.join(vaultRoot(), safePathSegment(row.tenant_id), row.artifact_path);
   const compressed = fs.readFileSync(absolutePath);
   const payloadBuffer = row.compression.startsWith("zstd") ? zstdDecompress(compressed) : compressed;
   const bodyBuffer =
