@@ -22,7 +22,8 @@ function isLandingAsset(pathname: string): boolean {
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/assets/") ||
     pathname.startsWith("/diagrams/") ||
-    pathname.startsWith("/demo/")
+    pathname.startsWith("/demo/") ||
+    pathname.startsWith("/research/")
   );
 }
 

@@ -62,4 +62,15 @@ describe("proxy", () => {
     expect(response.status).toBe(200);
     expect(await response.text()).toBe("");
   });
+
+  it("serves research PDFs on the public marketing host", async () => {
+    const response = await proxy(
+      new NextRequest("https://memroos.com/research/memroos-governed-knowledge-architecture-paper.pdf", {
+        headers: { host: "memroos.com" },
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+  });
 });

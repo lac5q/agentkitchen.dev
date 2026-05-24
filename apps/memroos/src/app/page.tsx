@@ -26,6 +26,7 @@ import { KangarooMark } from "@/components/layout/brand-mark";
 import { OperationsNoc } from "@/components/operations";
 
 const PUBLIC_LANDING_HOSTS = new Set(["memroos.com", "www.memroos.com", "memroos.vercel.app"]);
+const RESEARCH_PAPER_HREF = "/research/memroos-governed-knowledge-architecture-paper.pdf";
 
 function isPublicLandingHost(host: string): boolean {
   const normalized = host.split(":")[0]?.toLowerCase() ?? "";
@@ -105,6 +106,11 @@ const competitiveProofs = [
     value: "469 ms",
     label: "live p95 recall",
     detail: "Latest authenticated full eval run completed with no tier failures after vector write hardening.",
+  },
+  {
+    value: "68",
+    label: "documented tests",
+    detail: "Recall, degradation, API tier, health, and context-source checks are summarized in the architecture paper.",
   },
 ];
 
@@ -554,7 +560,7 @@ function LandingPage() {
               The benchmark compares public architecture evidence, governance depth, multi-agent workflow fit, retrieval design, interop, and proof surfaces. It does not claim private latency or accuracy for closed products without API access.
             </p>
           </div>
-          <div className="mt-8 grid gap-px bg-[#4a4a45] md:grid-cols-3">
+          <div className="mt-8 grid gap-px bg-[#4a4a45] md:grid-cols-2 lg:grid-cols-4">
             {competitiveProofs.map((proof) => (
               <article key={proof.label} className="bg-[#0f0f0e] p-6">
                 <p className="text-[46px] font-semibold leading-none text-[#e7b6a8]">{proof.value}</p>
@@ -562,6 +568,26 @@ function LandingPage() {
                 <p className="mt-3 text-[15px] leading-7 text-[#d8d4cb]">{proof.detail}</p>
               </article>
             ))}
+          </div>
+          <div className="mt-8 grid gap-5 border border-[#4a4a45] bg-[#0f0f0e] p-5 md:grid-cols-[1fr_auto] md:items-center">
+            <div>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#e7b6a8]">Research paper</p>
+              <h3 className="mt-3 text-[24px] font-semibold leading-tight text-white">
+                Read the governed knowledge architecture behind the benchmark.
+              </h3>
+              <p className="mt-3 max-w-[78ch] text-[15px] leading-7 text-[#d8d4cb]">
+                The paper explains why these stats matter: progressive disclosure, governed writes, dual-index retrieval, and the retain-retrieve-reinforce loop that makes memory useful across many agents.
+              </p>
+            </div>
+            <Link
+              href={RESEARCH_PAPER_HREF}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full items-center justify-center gap-2 border border-[#e7b6a8] px-5 py-3 text-[13px] font-semibold uppercase tracking-[0.08em] text-[#e7b6a8] transition hover:bg-[#e7b6a8] hover:text-[#0f0f0e] md:w-auto"
+            >
+              Read the research paper
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
           </div>
           <div className="mt-8 divide-y divide-[#4a4a45] border-y border-[#4a4a45]">
             {competitorScores.map((competitor, index) => (
@@ -574,7 +600,7 @@ function LandingPage() {
             ))}
           </div>
           <p className="mt-5 text-[13px] leading-6 text-[#bdb8ad]">
-            Methodology and source notes live in docs/marketplace/agentic-memory-benchmark-2026-05-24.md.
+            Methodology and source notes live in docs/marketplace/agentic-memory-benchmark-2026-05-24.md, with the companion architecture paper available as a public PDF.
           </p>
         </div>
       </section>
