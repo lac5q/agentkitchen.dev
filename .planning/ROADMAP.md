@@ -317,33 +317,64 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 
 ### Future Milestone Priority
 
-1. Plan v4.1 candidate: Harness Control Plane + Knowledge Graph Intelligence.
-   - Research intake: `Code as Agent Harness` (arXiv:2605.18747, 2026-05-18) argues future agent systems need executable, inspectable, stateful, governed harnesses.
-   - Research intake: Graphify (`safishamsi/graphify`) shows a practical query-first repo/docs/PDF/image knowledge graph with confidence-tagged edges, wiki/report exports, and commit/search hooks.
-   - Research intake: Graphite-style stacked review patterns suggest agent work should move as small, ordered, independently reviewable changes with stack-aware risk and merge gates.
-   - Research intake: production-agent checklist patterns (direnv/secrets manager, LLM gateway, eval-pinned commits, LLM-call proxy tracing, Inspect evals, `lessons.md`) map to MemroOS runtime guardrails and evidence capture.
-   - Integration call: LiteLLM should be an optional model-gateway adapter first, with direct provider calls retained as fallback; MemroOS owns task evidence, policy, replay, and NOC observability.
+1. **P0 — Plan Permissioned Memory Foundation.**
+   - Source notes: `.planning/notes/privacy-classification-policy-spike.md`, `.planning/notes/memory-security-storage-spike.md`.
+   - Requirements: `CTX-FOLLOWUP-03` and `MEMSEC-01..08` in `.planning/REQUIREMENTS.md`.
+   - Goal: make MemRoOS safe to trust with sensitive organizational memory before expanding recall power: raw evidence vault, fail-closed privacy/legal/finance/HR classification, retrieval authorization, safe indexes, envelope encryption, and leak-prevention regression tests.
 
-2. Plan corrective Operations NOC Real-Data Wiring phase.
+2. **P0 — Plan Context Source Reliability + Sink Health.**
+   - Requirements: `CTX-FOLLOWUP-01..02`, `CRON-HEALTH-01..05`, and `UX-FOLLOWUP-03` in `.planning/REQUIREMENTS.md`.
+   - Goal: prove sources are ingested, indexed, fresh, replayable, and degraded honestly; recurring transcript/email/context sinks become observable jobs with heartbeat, caught-up status, warning/critical state, and pause/resume/stop controls.
+
+3. **P1 — Plan corrective Operations NOC Real-Data Wiring phase.**
    - Source note: `.planning/notes/operations-noc-real-data-requirements.md`.
    - Requirements: `NOC-01..NOC-14` and `OPS-AUDIT-01..04` in `.planning/REQUIREMENTS.md`.
    - Goal: replace mock home-screen panels with live operational data, explicit missing/degraded states, functional controls, date-windowed performance views, and the telemetry streams needed for efficiency signals.
-3. Plan Phase 70 follow-up topology closure.
-   - Source note: `.planning/phases/70-foundation-engine-core/deferred-items.md`.
-   - Requirement: `ORCH-FOLLOWUP-01` in `.planning/REQUIREMENTS.md`.
-   - Goal: close deferred LangGraph multi-hop topology and rollback-compensation gaps before claiming full multi-hop orchestration depth.
-4. Plan recent-deferred hardening sweep.
-   - Source notes: Phase 57-64 context/summary deferred sections plus `.planning/PROJECT.md` v5 candidates.
-   - Requirements: `CTX-FOLLOWUP-01..02`, `INT-FOLLOWUP-01..07`, `EVAL-FOLLOWUP-01`, `EVAL-API-FOLLOWUP-01..02`, `MEMGEN-FOLLOWUP-01`, `SEAL-FOLLOWUP-01..02`, `AGENTGEN-FOLLOWUP-01`, `L3-FOLLOWUP-01..03`, `AUTH-FOLLOWUP-01..03`, `AUDIT-FOLLOWUP-01..03`, `UX-FOLLOWUP-01..06`, and `GSD-FOLLOWUP-01`.
-   - Goal: prevent recent deferred notes from living only in phase-local context by turning them into plan-ready backlog requirements.
 
-5. Plan integration modernization: unified MCP + FastMCP v3.x + dependency drift.
+4. **P1 — Plan Harness Control Plane + Evidence Governance.**
+   - Research intake: `Code as Agent Harness` (arXiv:2605.18747, 2026-05-18) argues future agent systems need executable, inspectable, stateful, governed harnesses.
+   - Requirements and candidates: Full Harness Control Plane, Universal evidence bundles, Shared harness state, Skill-contract evidence examples, Cross-harness skill auto-sync, Model gateway observability, Secret-scope health, Eval-pinned promotion commits, Agent lessons ledger, and `GSD-FOLLOWUP-01`.
+   - Goal: expose task-level Plan-Execute-Verify timelines, sources/memories/tools/checks evidence, read/write sets, prompt/model routing metadata, secret-scope health, replay/rollback anchors, and governed skill imports before increasing autonomy.
+
+5. **P1 — Plan Knowledge Graph Intelligence + Work Coordination.**
+   - Research intake: Graphify (`safishamsi/graphify`) shows a practical query-first repo/docs/PDF/image knowledge graph with confidence-tagged edges, wiki/report exports, and commit/search hooks.
+   - Research intake: Graphite-style stacked review patterns suggest agent work should move as small, ordered, independently reviewable changes with stack-aware risk and merge gates.
+   - Requirements and candidates: Knowledge graph intelligence, PR/workflow graph risk, Stacked agent work units, and `ARCH-01..03`.
+   - Goal: make repo/docs/PDF/image/transcript graphs explainable and confidence-tagged, then use graph communities and stacked work units to reduce merge and coordination risk.
+
+6. **P1 — Plan Evaluation + Safety Expansion.**
+   - Requirements and candidates: Full 50+ task behavioral W-lift golden set, Third-party eval adapter, `EVAL-FOLLOWUP-01`, `EVAL-API-FOLLOWUP-01..02`, `MEMGEN-FOLLOWUP-01`, `SEAL-FOLLOWUP-01..02`, and `AGENTGEN-FOLLOWUP-01`.
+   - Goal: move beyond small held-out eval samples into broader behavioral coverage, provider-backed judges, safety eval packs, non-fixture memory-autogen validation, and governed SEAL/agent trajectory workflows.
+
+7. **P2 — Plan Meeting Ingestion Expansion.**
+   - Requirements and candidates: Recall.ai bridge for Zoom/Teams/Meet, multi-participant meeting bot, and voice meeting bot follow-ups.
+   - Goal: extend beyond the Daily-only, listener-only v4.0 path while preserving consent, transcript attribution, source provenance, and memory-ingestion boundaries.
+
+8. **P2 — Plan Semantic Recall + Embedding Quality Upgrade.**
+   - Requirements and candidates: Voyage AI `voyage-4-large` embedding upgrade and LLM-powered recall scoring upgrade.
+   - Goal: improve recall quality behind provider flags while preserving Ollama local as the default path and avoiding vendor lock-in or unreviewed embedding of sensitive content.
+
+9. **P2 — Plan integration modernization: unified MCP + FastMCP v3.x + dependency drift.**
    - Source finding: current configs already register unified `memroos` MCP, but legacy `services/memory/mcp-mem0.py` and `mcp-mem0-wrapper.sh` still exist as a standalone mem0-only adapter and one capability manifest still advertises standalone-only memory tools.
    - Source finding: `services/knowledge-mcp` runs FastMCP 2.14.7 while PyPI latest is 3.3.1; v3 migration must move HTTP/path/stateless/auth options to the v3-compatible runtime API rather than doing a blind pin bump.
    - Source finding: `services/memory` uses `mem0ai` 0.1.118 while PyPI latest is 2.0.2; this is a separate memory-backend migration from the FastMCP upgrade.
    - Spike note: `.planning/notes/integration-modernization-spike.md`.
    - Requirements: `INT-FOLLOWUP-01..07` in `.planning/REQUIREMENTS.md`.
-   - Goal: keep one canonical MemroOS MCP connection, remove stale memory adapters, upgrade FastMCP and mem0ai deliberately, validate A2A/ADK and Next proxy boundaries against current specs, and stage SDK/toolchain majors before they become operational debt.
+   - Goal: keep one canonical MemRoOS MCP connection, remove stale memory adapters, upgrade FastMCP and mem0ai deliberately, validate A2A/ADK and Next proxy boundaries against current specs, and stage SDK/toolchain majors before they become operational debt. Pull any integration task forward if it blocks P0 memory/security work.
+
+10. **P2 — Plan Phase 70 follow-up topology closure.**
+   - Source note: `.planning/phases/70-foundation-engine-core/deferred-items.md`.
+   - Requirement: `ORCH-FOLLOWUP-01` in `.planning/REQUIREMENTS.md`.
+   - Goal: close deferred LangGraph multi-hop topology and rollback-compensation gaps before claiming full multi-hop orchestration depth. Pull forward only if a live workflow needs multi-hop compensation.
+
+11. **P3 — Plan commercial/product/backend expansion.**
+   - Requirements: `PRODUCT-01..02`, `VERTICAL-01`, and `L3-FOLLOWUP-01..03`.
+   - Goal: decide Eval Engine packaging, pricing/commercialization, second vertical, and live Salesforce/Zendesk/NetSuite/business-outcome adapters after the memory trust and evidence substrate is credible.
+
+12. **P3 — Plan recent-deferred hardening sweep.**
+   - Source notes: Phase 57-64 context/summary deferred sections plus `.planning/PROJECT.md` v5 candidates.
+   - Requirements: remaining `AUTH-FOLLOWUP-01..03`, `AUDIT-FOLLOWUP-01..03`, `UX-FOLLOWUP-01..06`, and any deferred items not already pulled into P0-P2.
+   - Goal: prevent recent deferred notes from living only in phase-local context by turning them into plan-ready backlog requirements.
 
 ### Later Ideas
 
@@ -352,9 +383,12 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 - Multi-hop retry compensation and rollback
 - Memory backend pluggability (beyond mem0 + Qdrant + Neo4j) — v3.0 concern
 - Voice meeting bot (Pipecat as meeting participant)
+- Recall.ai bridge for Zoom/Teams/Meet meeting bot support beyond the Daily-only v4.0 path
+- Multi-participant meeting bot: move beyond listener-only recording into participant-aware meeting capture and consent behavior
 - Flow trigger button (`qmd update` from UI)
 - Library freshness indicator (QMD index recency vs file mtime)
 - LLM-powered recall scoring upgrade (embedding over BM25)
+- Voyage AI `voyage-4-large` embedding upgrade behind the existing embedding-provider flag, preserving Ollama local as the default path
 - Cross-project recall (similar-task recommendations across repos)
 - Operations NOC real-data contract: replace sample `noc-mock-data` panels with live data, source provenance, honest empty/degraded states, and tests that fail on production mock imports
 - Operations NOC efficiency telemetry: track retrieval calls before useful work, source re-reads, raw-context ingest share, operator re-ask redundancy, and rediscovered-fact rate
@@ -362,15 +396,20 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 - Phase 70 topology follow-up: add rollback compensation as a LangGraph node, multi-hop graph iteration, per-hop retry counters, and A2A compensation dispatch
 - Agentic stack architecture coverage: document and expose health for goal, orchestration, agents, tools, memory, monitoring, reliability/failure, and governance/security layers
 - Harness Control Plane: task-level Plan-Execute-Verify timeline showing context assembled, tools exposed, permissions granted, actions taken, verification run, and memory updated
-- Evidence bundles on agent outputs: sources used, memories consumed, tools/commands run, checks passed, unverified assumptions, residual risks, and rollback/replay artifacts
+- Universal evidence bundles on agent outputs: sources used, memories consumed, tools/commands run, checks passed, unverified assumptions, residual risks, and rollback/replay artifacts
 - Shared harness state substrate: authoritative task state with read/write sets, assumptions, version dependencies, verifier obligations, conflict policy, and belief-drift detection for stale context
 - Governed skill contracts: each promoted skill carries preconditions, allowed tools, risk tier, verification checks, evidence examples, owner, rollback behavior, and dispatch status
+- Cross-harness skill auto-sync from agent directories, with governed import contracts instead of manual-only v4.0 skill import
 - Evolution Agent: telemetry-driven proposals for harness improvements such as context packing, tool schemas, validators, retry limits, permission gates, and workflow topology, promoted only after regression evidence
 - Knowledge Graph Intelligence: Graphify-style graph reports for code, docs, PDFs, diagrams, and transcripts with `EXTRACTED`/`INFERRED`/`AMBIGUOUS` confidence tags, god-node detection, surprising connections, query/path/explain commands, wiki export, and freshness hooks
 - PR and workflow graph risk: use graph communities and dependency paths to show likely merge conflicts, impacted concepts, stale graph regions, and cross-agent coordination risk before dispatch or review
 - Stacked agent work units: break large agent tasks into ordered, dependent, independently reviewable slices with stack-aware verification, promotion gates, and rollback invalidation when an earlier slice fails
 - Model gateway observability: integrate LiteLLM as the first optional `ModelGatewayAdapter`, while retaining direct-provider fallback; record provider/model route, prompt/template version, cache hit/miss, fallback path, token/cost budget, latency, and denial reason for every LLM call in the task evidence bundle
 - Secret-scope health: verify agent runtime secrets are folder/project scoped, loaded from an approved secret manager path, and never persisted in plain `.env` or audit artifacts
+- Memory security raw vault: preserve original agentic conversations as compressed, encrypted, append-only evidence artifacts while keeping SQLite focused on metadata and replay pointers
+- Memory security retrieval gate: apply labels, RBAC/capabilities, tenant/project scope, purpose, and source freshness checks before memory recall, context assembly, exports, derived indexing, or agent dispatch
+- Memory security safe indexes: keep legal, finance, HR, credential, payment, privileged, confidential, and public-promotion content out of FTS/vector/graph/qmd projections unless redacted and approved
+- Full 50+ task behavioral W-lift golden set to replace the v4.0 held-out sample with broader behavioral evaluation coverage
 - Eval-pinned promotion commits: when an eval suite passes, capture model version, prompt/harness version, pass rate, dataset seed, and commit/release pointer for incident-grade rollback
 - Agent lessons ledger: maintain a repo-level `lessons.md`/lessons table for weird behavior, edge cases, config changes, incident notes, and promoted skills, then surface it in context packs and graph freshness checks
 - Third-party eval adapter: evaluate whether Inspect-style eval packs should plug into the existing eval engine for safety behaviors such as deception, tool misuse, manipulation, and policy-boundary violations
