@@ -73,4 +73,15 @@ describe("proxy", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("location")).toBeNull();
   });
+
+  it("serves public screenshot assets on the marketing host", async () => {
+    const response = await proxy(
+      new NextRequest("https://memroos.com/screenshots/memroos-floor.png", {
+        headers: { host: "memroos.com" },
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("location")).toBeNull();
+  });
 });

@@ -6,9 +6,11 @@ import {
   ArrowRight,
   Brain,
   BriefcaseBusiness,
+  CalendarDays,
   CheckCircle2,
   Code2,
   Database,
+  ExternalLink,
   FileSearch,
   Gauge,
   GitBranch,
@@ -27,6 +29,9 @@ import { OperationsNoc } from "@/components/operations";
 
 const PUBLIC_LANDING_HOSTS = new Set(["memroos.com", "www.memroos.com", "memroos.vercel.app"]);
 const RESEARCH_PAPER_HREF = "/research/memroos-governed-knowledge-architecture-paper.pdf";
+const GITHUB_REPO_HREF = "https://github.com/lac5q/memroos";
+const GOOGLE_CALENDAR_HREF =
+  "https://calendar.google.com/calendar/appointments/schedules/AcZssZ2JkygvmpuopbcqA_NAPJZDRp0RfmZGa2x_w_oV_dFm-cYVGEyEYG9vy80meCKZzyianVC6P2vJ";
 function isPublicLandingHost(host: string): boolean {
   const normalized = host.split(":")[0]?.toLowerCase() ?? "";
   return PUBLIC_LANDING_HOSTS.has(normalized) || normalized.endsWith(".vercel.app");
@@ -141,6 +146,33 @@ const operatorSurfaces = [
     label: "Evidence loop",
     value: "trace",
     detail: "The roadmap ties agent output back to sources used, memories consumed, tool actions, verification checks, and residual risk.",
+  },
+];
+
+const screenshotShowcase = [
+  {
+    title: "Operator NOC",
+    image: "/screenshots/memroos-floor.png",
+    alt: "MemroOS operator NOC showing memory consumption, workload, model utility, governance, and agent activity panels.",
+    detail: "One operational surface for memory health, agent workload, governance, and evidence.",
+  },
+  {
+    title: "Memory",
+    image: "/screenshots/readme-memory.png",
+    alt: "MemroOS memory page with retained context search and memory activity surfaces.",
+    detail: "Search retained context before dispatch, then trace what agents consumed.",
+  },
+  {
+    title: "Dispatch",
+    image: "/screenshots/readme-dispatch.png",
+    alt: "MemroOS dispatch page with agent cards, live delegations, and task state.",
+    detail: "Send work to local, REST, and A2A-style agents from one governed registry.",
+  },
+  {
+    title: "Skills",
+    image: "/screenshots/readme-skills.png",
+    alt: "MemroOS skills page showing skill lifecycle, analytics, and review workflow.",
+    detail: "Promote repeated successful workflows into reviewed, reusable procedures.",
   },
 ];
 
@@ -407,11 +439,19 @@ function LandingPage() {
               Benchmark
             </Link>
             <Link
-              href="#memory-loop"
+              href={GITHUB_REPO_HREF}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden items-center gap-2 border border-[#0f0f0e] px-4 py-2 text-sm font-semibold uppercase tracking-[0.08em] text-[#0f0f0e] transition hover:bg-[#0f0f0e] hover:text-white sm:inline-flex"
+            >
+              GitHub repo
+            </Link>
+            <Link
+              href="#contact"
               className="inline-flex items-center gap-2 bg-[#0f0f0e] px-4 py-2 text-sm font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[#a8392c]"
             >
-              See the loop
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              Get in touch
+              <CalendarDays className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
         </div>
@@ -426,23 +466,24 @@ function LandingPage() {
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link
-                href="#memory-first"
+                href={GITHUB_REPO_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 bg-[#a8392c] px-5 py-3 text-[13px] font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[#7a2a1e]"
               >
-                Explore memory layer
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                GitHub repo
               </Link>
               <Link
-                href="#demo"
+                href="#contact"
                 className="inline-flex items-center border border-[#0f0f0e] px-5 py-3 text-[13px] font-semibold uppercase tracking-[0.08em] text-[#0f0f0e] transition hover:bg-[#0f0f0e] hover:text-white"
               >
-                Watch demo
+                Get in touch
               </Link>
               <Link
-                href="#proof"
+                href="#screenshots"
                 className="inline-flex items-center border border-[#c9c9c2] px-5 py-3 text-[13px] font-semibold uppercase tracking-[0.08em] text-[#0f0f0e] transition hover:border-[#0f0f0e]"
               >
-                View proof
+                View product
               </Link>
             </div>
             <div className="mt-8 flex flex-wrap items-center gap-6 text-[12px] uppercase tracking-[0.1em] text-[#4a4a45]">
@@ -629,6 +670,42 @@ function LandingPage() {
         </div>
       </section>
 
+      <section id="screenshots" className="border-b border-[#1f1f1c] bg-[#0f0f0e] text-white">
+        <div className="mx-auto max-w-[1180px] px-5 py-16 sm:px-8 lg:py-20">
+          <div className="grid gap-8 lg:grid-cols-[0.76fr_1.24fr] lg:items-end">
+            <div>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#e7b6a8]">Product screenshots</p>
+              <h2 className="mt-3 text-[42px] font-semibold leading-tight tracking-normal text-white">
+                Public repo proof, now visible on the site too.
+              </h2>
+            </div>
+            <p className="text-[17px] leading-8 text-[#d8d4cb]">
+              The README and public landing page now point at the same updated product surfaces: the operator NOC, retained memory, governed dispatch, and the skills workflow.
+            </p>
+          </div>
+          <div className="mt-8 grid gap-5 lg:grid-cols-2">
+            {screenshotShowcase.map((screenshot) => (
+              <figure key={screenshot.title} className="overflow-hidden border border-[#4a4a45] bg-[#171715]">
+                <div className="relative aspect-[16/10] w-full bg-[#080a12]">
+                  <Image
+                    src={screenshot.image}
+                    alt={screenshot.alt}
+                    fill
+                    unoptimized
+                    sizes="(max-width: 1024px) 100vw, 560px"
+                    className="object-cover object-top"
+                  />
+                </div>
+                <figcaption className="border-t border-[#4a4a45] p-5">
+                  <h3 className="text-[20px] font-semibold text-white">{screenshot.title}</h3>
+                  <p className="mt-2 text-[15px] leading-7 text-[#d8d4cb]">{screenshot.detail}</p>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="memory-architecture" className="border-b border-[#c9c9c2] bg-[#fafaf7]">
         <div className="mx-auto max-w-[1180px] px-5 py-16 sm:px-8 lg:py-20">
           <div className="grid gap-8 lg:grid-cols-[0.72fr_1.28fr] lg:items-end">
@@ -745,7 +822,9 @@ function LandingPage() {
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </a>
               <Link
-                href="https://github.com/lac5q/memroos"
+                href={GITHUB_REPO_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-flex items-center border border-[#0f0f0e] px-5 py-3 text-[13px] font-semibold uppercase tracking-[0.08em] text-[#0f0f0e] transition hover:bg-[#0f0f0e] hover:text-white"
               >
                 GitHub repo
@@ -922,22 +1001,51 @@ function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1180px] px-5 py-16 sm:px-8 lg:py-20">
-        <div className="border-y border-[#0f0f0e] py-10">
-          <div className="grid gap-6 md:grid-cols-[1fr_auto] md:items-center">
+      <section id="contact" className="mx-auto max-w-[1180px] px-5 py-16 sm:px-8 lg:py-20">
+        <div className="grid gap-8 border-y border-[#0f0f0e] py-10 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
+          <div>
             <div className="flex items-center gap-4">
               <KangarooMark className="h-12 w-12 border border-[#c9c9c2]" />
-              <h2 className="max-w-[20ch] text-[42px] font-semibold leading-tight tracking-normal text-[#0f0f0e]">
-                Give every agent the team&apos;s lived context before it starts.
-              </h2>
+              <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#7a2a1e]">Get in touch</p>
             </div>
-            <Link
-              href="#memory-loop"
-              className="inline-flex items-center justify-center gap-2 bg-[#0f0f0e] px-5 py-3 text-[13px] font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[#a8392c]"
-            >
-              See memory loop
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
+            <h2 className="mt-6 max-w-[19ch] text-[42px] font-semibold leading-tight tracking-normal text-[#0f0f0e]">
+              Book time with Luis to talk through your agent memory stack.
+            </h2>
+            <p className="mt-5 text-[17px] leading-8 text-[#4a4a45]">
+              Bring a workflow where agents keep rediscovering the same context. The best first call is usually a concrete walkthrough of where memory, governance, and proof break today.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link
+                href={GOOGLE_CALENDAR_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 bg-[#a8392c] px-5 py-3 text-[13px] font-semibold uppercase tracking-[0.08em] text-white transition hover:bg-[#7a2a1e]"
+              >
+                Schedule on Google Calendar
+                <ExternalLink className="h-4 w-4" aria-hidden="true" />
+              </Link>
+              <Link
+                href={GITHUB_REPO_HREF}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 border border-[#0f0f0e] px-5 py-3 text-[13px] font-semibold uppercase tracking-[0.08em] text-[#0f0f0e] transition hover:bg-[#0f0f0e] hover:text-white"
+              >
+                GitHub repo
+              </Link>
+            </div>
+          </div>
+          <div className="overflow-hidden border border-[#1f1f1c] bg-white shadow-[0_16px_36px_rgba(15,15,14,0.08)]">
+            <div className="flex items-center justify-between border-b border-[#c9c9c2] bg-[#fafaf7] px-4 py-3">
+              <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-[#0f0f0e]">Luis Calderon availability</p>
+              <CalendarDays className="h-5 w-5 text-[#a8392c]" aria-hidden="true" />
+            </div>
+            <iframe
+              title="Book time with Luis"
+              src={GOOGLE_CALENDAR_HREF}
+              className="h-[680px] w-full bg-white"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
           </div>
         </div>
       </section>
