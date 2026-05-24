@@ -809,6 +809,25 @@ export interface SkillRegistryResponse {
   offset: number;
 }
 
+export interface SkillSuggestion {
+  id: string;
+  name: string;
+  slug: string;
+  sourcePattern: string;
+  recommendation: string;
+  confidence: number;
+  evidence: string[];
+  comparedHarnesses: Record<string, { exists: boolean; path: string | null }>;
+  status: "proposed" | "approved" | "promoted" | "dismissed";
+}
+
+export interface SkillSuggestionsResponse {
+  ok: boolean;
+  windowDays: number;
+  suggestions: SkillSuggestion[];
+  timestamp: string;
+}
+
 export function useSkillRegistry(opts?: {
   offset?: number;
   limit?: number;
@@ -827,6 +846,15 @@ export function useSkillRegistry(opts?: {
     queryFn: () =>
       fetchJSON<SkillRegistryResponse>(`/api/skills/import?${params.toString()}`),
     staleTime: 30_000,
+  });
+}
+
+export function useSkillSuggestions(days = 30) {
+  return useQuery({
+    queryKey: ["skill-suggestions", days],
+    queryFn: () =>
+      fetchJSON<SkillSuggestionsResponse>(`/api/skills/suggestions?days=${days}`),
+    staleTime: 5 * 60_000,
   });
 }
 
