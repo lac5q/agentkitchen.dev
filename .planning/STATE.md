@@ -6,7 +6,7 @@ status: planning
 last_updated: "2026-05-24T00:21:08.098Z"
 last_activity: 2026-05-24
 progress:
-  total_phases: 0
+  total_phases: 9
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,27 +20,32 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 **Core value:** Any agent framework plugs into Memroos — and every agent, knowledge system, and skill becomes visible, connected, and self-improving.
-**Current focus:** Phase 73 — operator-ui-truth-phase-parity
+**Current focus:** Phase 74 — security-label-schema-raw-vault
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 74 — Security Label Schema + Raw Vault (not started; awaiting plan-phase)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-24 — Milestone v5.0 started
+Status: Roadmap approved; planning Phase 74
+Last activity: 2026-05-24 — v5.0 roadmap created (phases 74-82, 41 requirements)
 
-## Roadmap Summary (v4.0)
+## Roadmap Summary (v5.0)
 
 | Phase | Goal | Requirements |
 |-------|------|--------------|
-| 70 | Foundation + Engine Core — HIL edit-and-continue, multi-hop retry/rollback, memory adapter interface (incl. WAL pragma fix) | HIL-01..03, ORCH-08..10, MEM-06..08 (9) |
-| 71 | Recall + HIL SLA + Voice — LLM semantic recall, SLA escalation timers, Daily.co meeting bot | RECALL-01..02, HIL-04..06, VOICE-06..08 (8) |
-| 72 | Cross-Project Recall + Behavioral W-lift + UI + Skills | RECALL-03..04, SEAL-04..06, UI-05..06, SKILL-01..04 (11) |
-| 73 | Operator UI Truth + Phase Parity | UI-PARITY-01..05 (5) |
+| 74 | Security Label Schema + Raw Vault — append-only vault, multi-dim labels, additive migrations with safe defaults | MEMSEC-01, MEMSEC-02 (2) |
+| 75 | Classification Cascade + Ingestion Gate — fail-closed deterministic-first cascade + human review queue | MEMSEC-03, CTX-FOLLOWUP-03 (2) |
+| 76 | Retrieval Authorization Gate — policy decision on every recall/export/dispatch path | MEMSEC-04 (1) |
+| 77 | Safe Index Projections + Envelope Encryption — classification-aware FTS/vector/graph + AES-GCM rotation | MEMSEC-05, MEMSEC-06, MEMSEC-07 (3) |
+| 78 | Security Regression Tests — negative-fixture suite proves no leak path | MEMSEC-08 (1) |
+| 79 | NOC Telemetry + Real-Data Wiring — live NOC + provenance + efficiency telemetry | NOC-01..14, OPS-AUDIT-01..04 (18) |
+| 80 | Cron Health Registry + Schedules Console — heartbeat, caught-up, pause/resume, source contracts | CTX-FOLLOWUP-01..02, CRON-HEALTH-01..05, UX-FOLLOWUP-03 (8) |
+| 81 | Universal Evidence Bundles + Harness Control Plane — Plan-Execute-Verify timelines, shared state | HARN-01..03 (3) |
+| 82 | Auth Hardening — email invites, password reset, OAuth/SSO, role-aware nav | AUTH-FOLLOWUP-01..03 (3) |
 
-**Coverage:** 33/33 v4.0 requirements mapped, no orphans.
-**Current v4.0 completion:** Phase 70 through Phase 73 are complete. Broader Operations NOC live-data wiring remains tracked separately as NOC-01..11.
-**Completed so far:** Phase 34 through Phase 69 (v2.0–v3.1 shipped).
+**Coverage:** 41/41 v5.0 requirements mapped, no orphans.
+**Critical path:** 74 → 75 → 76 → 77 → 78. Phases 79, 80, 81, 82 run parallel (81 soft-depends on 74).
+**Completed so far:** Phase 34 through Phase 73 (v2.0–v4.0 shipped).
 
 ## Performance Metrics
 
@@ -185,10 +190,10 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-22T07:35:51.122Z
-Stopped at: Phase 73 Plan 01 complete. UI-PARITY-01..05 closed.
+Last session: 2026-05-24
+Stopped at: v5.0 roadmap created (phases 74-82). 41 requirements mapped 100%.
 Resume file: None
-Next action: Run v4.0 milestone audit/closeout; keep unrelated dirty worktree changes separate from Phase 73.
+Next action: `/gsd:plan-phase 74` — Security Label Schema + Raw Vault (foundation of security critical path).
 
 ## UAT Findings (2026-05-17)
 
