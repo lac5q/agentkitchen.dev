@@ -80,6 +80,24 @@
 
 ---
 
+## v5.1 Requirements (Completed)
+
+### Memory Inventory + Listing Clarity
+
+- [x] **MEMLIST-01**: Memory-facing UI and API copy must use explicit memory categories instead of a single ambiguous "memories" count. At minimum, surfaces distinguish vector memories, ingested messages, consolidated insights, episodic writes, graph facts, and knowledge files, with definitions available near the count.
+- [x] **MEMLIST-02**: The Memory surface exposes an inventory summary that counts each memory category from its canonical source of truth: mem0/Qdrant for vector memories, SQLite `messages` for ingested messages, `memory_meta_insights` for consolidated insights, `agent_memory_writes` for explicit episodic writes, Neo4j/graph health for graph facts, and configured qmd/knowledge collections for knowledge files.
+- [x] **MEMLIST-03**: Memory listing rows include provenance and state fields needed to explain why an item appears: tier/category, backend, source connector or agent, project/workspace, timestamp, security label snapshot, consolidation state, salience/access metadata when available, and raw evidence/vault pointer when authorized.
+- [x] **MEMLIST-04**: Memory search and list filters let operators narrow by category/tier, backend, agent, project/workspace, source, date range, label dimensions, consolidation state, and degraded source status without mixing knowledge files, raw messages, and durable vector facts in one unlabelled result set.
+- [x] **MEMLIST-05**: Memory-count and listing verification includes seeded tests and a live operator smoke that prove no hardcoded demo counts remain, all counts cite a source/provenance timestamp, empty/degraded states are honest, and provider failures such as consolidation `429` errors explain why new insights are not appearing.
+
+### Traceability
+
+| Phase | Requirements |
+|-------|-------------|
+| Phase 83 | MEMLIST-01..05 |
+
+---
+
 ## v4.0 Requirements (Completed)
 
 ### HIL Enhancements

@@ -1,9 +1,7 @@
 "use client";
 
-import type { MemoryEntry } from "@/types";
-
 interface CalendarHeatmapProps {
-  entries: MemoryEntry[];
+  entries: Array<{ date?: string | null; timestamp?: string | null }>;
 }
 
 function getLast90Days(): string[] {
@@ -23,7 +21,7 @@ export function CalendarHeatmap({ entries }: CalendarHeatmapProps) {
   // Count entries per date
   const countByDate: Record<string, number> = {};
   for (const entry of entries) {
-    const dateKey = entry.date?.slice(0, 10);
+    const dateKey = (entry.timestamp ?? entry.date)?.slice(0, 10);
     if (dateKey) {
       countByDate[dateKey] = (countByDate[dateKey] ?? 0) + 1;
     }

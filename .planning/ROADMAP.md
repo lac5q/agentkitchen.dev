@@ -19,6 +19,7 @@
 - ✅ **v3.1 Context Reliability + Runtime Resilience** — Phase 69 (shipped 2026-05-17)
 - ✅ **v4.0 Orchestration Depth + Intelligence Uplift** — Phases 70-73 (completed 2026-05-21; milestone audit/closeout next)
 - ✅ **v5.0 Memory Trust + Operational Intelligence** — Phases 74-82 (MVP phase closeout completed 2026-05-24)
+- ✅ **v5.1 Memory Inventory Clarity** — Phase 83 (shipped 2026-05-24)
 
 ## Phases
 
@@ -35,6 +36,12 @@
 - [x] **Phase 82: Auth Hardening** — AUTH-FOLLOWUP-01, AUTH-FOLLOWUP-02, AUTH-FOLLOWUP-03; completed 2026-05-24
 
 Full v5.0 detail in the `## v5.0 Memory Trust + Operational Intelligence` section below.
+
+### Current v5.1 Memory Inventory Clarity Summary — COMPLETE
+
+- [x] **Phase 83: Memory Inventory + Listing Clarity** — MEMLIST-01..05; completed 2026-05-24
+
+Full v5.1 detail in the `## v5.1 Memory Inventory Clarity` section below.
 
 ### Previous v4.0 Orchestration Depth + Intelligence Uplift Summary — COMPLETE
 
@@ -408,6 +415,7 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 - Operations NOC real-data contract: replace sample `noc-mock-data` panels with live data, source provenance, honest empty/degraded states, and tests that fail on production mock imports
 - Operations NOC efficiency telemetry: track retrieval calls before useful work, source re-reads, raw-context ingest share, operator re-ask redundancy, and rediscovered-fact rate
 - Operations NOC engagement binding: wire home-screen agent selection and directives to canonical registry plus real chat/dispatch APIs
+- Memory inventory clarity: shipped in Phase 83 with split category counts, source-of-truth tooltips, provenance rows, category filters, and degraded backend-count states
 - Phase 70 topology follow-up: add rollback compensation as a LangGraph node, multi-hop graph iteration, per-hop retry counters, and A2A compensation dispatch
 - Agentic stack architecture coverage: document and expose health for goal, orchestration, agents, tools, memory, monitoring, reliability/failure, and governance/security layers
 - Harness Control Plane: task-level Plan-Execute-Verify timeline showing context assembled, tools exposed, permissions granted, actions taken, verification run, and memory updated
@@ -837,3 +845,28 @@ Plans:
 | 80 | v5.0 | 1/1 | Complete | 2026-05-24 |
 | 81 | v5.0 | 1/1 | Complete | 2026-05-24 |
 | 82 | v5.0 | 1/1 | Complete | 2026-05-24 |
+
+## v5.1 Memory Inventory Clarity
+
+### Phase 83: Memory Inventory + Listing Clarity
+**Goal**: The Memory surface stops treating every store as one vague "memory" bucket and gives operators a source-backed inventory of vector memories, ingested messages, consolidated insights, episodic writes, graph facts, and knowledge files.
+**Depends on**: Phase 79 (real-data/provenance UI patterns) and Phase 80 (source/degradation health)
+**Requirements**: MEMLIST-01, MEMLIST-02, MEMLIST-03, MEMLIST-04, MEMLIST-05
+**Prerequisite tasks**:
+  - Add a canonical memory category vocabulary shared by UI copy, API responses, docs, and tests.
+  - Add a memory inventory contract that reads counts from the owning stores instead of hardcoded demo values or mixed aggregate labels.
+  - Update the Memory list/search surface so rows expose category, backend, source, project/workspace, timestamp, label snapshot, consolidation state, and provenance.
+  - Wire degraded-state explanations for stalled consolidation, mem0/vector failures, graph unavailability, and stale knowledge indexes.
+**Success Criteria** (what must be TRUE):
+  1. The UI never shows a standalone "memories" count without a category label and source/provenance timestamp.
+  2. Operators can answer "why only N?" from the page itself because each count maps to a specific backend/store and explains missing or degraded paths.
+  3. Memory list/search filters separate vector memories, SQLite messages, consolidated insights, episodic writes, graph facts, and knowledge files without co-mingled unlabelled results.
+  4. Seeded API/component tests prove counts come from the canonical stores, and a smoke test catches hardcoded demo numbers such as the old `97 memories` stat.
+**Plans**: 1/1 complete
+**UI hint**: yes
+
+### v5.1 Progress
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|----------|---------------|--------|-----------|
+| 83 | v5.1 | 1/1 | Complete | 2026-05-24 |

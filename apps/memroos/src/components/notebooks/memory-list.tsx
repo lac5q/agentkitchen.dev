@@ -1,26 +1,27 @@
 "use client";
 
-import type { MemoryEntry } from "@/types";
+import type { MemoryInventoryRow } from "@/lib/api-client";
 
-const TYPE_BADGE_STYLES: Record<MemoryEntry["type"], string> = {
-  user: "bg-sky-500/15 text-sky-400 border-sky-500/30",
-  feedback: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-  project: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  reference: "bg-purple-500/15 text-purple-400 border-purple-500/30",
-  daily: "bg-slate-100 text-stone-600 border-slate-200",
+const CATEGORY_BADGE_STYLES: Record<MemoryInventoryRow["category"], string> = {
+  vector_memory: "bg-cyan-500/15 text-cyan-700 border-cyan-500/30",
+  ingested_message: "bg-emerald-500/15 text-emerald-700 border-emerald-500/30",
+  consolidated_insight: "bg-amber-500/15 text-amber-700 border-amber-500/30",
+  episodic_write: "bg-sky-500/15 text-sky-700 border-sky-500/30",
+  graph_fact: "bg-violet-500/15 text-violet-700 border-violet-500/30",
+  knowledge_file: "bg-slate-100 text-stone-600 border-slate-200",
 };
 
 interface MemoryListProps {
-  entries: MemoryEntry[];
-  onSelect: (entry: MemoryEntry) => void;
-  selected: MemoryEntry | null;
+  entries: MemoryInventoryRow[];
+  onSelect: (entry: MemoryInventoryRow) => void;
+  selected: MemoryInventoryRow | null;
 }
 
 export function MemoryList({ entries, onSelect, selected }: MemoryListProps) {
   if (entries.length === 0) {
     return (
       <div className="flex h-40 items-center justify-center text-sm text-stone-500">
-        No memories found.
+        No memory inventory rows found for the selected filters.
       </div>
     );
   }
@@ -33,7 +34,7 @@ export function MemoryList({ entries, onSelect, selected }: MemoryListProps) {
           entry.content.length > 80
             ? entry.content.slice(0, 80) + "…"
             : entry.content;
-        const badgeStyle = TYPE_BADGE_STYLES[entry.type] ?? TYPE_BADGE_STYLES.daily;
+        const badgeStyle = CATEGORY_BADGE_STYLES[entry.category] ?? CATEGORY_BADGE_STYLES.knowledge_file;
 
         return (
           <button
@@ -53,12 +54,19 @@ export function MemoryList({ entries, onSelect, selected }: MemoryListProps) {
                   badgeStyle,
                 ].join(" ")}
               >
-                {entry.type}
+                {entry.label}
               </span>
-              <span className="ml-auto text-xs text-stone-500">{entry.date}</span>
+              <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-xs text-stone-600">
+                {entry.backend}
+              </span>
+              <span className="ml-auto text-xs text-stone-500">{entry.timestamp?.slice(0, 10) ?? "no timestamp"}</span>
             </div>
             <p className="text-sm leading-snug text-slate-700">{truncated}</p>
-            <p className="mt-1 text-xs text-stone-500">{entry.agent}</p>
+            <div className="mt-2 flex flex-wrap gap-2 text-xs text-stone-500">
+              <span>{entry.source}</span>
+              <span>{entry.consolidationState}</span>
+              {entry.evidencePointer && <span className="break-all">{entry.evidencePointer}</span>}
+            </div>
           </button>
         );
       })}

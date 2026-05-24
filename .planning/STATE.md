@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v5.0
-milestone_name: Memory Trust + Operational Intelligence
+milestone: v5.1
+milestone_name: Memory Trust + Operational Intelligence + Memory Inventory Clarity
 status: complete
-stopped_at: v5.0 phases 74-82 completed through MVP verification; deploy and skill audit next
-last_updated: "2026-05-24T04:30:00.000Z"
-last_activity: 2026-05-24 -- Phases 77-82 closed with classification-aware FTS, MEMSEC-08 regression tests, NOC contract, cron health, evidence bundles, auth reset, and skill suggestions
+stopped_at: v5.1 Phase 83 completed through targeted verification; deploy next
+last_updated: "2026-05-24T07:30:00.000Z"
+last_activity: 2026-05-24 -- Phase 83 closed memory inventory/listing clarity with source-backed category counts, provenance rows, category filters, and degraded backend-count states
 progress:
-  total_phases: 9
-  completed_phases: 9
-  total_plans: 10
-  completed_plans: 10
+  total_phases: 10
+  completed_phases: 10
+  total_plans: 11
+  completed_plans: 11
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 **Core value:** Any agent framework plugs into Memroos — and every agent, knowledge system, and skill becomes visible, connected, and self-improving.
-**Current focus:** v5.0 closeout verification, local/public deploy, and 30-day skill auto-promotion audit
+**Current focus:** v5.1 closeout verification, local/public deploy, and 30-day skill auto-promotion audit
 
 ## Current Position
 
-Phase: 82 — Auth Hardening
-Plan: 82-01
-Status: Complete — v5.0 MVP phases 74-82 are code-complete with focused verification
-Last activity: 2026-05-24 -- Phase 77 FTS projection/rebuild, Phase 78 regression tests, Phase 79 NOC contract, Phase 80 cron health, Phase 81 evidence bundles, Phase 82 password reset/auth telemetry, and skill suggestions landed
+Phase: 83 — Memory Inventory + Listing Clarity
+Plan: 83-01
+Status: Complete — v5.1 inventory clarity is code-complete with focused verification
+Last activity: 2026-05-24 -- Phase 83 added source-backed memory inventory counts, provenance rows, category filters, and degraded-state explanations on the Memory surface
 
 ## Roadmap Summary (v5.0)
 
@@ -43,8 +43,9 @@ Last activity: 2026-05-24 -- Phase 77 FTS projection/rebuild, Phase 78 regressio
 | 80 | Cron Health Registry + Schedules Console — heartbeat, caught-up, pause/resume, source contracts | COMPLETE — CTX-FOLLOWUP-01..02, CRON-HEALTH-01..05, UX-FOLLOWUP-03 (8) |
 | 81 | Universal Evidence Bundles + Harness Control Plane — Plan-Execute-Verify timelines, shared state | COMPLETE — HARN-01..03 (3) |
 | 82 | Auth Hardening — email invites, password reset, OAuth/SSO, role-aware nav | COMPLETE — AUTH-FOLLOWUP-01..03 (3) |
+| 83 | Memory Inventory + Listing Clarity — category-specific counts, provenance rows, filters, degraded count honesty | COMPLETE — MEMLIST-01..05 (5) |
 
-**Coverage:** 41/41 v5.0 requirements mapped, no orphans.
+**Coverage:** 46/46 v5.0/v5.1 requirements mapped, no orphans.
 **Critical path:** 74 → 75 → 76 → 77 → 78. Phases 79, 80, 81, 82 run parallel (81 soft-depends on 74).
 **Completed so far:** Phase 34 through Phase 82 (v2.0–v5.0 shipped through MVP phase closeout).
 

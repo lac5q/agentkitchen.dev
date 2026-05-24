@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useMemory, useMultiMemorySearch } from "@/lib/api-client";
-import type { MemoryEntry } from "@/types";
+import {
+  useMemoryInventory,
+  useMultiMemorySearch,
+  type MemoryInventoryCategoryId,
+  type MemoryInventoryRow,
+} from "@/lib/api-client";
 import { MemoryList } from "@/components/notebooks/memory-list";
 import { CalendarHeatmap } from "@/components/notebooks/calendar-heatmap";
 import { ContentViewer } from "@/components/notebooks/content-viewer";
@@ -12,8 +16,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Card, PageHeader, Stat } from "@/components/shared/ui";
 import { NOC } from "@/lib/noc-theme";
 
-type FilterTab = "All" | "Feedback" | "Project" | "User";
-const TABS: FilterTab[] = ["All", "Feedback", "Project", "User"];
+const CATEGORY_ORDER: Array<MemoryInventoryCategoryId | "all"> = [
+  "all",
+  "vector_memory",
+  "ingested_message",
+  "consolidated_insight",
+  "episodic_write",
+  "graph_fact",
+  "knowledge_file",
+];
 
 const TIER_STYLES = {
   vector: "border-cyan-500/30 bg-cyan-500/10 text-cyan-700",
@@ -44,32 +55,22 @@ function StatCard({
 }
 
 export default function NotebooksPage() {
-  const { data, isLoading } = useMemory("claude");
   const searchParams = useSearchParams();
   const urlSearchQuery = searchParams.get("q")?.trim() ?? "";
-  const [activeTab, setActiveTab] = useState<FilterTab>("All");
-  const [selected, setSelected] = useState<MemoryEntry | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<MemoryInventoryCategoryId | "all">("all");
+  const [selected, setSelected] = useState<MemoryInventoryRow | null>(null);
   const [searchInput, setSearchInput] = useState(urlSearchQuery);
   const [submittedSearchQuery, setSubmittedSearchQuery] = useState("");
   const searchQuery = submittedSearchQuery || urlSearchQuery;
   const search = useMultiMemorySearch(searchQuery, 8);
+  const inventory = useMemoryInventory({ category: categoryFilter });
 
-  const allEntries: MemoryEntry[] = data?.claude ?? [];
+  const categories = inventory.data?.categories ?? [];
+  const rows = inventory.data?.rows ?? [];
+  const newestRowDate = rows[0]?.timestamp?.slice(0, 10) ?? "none";
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
 
-  const today = new Date().toISOString().slice(0, 10);
-  const addedToday = allEntries.filter((e) => e.date?.startsWith(today)).length;
-  const feedbackCount = allEntries.filter((e) => e.type === "feedback").length;
-  const projectCount = allEntries.filter((e) => e.type === "project").length;
-  const newestEntryDate = allEntries[0]?.date?.slice(0, 10) ?? "none";
-
-  const filtered =
-    activeTab === "All"
-      ? allEntries
-      : allEntries.filter(
-          (e) => e.type === (activeTab.toLowerCase() as MemoryEntry["type"])
-        );
-
-  if (isLoading) {
+  if (inventory.isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-500 border-t-transparent" />
@@ -82,38 +83,22 @@ export default function NotebooksPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         eyebrow="Memory"
-        title={<>Memory <InfoTip text="This list is the local Claude file-backed episodic memory archive from ~/.claude/projects. Use Multi-Memory Search below for vector, graph, and episodic retrieval together." /></>}
-        hint="File-backed episodic archive, multi-tier search, and source inspection."
+        title={<>Memory Inventory <InfoTip text="Counts are split by source-backed category: vector memories, ingested messages, consolidated insights, episodic writes, graph facts, and knowledge files." /></>}
+        hint="Source-backed category counts, provenance rows, multi-tier search, and degraded-state inspection."
       />
       <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-        Showing local Claude file memories. Newest file-backed entry: <span className="font-semibold">{newestEntryDate}</span>. Search uses vector, graph, and episodic tiers together.
+        Newest inventory row: <span className="font-semibold">{newestRowDate}</span>. Counts cite their owning store, and degraded categories explain missing backend counts.
       </div>
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard
-          label="Total Memories"
-          value={allEntries.length}
-          tone="info"
-          tooltip="Total number of memory entries stored for this Claude instance. Each entry is a structured fact, preference, or correction that Claude has learned across sessions."
-        />
-        <StatCard
-          label="Added Today"
-          value={addedToday}
-          tone="success"
-          tooltip="Memory entries whose date field matches today's date. A high count means Claude is actively learning from this session; zero means no new memories have been written today."
-        />
-        <StatCard
-          label="Feedback"
-          value={feedbackCount}
-          tone="warn"
-          tooltip="Entries of type 'feedback' — corrections or adjustments Luis has made to Claude's behavior. These are the most important entries as they shape how Claude responds in future sessions."
-        />
-        <StatCard
-          label="Project"
-          value={projectCount}
-          tone="terra"
-          tooltip="Entries of type 'project' — context facts about specific repositories, codebases, or ongoing work. Help Claude recall architectural decisions and project-specific conventions."
-        />
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-6">
+        {categories.map((category) => (
+          <StatCard
+            key={category.id}
+            label={category.label}
+            value={category.count ?? "unknown"}
+            tone={category.status === "degraded" ? "warn" : category.status === "empty" ? "neutral" : "info"}
+            tooltip={`${category.description} Source: ${category.sourceOfTruth}${category.lastUpdated ? `. Last updated: ${category.lastUpdated}` : ""}${category.warnings.length ? `. ${category.warnings.join("; ")}` : ""}`}
+          />
+        ))}
       </div>
 
       <section className="rounded-xl border border-slate-200 bg-white/85 p-5 shadow-[0_18px_42px_rgba(15,23,42,0.05)]">
@@ -205,23 +190,21 @@ export default function NotebooksPage() {
         )}
       </section>
 
-      {/* Heatmap */}
       <div className="rounded-xl border border-slate-200 bg-white/85 p-5 shadow-[0_18px_42px_rgba(15,23,42,0.05)]">
-        <CalendarHeatmap entries={allEntries} />
+        <CalendarHeatmap entries={rows} />
       </div>
 
-      {/* Two-column: list + viewer */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Left: tab switcher + memory list */}
         <div className="flex flex-col gap-3">
-          <div className="flex w-fit gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
-            {TABS.map((tab) => {
-              const isActive = activeTab === tab;
+          <div className="flex flex-wrap gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
+            {CATEGORY_ORDER.map((categoryId) => {
+              const isActive = categoryFilter === categoryId;
+              const label = categoryId === "all" ? "All categories" : categoryById.get(categoryId)?.label ?? categoryId;
               return (
                 <button
-                  key={tab}
+                  key={categoryId}
                   onClick={() => {
-                    setActiveTab(tab);
+                    setCategoryFilter(categoryId);
                     setSelected(null);
                   }}
                   className={[
@@ -231,19 +214,18 @@ export default function NotebooksPage() {
                       : "text-stone-500 hover:bg-white hover:text-slate-800",
                   ].join(" ")}
                 >
-                  {tab}
+                  {label}
                 </button>
               );
             })}
           </div>
           <MemoryList
-            entries={filtered}
+            entries={rows}
             onSelect={setSelected}
             selected={selected}
           />
         </div>
 
-        {/* Right: content viewer */}
         <div>
           <ContentViewer entry={selected} />
         </div>

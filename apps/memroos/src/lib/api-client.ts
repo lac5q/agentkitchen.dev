@@ -128,6 +128,73 @@ export interface MultiMemorySearchResponse {
   timestamp: string;
 }
 
+export type MemoryInventoryCategoryId =
+  | "vector_memory"
+  | "ingested_message"
+  | "consolidated_insight"
+  | "episodic_write"
+  | "graph_fact"
+  | "knowledge_file";
+
+export type MemoryInventoryStatus = "live" | "empty" | "degraded" | "missing";
+
+export interface MemoryInventoryCategory {
+  id: MemoryInventoryCategoryId;
+  label: string;
+  description: string;
+  count: number | null;
+  backend: string;
+  sourceOfTruth: string;
+  status: MemoryInventoryStatus;
+  lastUpdated: string | null;
+  warnings: string[];
+}
+
+export interface MemoryInventoryRow {
+  id: string;
+  category: MemoryInventoryCategoryId;
+  label: string;
+  content: string;
+  backend: string;
+  source: string;
+  project: string | null;
+  workspace: string | null;
+  timestamp: string | null;
+  securityLabel: {
+    visibility: string | null;
+    domain: string | null;
+    sensitivity: string | null;
+    policy: string | null;
+  };
+  consolidationState: "pending" | "consolidated" | "not_applicable" | "unknown";
+  salienceScore: number | null;
+  accessCount: number | null;
+  evidencePointer: string | null;
+  degradedReason: string | null;
+  provenance: {
+    sourceTable: string;
+    sourceId: string | number;
+    sourceTimestamp: string | null;
+  };
+}
+
+export interface MemoryInventoryResponse {
+  categories: MemoryInventoryCategory[];
+  rows: MemoryInventoryRow[];
+  filters: {
+    categories: MemoryInventoryCategoryId[];
+    backends: string[];
+    agents: string[];
+    projects: string[];
+    sources: string[];
+    workspaces: string[];
+    consolidationStates: MemoryInventoryRow["consolidationState"][];
+    degradedStates: MemoryInventoryStatus[];
+  };
+  definitions: Record<MemoryInventoryCategoryId, string>;
+  timestamp: string;
+}
+
 export interface MemoryEvalRunSummary {
   totalCases: number;
   passedCases: number;
@@ -656,6 +723,40 @@ export function useMultiMemorySearch(query: string, limit = 8) {
     queryFn: () => fetchJSON<MultiMemorySearchResponse>(`/api/memory/multi-search?${params}`),
     enabled: query.trim().length > 0,
     staleTime: 15_000,
+  });
+}
+
+export interface MemoryInventoryParams {
+  category?: MemoryInventoryCategoryId | "all";
+  backend?: string;
+  agent?: string;
+  project?: string;
+  source?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  label?: string;
+  consolidationState?: MemoryInventoryRow["consolidationState"] | "all";
+  degraded?: MemoryInventoryStatus | "all";
+}
+
+export function useMemoryInventory(params: MemoryInventoryParams = {}) {
+  const search = new URLSearchParams();
+  if (params.category && params.category !== "all") search.set("category", params.category);
+  if (params.backend) search.set("backend", params.backend);
+  if (params.agent) search.set("agent", params.agent);
+  if (params.project) search.set("project", params.project);
+  if (params.source) search.set("source", params.source);
+  if (params.dateFrom) search.set("dateFrom", params.dateFrom);
+  if (params.dateTo) search.set("dateTo", params.dateTo);
+  if (params.label) search.set("label", params.label);
+  if (params.consolidationState && params.consolidationState !== "all") search.set("consolidationState", params.consolidationState);
+  if (params.degraded && params.degraded !== "all") search.set("degraded", params.degraded);
+  const query = search.toString();
+
+  return useQuery({
+    queryKey: ["memory", "inventory", params],
+    queryFn: () => fetchJSON<MemoryInventoryResponse>(`/api/memory-inventory${query ? `?${query}` : ""}`),
+    refetchInterval: POLL_INTERVALS.memory,
   });
 }
 
