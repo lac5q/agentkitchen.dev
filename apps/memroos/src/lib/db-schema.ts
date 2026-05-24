@@ -93,8 +93,10 @@ export function initSchema(db: Database.Database): void {
       );
   `);
 
-  // AFTER INSERT trigger keeps FTS index in sync with messages table
-  db.exec(`
+  // Keep FTS index triggers in sync with classification labels. Run the DDL as
+  // one transaction so parallel test workers cannot interleave drop/create.
+  db.transaction(() => {
+    db.exec(`
     DROP TRIGGER IF EXISTS messages_ai;
     DROP TRIGGER IF EXISTS messages_au;
     DROP TRIGGER IF EXISTS messages_au_delete;
@@ -129,6 +131,7 @@ export function initSchema(db: Database.Database): void {
       VALUES('delete', old.id, old.content, old.project, old.timestamp, old.agent_id);
     END;
   `);
+  })();
 
   // ingest_meta: tracks JSONL file state for incremental ingestion
   db.exec(`

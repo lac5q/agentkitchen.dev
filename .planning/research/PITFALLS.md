@@ -414,7 +414,7 @@ Mistakes that cause data leaks, silent security bypasses, or force rewrites.
 
 ## Sources
 
-- `/Users/lcalderon/github/memroos/.planning/PROJECT.md` — existing component inventory, tech decisions, constraint list
-- `/Users/lcalderon/github/memroos/.planning/notes/memory-security-storage-spike.md` — two-gateway security model, raw vault design, non-goals
-- `/Users/lcalderon/github/memroos/.planning/notes/privacy-classification-policy-spike.md` — classification cascade design, abstention requirement, human review workflow
-- `/Users/lcalderon/github/memroos/.planning/REQUIREMENTS.md` — v4.0 requirements including SEAL-06 evidence bundle pattern, ORCH-08/09 rollback, RECALL-01/02 embedding job, HIL-01..03 edit payloads
+- `.planning/PROJECT.md` — existing component inventory, tech decisions, constraint list
+- `.planning/notes/memory-security-storage-spike.md` — two-gateway security model, raw vault design, non-goals
+- `.planning/notes/privacy-classification-policy-spike.md` — classification cascade design, abstention requirement, human review workflow
+- `.planning/REQUIREMENTS.md` — v4.0 requirements including SEAL-06 evidence bundle pattern, ORCH-08/09 rollback, RECALL-01/02 embedding job, HIL-01..03 edit payloads

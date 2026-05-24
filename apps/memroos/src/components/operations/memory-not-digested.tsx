@@ -8,13 +8,14 @@ import { NOC, NOC_FONT_MONO } from "@/lib/noc-theme";
 import { NocPanelHeader, Mono } from "./noc-primitives";
 
 interface MemoryNotDigestedProps {
-  filters: NocFilters;
+  filters?: NocFilters;
 }
 
 export function MemoryNotDigested({ filters }: MemoryNotDigestedProps) {
+  const effectiveFilters = filters ?? { window: "24h", workspace: "all" };
   const memory = useMemoryStats({
-    window: nocWindowToTimeSeriesWindow(filters.window),
-    workspace: filters.workspace,
+    window: nocWindowToTimeSeriesWindow(effectiveFilters.window),
+    workspace: effectiveFilters.workspace,
   });
   const health = useMemoryTierHealth();
   const sources = memory.data?.sources ?? [];

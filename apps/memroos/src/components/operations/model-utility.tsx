@@ -12,11 +12,12 @@ function formatTokens(value: number): string {
 }
 
 interface ModelUtilityProps {
-  filters: NocFilters;
+  filters?: NocFilters;
 }
 
 export function ModelUtility({ filters }: ModelUtilityProps) {
-  const { data, isLoading, isError } = useModelUsage(nocWindowToSinceIso(filters.window));
+  const effectiveFilters = filters ?? { window: "24h", workspace: "all" };
+  const { data, isLoading, isError } = useModelUsage(nocWindowToSinceIso(effectiveFilters.window));
   const models = data?.usage.models.slice(0, 5) ?? [];
   const totalTokens =
     (data?.usage.total.inputTokens ?? 0) + (data?.usage.total.outputTokens ?? 0);
