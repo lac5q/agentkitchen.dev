@@ -1,20 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v4.0
-milestone_name: Orchestration Depth + Intelligence Uplift
-current_phase: 73
-current_phase_name: operator-ui-truth-phase-parity
-current_plan: 1
-status: completed
-stopped_at: Phase 73 Plan 01 complete. UI-PARITY-01..05 closed.
-last_updated: "2026-05-22T07:35:51.130Z"
-last_activity: 2026-05-21
+milestone: v5.0
+milestone_name: Memory Trust + Operational Intelligence
+status: planning
+last_updated: "2026-05-24T00:21:08.098Z"
+last_activity: 2026-05-24
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 18
-  completed_plans: 18
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # State: Memroos
@@ -28,23 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 ## Current Position
 
-Current Phase: 73
-Current Phase Name: operator-ui-truth-phase-parity
-Current Plan: 1
-Total Phases: 4
-Total Plans in Phase: 1
-Progress: [██████████] 100%
-Status: Complete
-
-Phase: 73 (operator-ui-truth-phase-parity) — COMPLETE
-Plan: 1 of 1
-Wave 1 (complete): 71-01 recall foundation, 71-03 HIL SLA engine, 71-05 voice Daily bot
-Wave 2 (complete): 71-02 recall endpoint+job, 71-04 HIL dashboard, 71-06 voice consent UI
-Deployment closeout: merged to `main` at c2ff997, pushed to origin, rebuilt, restarted `com.memroos` launchd service on port 3002, and verified the private HTTPS app login route returned HTTP 200.
-Phase 72 closeout: skill-aware dispatch and evidence integration complete with fail-closed SQL governance.
-Phase 73 closeout: HIL edit UI mounted in live approvals, NOC telemetry truth corrected, and phase-close UI representation gate added.
-Next action: run v4.0 milestone audit/closeout, then decide whether to deploy Phase 73 after separating unrelated dirty worktree changes.
-Last activity: 2026-05-21
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-24 — Milestone v5.0 started
 
 ## Roadmap Summary (v4.0)
 

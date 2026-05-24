@@ -132,18 +132,23 @@ Any agent framework plugs into Memroos — and every agent, knowledge system, an
 - ✓ SQLite audit_log table + AuditLogPanel — v1.5 (SEC-02/03, DASH-03)
 - ✓ Usage analytics (6 metrics, 3 windows) on Ledger/Library/Cookbooks — v1.5 (ANA-01/02/03/04)
 
-### Active (v4.0)
+### Active (v5.0)
 
-- [ ] HIL edit-and-continue — operator edits task payload fields mid-graph before resume (HIL-01..03)
-- [ ] HIL timeout + escalation policies — SLA countdown, auto-escalate on timeout (HIL-04..06)
-- [ ] Multi-hop retry compensation and rollback — per-hop retry budget, coordinated rollback (ORCH-08..10)
-- [ ] Memory backend pluggability — adapter interface for swapping vector/graph/episodic backends (MEM-06..08)
-- [ ] Voice meeting bot — Pipecat meeting participant, real-time transcript, Memroos highlights panel (VOICE-06..08)
-- [ ] Flow trigger button — `qmd update` pipeline kickoff from UI (UI-05)
-- [ ] Library freshness indicator — QMD index recency vs file mtime display (UI-06)
-- [ ] LLM-powered recall scoring — embedding-based semantic ranking upgrade (RECALL-01..02)
-- [ ] Cross-project recall — similar-task recommendations across multiple local repos (RECALL-03..04)
-- [ ] True behavioral W-lift — SEAL instruction/skill proposals with real agent re-execution + eval (SEAL-04..06)
+- [ ] Memory security raw vault — append-only, compressed, encrypted evidence vault with retention and classification labels (MEMSEC-01)
+- [ ] Security label dimensions — visibility/domain/sensitivity/policy independent dimensions (MEMSEC-02)
+- [ ] Fail-closed ingestion classification — private-default, deterministic detectors before LLM adjudication, human review routing (MEMSEC-03, CTX-FOLLOWUP-03)
+- [ ] Retrieval authorization gate — policy check before every recall, context assembly, export, or agent dispatch (MEMSEC-04)
+- [ ] Classification-aware safe indexes — restricted content excluded from FTS/vector/graph/qmd unless redacted and approved (MEMSEC-05)
+- [ ] Multimodal storage — text-first embeddings from transcripts/OCR, binary media in vault, embedding provenance (MEMSEC-06)
+- [ ] Envelope encryption — app-level key encryption with rotation path and backup/restore verification (MEMSEC-07)
+- [ ] Security regression tests — negative fixtures proving restricted memory cannot leak through any recall or export path (MEMSEC-08)
+- [ ] Context source reliability — all operator source families declare ingest/index/freshness/safe-answer/repair contracts (CTX-FOLLOWUP-01..02)
+- [ ] Cron job health monitoring — heartbeat, caught-up status, warning signals, pause/resume/stop controls, declarative job registry (CRON-HEALTH-01..05)
+- [ ] Schedules and routines console — visible recurring jobs, cron health, standing delegations, maintenance routines, approval-required automations (UX-FOLLOWUP-03)
+- [ ] NOC real-data wiring — all 14 NOC panels backed by live data, provenance/degraded states, no mock imports in production (NOC-01..14)
+- [ ] Operations page audit — date-range controls, source provenance, loading/error states, over-time views across all ops pages (OPS-AUDIT-01..04)
+- [ ] Harness Control Plane — task-level Plan-Execute-Verify timelines, universal evidence bundles, shared harness state with read/write sets
+- [ ] Auth hardening — email invitations, password reset, OAuth/SSO, role-aware navigation gating (AUTH-FOLLOWUP-01..03)
 
 ### Recent Milestones
 
@@ -153,7 +158,7 @@ Any agent framework plugs into Memroos — and every agent, knowledge system, an
 - [x] **v2.3 Agent Runtime Enhancements (Phases 50-52)** — Agent-side middleware, memory client v2, local observability dashboard
 - [x] **v2.4 Performance + Caching (Phases 53-54)** — Response caching, query performance, cold-start elimination, regression budgets
 
-### Deferred (v5.0+ candidates)
+### Deferred (v5.1+ candidates)
 
 Backlog status: promoted to `.planning/REQUIREMENTS.md` as `UX-FOLLOWUP-01..06` and to `.planning/ROADMAP.md` Later Ideas.
 
@@ -230,3 +235,22 @@ Backlog status: promoted to `.planning/REQUIREMENTS.md` as `UX-FOLLOWUP-01..06` 
 - Obsidian heartbeat: stat 3-5 known paths only
 - Production server: `npm start` on port 3002 — never `npm run dev`
 - mem0 collection `agent_memory`: read-only from app — writes via mem0 HTTP API only
+
+---
+
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
