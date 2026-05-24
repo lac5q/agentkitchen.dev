@@ -1,6 +1,6 @@
 {
   "name": "@memroos/eval-sdk",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "description": "TypeScript SDK for the MemroOS Public Eval API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
