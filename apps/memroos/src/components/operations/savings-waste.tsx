@@ -13,8 +13,7 @@ export function Savings() {
   const tokenTotal = modelUsage.data?.usage.total
     ? modelUsage.data.usage.total.inputTokens +
       modelUsage.data.usage.total.outputTokens +
-      modelUsage.data.usage.total.cacheRead +
-      modelUsage.data.usage.total.cacheCreation
+      modelUsage.data.usage.total.cacheRead
     : 0;
   const spark = modelUsage.data?.usage.models.slice(0, 12).map((model) => model.totalTokens) ?? [0, 0];
 

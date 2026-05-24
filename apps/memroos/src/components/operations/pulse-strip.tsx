@@ -37,8 +37,7 @@ export function PulseStrip({ filters }: PulseStripProps) {
   const tokenTotal = modelUsage.data?.usage.total
     ? modelUsage.data.usage.total.inputTokens +
       modelUsage.data.usage.total.outputTokens +
-      modelUsage.data.usage.total.cacheRead +
-      modelUsage.data.usage.total.cacheCreation
+      modelUsage.data.usage.total.cacheRead
     : null;
   const failedWork = actions.filter((a) => a.action_type === "error").length +
     delegationRows.filter((d) => d.status === "failed").length;
