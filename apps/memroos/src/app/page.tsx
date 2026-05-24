@@ -6,11 +6,9 @@ import {
   ArrowRight,
   Brain,
   BriefcaseBusiness,
-  CalendarDays,
   CheckCircle2,
   Code2,
   Database,
-  ExternalLink,
   FileSearch,
   Gauge,
   GitBranch,
@@ -29,10 +27,6 @@ import { OperationsNoc } from "@/components/operations";
 
 const PUBLIC_LANDING_HOSTS = new Set(["memroos.com", "www.memroos.com", "memroos.vercel.app"]);
 const RESEARCH_PAPER_HREF = "/research/memroos-governed-knowledge-architecture-paper.pdf";
-const GITHUB_REPO_HREF = "https://github.com/lac5q/memroos";
-const GOOGLE_CALENDAR_HREF =
-  "https://calendar.google.com/calendar/appointments/schedules/AcZssZ2JkygvmpuopbcqA_NAPJZDRp0RfmZGa2x_w_oV_dFm-cYVGEyEYG9vy80meCKZzyianVC6P2vJ";
-
 function isPublicLandingHost(host: string): boolean {
   const normalized = host.split(":")[0]?.toLowerCase() ?? "";
   return PUBLIC_LANDING_HOSTS.has(normalized) || normalized.endsWith(".vercel.app");
@@ -147,33 +141,6 @@ const operatorSurfaces = [
     label: "Evidence loop",
     value: "trace",
     detail: "The roadmap ties agent output back to sources used, memories consumed, tool actions, verification checks, and residual risk.",
-  },
-];
-
-const screenshotShowcase = [
-  {
-    title: "Operator NOC",
-    image: "/screenshots/memroos-floor.png",
-    alt: "MemroOS operator NOC showing memory consumption, workload, model utility, governance, and agent activity panels.",
-    detail: "One operational surface for memory health, agent workload, governance, and evidence.",
-  },
-  {
-    title: "Memory",
-    image: "/screenshots/readme-memory.png",
-    alt: "MemroOS memory page with retained context search and memory activity surfaces.",
-    detail: "Search retained context before dispatch, then trace what agents consumed.",
-  },
-  {
-    title: "Dispatch",
-    image: "/screenshots/readme-dispatch.png",
-    alt: "MemroOS dispatch page with agent cards, live delegations, and task state.",
-    detail: "Send work to local, REST, and A2A-style agents from one governed registry.",
-  },
-  {
-    title: "Skills",
-    image: "/screenshots/readme-skills.png",
-    alt: "MemroOS skills page showing skill lifecycle, analytics, and review workflow.",
-    detail: "Promote repeated successful workflows into reviewed, reusable procedures.",
   },
 ];
 
