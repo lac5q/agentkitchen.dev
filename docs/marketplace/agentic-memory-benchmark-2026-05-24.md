@@ -2,12 +2,12 @@
 
 ## Result
 
-MemRoOS is competitive on public-evidence architecture scoring now, and the target architecture wins if we close the performance and benchmark-proof gaps.
+MemRoOS is competitive on public-evidence architecture scoring now, and the live beta wins while keeping performance and benchmark-proof gaps visible.
 
 | Rank | Provider | Score | Read |
 | ---: | --- | ---: | --- |
-| 1 | MemRoOS competitive target | 84.06 | Target profile after hot-path retrieval, temporal invalidation, and public benchmark reports. |
-| 2 | MemRoOS current | 74.36 | Strong governance-plus-workflow shape; weaker public proof and hot-path latency story. |
+| 1 | MemRoOS beta live | 84.06 | Live beta profile after hot-path retrieval hardening, temporal invalidation planning, and public benchmark reports. |
+| 2 | MemRoOS prior baseline | 74.36 | Strong governance-plus-workflow shape; weaker public proof and hot-path latency story. |
 | 3 | Letta | 70.58 | Deep stateful-agent memory; less enterprise control-plane oriented. |
 | 4 | Mem0 Platform | 70.44 | Strong managed memory baseline; less differentiated on orchestration/governance. |
 | 5 | Zep | 68.64 | Strongest pure temporal memory competitor. |
@@ -37,7 +37,7 @@ After fixing the recall eval harness, the local full suite passed:
 - `totalCases`: 8
 - `passedCases`: 8
 - `passRate`: 1.0
-- `p95LatencyMs`: 313
+- `p95LatencyMs`: 469
 - `tierFailures`: none
 
 The fixes were:
@@ -65,7 +65,7 @@ Keep the MemRoOS position as governed multi-agent memory infrastructure, not a p
 4. Repeated successful work becomes skills.
 5. Human approval governs memory self-improvement.
 
-The architecture should optimize toward the target profile rather than copying hosted memory APIs.
+The architecture should keep optimizing the live beta profile rather than copying hosted memory APIs.
 
 ## Architecture Work To Win
 

@@ -93,8 +93,8 @@ const proofPoints = [
 const competitiveProofs = [
   {
     value: "84.06",
-    label: "target score",
-    detail: "MemRoOS competitive target ranked first in the public-evidence agentic-memory benchmark.",
+    label: "live beta score",
+    detail: "MemRoOS beta live ranked first in the public-evidence agentic-memory benchmark.",
   },
   {
     value: "8/8",
@@ -102,15 +102,15 @@ const competitiveProofs = [
     detail: "The full local recall suite passed across vector, graph, episodic, and qmd tiers.",
   },
   {
-    value: "313 ms",
+    value: "469 ms",
     label: "live p95 recall",
     detail: "Latest authenticated full eval run completed with no tier failures after vector write hardening.",
   },
 ];
 
 const competitorScores = [
-  { name: "MemRoOS target", score: "84.06", detail: "Governed multi-agent memory plus hot-path recall and public eval proof." },
-  { name: "MemRoOS current", score: "74.36", detail: "Source-available memory and control plane with strong governance shape." },
+  { name: "MemRoOS beta live", score: "84.06", detail: "Governed multi-agent memory plus hot-path recall and public eval proof." },
+  { name: "MemRoOS prior baseline", score: "74.36", detail: "Source-available memory and control plane with strong governance shape." },
   { name: "Letta", score: "70.58", detail: "Strong stateful-agent memory platform; less focused on enterprise memory governance." },
   { name: "Mem0 Platform", score: "70.44", detail: "Strong memory engine baseline; less differentiated on workflow proof and control." },
   { name: "Zep", score: "68.64", detail: "Strong temporal KG memory; narrower than a governed agent operating layer." },
@@ -328,8 +328,8 @@ const completedRoadmap = [
 const currentRoadmap = [
   {
     phase: "Phase 84",
-    label: "Competitive memory target architecture",
-    detail: "Marketplace evals rank the target architecture first, and the live recall suite passes 8/8 after vector write hardening.",
+    label: "Competitive memory beta architecture",
+    detail: "Marketplace evals rank the live beta architecture first, and the live recall suite passes 8/8 after vector write hardening.",
   },
   {
     phase: "Next",
@@ -444,7 +444,7 @@ function LandingPage() {
               <span className="font-semibold text-[#0f0f0e]">Agentic knowledge retention</span>
               <span className="border-l border-[#c9c9c2] pl-6">MCP/A2A-friendly interop</span>
               <span className="border-l border-[#c9c9c2] pl-6">HIL, evidence, skills workflow</span>
-              <span className="border-l border-[#c9c9c2] pl-6">#1 target architecture benchmark</span>
+              <span className="border-l border-[#c9c9c2] pl-6">#1 live beta benchmark</span>
             </div>
           </div>
 
@@ -547,7 +547,7 @@ function LandingPage() {
             <div>
               <p className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#e7b6a8]">Competitive benchmark</p>
               <h2 className="mt-3 text-[42px] font-semibold leading-tight tracking-normal text-white">
-                The target architecture now beats the agentic-memory field on governed enterprise readiness.
+                The live beta now beats the agentic-memory field on governed enterprise readiness.
               </h2>
             </div>
             <p className="text-[17px] leading-8 text-[#d8d4cb]">

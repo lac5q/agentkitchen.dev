@@ -23,12 +23,12 @@
 
 <p align="center">
   <a href="https://github.com/lac5q/memroos/blob/main/LICENSE"><img alt="License: PolyForm Small Business 1.0.0" src="https://img.shields.io/badge/license-PolyForm%20Small%20Business-a8392c.svg"></a>
-  <img alt="Release: v0.9.0" src="https://img.shields.io/badge/release-v0.9.0-a8392c.svg">
+  <img alt="Release: v1.0.0-beta.1" src="https://img.shields.io/badge/release-v1.0.0--beta.1-a8392c.svg">
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-black.svg">
   <img alt="A2A ready" src="https://img.shields.io/badge/A2A-ready-7a2a1e.svg">
   <img alt="Local first" src="https://img.shields.io/badge/local--first-yes-4a4a45.svg">
   <img alt="Security" src="https://img.shields.io/badge/security-operator--gated-a8392c.svg">
-  <img alt="Benchmark target: #1" src="https://img.shields.io/badge/benchmark_target-%231_agentic_memory-a8392c.svg">
+  <img alt="Benchmark live beta: #1" src="https://img.shields.io/badge/live_beta-%231_agentic_memory-a8392c.svg">
 </p>
 
 ---
@@ -47,7 +47,7 @@ npm install
 
 Then open `http://localhost:3000`, search retained memory, inspect Knowledge source health, register or dispatch an agent, and review the runtime context pack that gets assembled before work starts.
 
-If you are evaluating the launch build, start with the v0.9.0 release, watch the demo, then open a workflow feedback issue with the first place your agents lose context. Maintainers can process launch feedback with the [workflow feedback intake guide](docs/workflow-feedback-intake.md).
+If you are evaluating the launch build, start with the v1.0.0-beta.1 release, watch the demo, then open a workflow feedback issue with the first place your agents lose context. Maintainers can process launch feedback with the [workflow feedback intake guide](docs/workflow-feedback-intake.md).
 
 ## What MemroOS Is
 
@@ -67,25 +67,25 @@ The repository began as `memroos.dev`; some internal package names, paths, and e
 
 ## Competitive Benchmark
 
-MemroOS now has a public-evidence benchmark for enterprise agentic memory and a passing live recall gate for the local target architecture.
+MemroOS now has a public-evidence benchmark for enterprise agentic memory and a passing live recall gate for the local beta architecture.
 
 Latest local results from May 24, 2026:
 
 | Rank | Provider | Score | Note |
 | ---: | --- | ---: | --- |
-| 1 | MemRoOS competitive target | 84.06 | Governed multi-agent memory with hot-path recall, proof surfaces, and public evals. |
-| 2 | MemRoOS current | 74.36 | Source-available memory/control plane with strong governance and workflow fit. |
+| 1 | MemRoOS beta live | 84.06 | Governed multi-agent memory with hot-path recall, proof surfaces, and public evals. |
+| 2 | MemRoOS prior baseline | 74.36 | Source-available memory/control plane with strong governance and workflow fit. |
 | 3 | Letta | 70.58 | Strong stateful-agent memory platform. |
 | 4 | Mem0 Platform | 70.44 | Strong memory engine baseline. |
 | 5 | Zep | 68.64 | Strong temporal knowledge-graph memory. |
 
 The benchmark compares public architecture evidence, governance depth, multi-agent workflow fit, retrieval design, interop, and proof surfaces. It does not claim private latency or accuracy for closed products without API access. See [the benchmark methodology and results](docs/marketplace/agentic-memory-benchmark-2026-05-24.md).
 
-Live recall gate after target-architecture hardening:
+Live recall gate after beta hardening:
 
 - Full suite: `8/8` cases passed.
 - Pass rate: `1.0`.
-- p95 recall latency: `313 ms`.
+- p95 recall latency: `469 ms`.
 - Tier failures: none.
 
 ## Video Demo
@@ -179,9 +179,9 @@ After setup, you can:
 7. Review skill proposals before they modify instructions or playbooks.
 8. Keep memory, knowledge, orchestration, skills, agents, usage, and governance in one operator surface.
 
-## Release 0.9
+## Release 1.0 Beta
 
-`v0.9.0` is the public documentation release for MemroOS's memory-plus-governance positioning.
+`v1.0.0-beta.1` is the public beta release for MemroOS's memory-plus-governance positioning.
 
 The current release includes:
 
@@ -208,7 +208,7 @@ The current release includes:
 
 The active GSD milestone is `v5.2: Competitive Memory Target Architecture`. It keeps the product focused on measurable memory advantage instead of generic agent breadth:
 
-- **Phase 84: Competitive memory target architecture** - complete locally. The marketplace benchmark ranks the target architecture first, and the live recall suite passes 8/8 after vector write hardening.
+- **Phase 84: Competitive memory beta architecture** - live locally. The marketplace benchmark ranks the beta architecture first, and the live recall suite passes 8/8 after vector write hardening.
 - **Next focus: hot-path retrieval** - make the benchmark advantage visible in day-to-day runtime latency, cache prewarm, and context-pack assembly.
 - **Next focus: temporal invalidation** - close the remaining Zep-style temporal memory gap without weakening MemRoOS governance, audit, or source proof.
 - **Next focus: public benchmark proof** - keep the methodology, fixtures, and results reproducible so public claims stay defensible.

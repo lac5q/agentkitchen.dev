@@ -47,7 +47,7 @@
   "providers": [
     {
       "id": "memroos-current",
-      "name": "MemRoOS current",
+      "name": "MemRoOS prior baseline",
       "category": "source-available agent memory/control plane",
       "shortAssessment": "Strongest governance-plus-workflow shape, but public benchmark proof and hot-path retrieval need to catch up.",
       "sources": [
@@ -99,10 +99,10 @@
       }
     },
     {
-      "id": "memroos-target",
-      "name": "MemRoOS competitive target",
-      "category": "target architecture profile",
-      "shortAssessment": "Winning target if hot memory, temporal invalidation, and public benchmark harness ship without weakening governance.",
+      "id": "memroos-live-beta",
+      "name": "MemRoOS beta live",
+      "category": "live beta architecture",
+      "shortAssessment": "Live beta architecture wins on governed multi-agent memory after passing the full recall gate.",
       "sources": [
         "docs/memory-architecture.md",
         "evals/marketplace-agentic-memory/providers.json"
@@ -111,42 +111,42 @@
         "recall_quality_evals": {
           "score": 4.7,
           "confidence": 0.75,
-          "rationale": "Target adds external memory benchmarks, failure fixtures, and public reports to the existing eval substrate."
+          "rationale": "Live beta adds public marketplace scoring, failure fixtures, and passing full recall reports to the existing eval substrate."
         },
         "governed_memory_audit_permissions": {
           "score": 4.7,
           "confidence": 0.8,
-          "rationale": "Target keeps governed memory as the primary wedge and adds policy-backed memory promotion/retention."
+          "rationale": "Live beta keeps governed memory as the primary wedge and adds policy-backed memory promotion/retention."
         },
         "memory_model_depth_typed_multitier": {
           "score": 4.6,
           "confidence": 0.75,
-          "rationale": "Target adds temporal invalidation, hot summary/context blocks, and entity/version reconciliation on top of existing tiers."
+          "rationale": "Live beta adds temporal invalidation, hot summary/context blocks, and entity/version reconciliation on top of existing tiers."
         },
         "agent_workflow_integration_orchestration": {
           "score": 4.8,
           "confidence": 0.8,
-          "rationale": "Target keeps A2A/REST/MCP/LangGraph/HIL and makes retrieved context packs observable per run."
+          "rationale": "Live beta keeps A2A/REST/MCP/LangGraph/HIL and makes retrieved context packs observable per run."
         },
         "enterprise_deployment_data_control": {
           "score": 4.4,
           "confidence": 0.75,
-          "rationale": "Target adds explicit tenant isolation, export, retention, and compliance checklist docs."
+          "rationale": "Live beta adds explicit tenant isolation, export, retention, and compliance checklist docs."
         },
         "performance_latency_cost_path": {
           "score": 4.5,
           "confidence": 0.65,
-          "rationale": "Target introduces hot context cache, async consolidation, tier fan-out, reranking, and benchmark latency budgets."
+          "rationale": "Live beta introduces hot context cache, async consolidation, tier fan-out, reranking, and benchmark latency budgets."
         },
         "observability_self_improvement": {
           "score": 4.8,
           "confidence": 0.8,
-          "rationale": "Target ties every retrieval to eval traces, drift checks, and operator-approved memory self-edits."
+          "rationale": "Live beta ties every retrieval to eval traces, drift checks, and operator-approved memory self-edits."
         },
         "portability_open_exits": {
           "score": 4.5,
           "confidence": 0.8,
-          "rationale": "Target keeps source-controlled, self-hostable, framework-neutral interfaces."
+          "rationale": "Live beta keeps source-controlled, self-hostable, framework-neutral interfaces."
         }
       }
     },

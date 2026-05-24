@@ -99,14 +99,14 @@ function readBenchmark(inputPath) {
 
 function summarizeFindings(ranked) {
   const memroos = ranked.find((provider) => provider.id === "memroos-current");
-  const target = ranked.find((provider) => provider.id === "memroos-target");
-  const closedLeader = ranked.find((provider) => provider.id !== "memroos-current" && provider.id !== "memroos-target");
+  const liveBeta = ranked.find((provider) => provider.id === "memroos-live-beta");
+  const closedLeader = ranked.find((provider) => provider.id !== "memroos-current" && provider.id !== liveBeta?.id);
   return {
     leader: ranked[0]?.name ?? null,
     memroosCurrentRank: memroos?.rank ?? null,
     memroosCurrentScore: memroos?.evaluation.weightedScore ?? null,
-    memroosTargetRank: target?.rank ?? null,
-    memroosTargetScore: target?.evaluation.weightedScore ?? null,
+    memroosLiveBetaRank: liveBeta?.rank ?? null,
+    memroosLiveBetaScore: liveBeta?.evaluation.weightedScore ?? null,
     highestScoredAlternative: closedLeader
       ? {
           name: closedLeader.name,
@@ -115,7 +115,7 @@ function summarizeFindings(ranked) {
         }
       : null,
     recommendation:
-      "Keep MemRoOS's governed multi-agent memory position; close the competitive gap with hot-path retrieval, public recall benchmarks, and temporal fact invalidation.",
+      "Keep MemRoOS's governed multi-agent memory position; strengthen the live beta with hot-path retrieval, public recall benchmarks, and temporal fact invalidation.",
   };
 }
 
