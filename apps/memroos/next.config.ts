@@ -1,7 +1,4 @@
 import type { NextConfig } from "next";
-import path from "path";
-
-const monorepoRoot = process.env.MEMROOS_ROOT || path.resolve(__dirname, "../..");
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
@@ -13,7 +10,17 @@ const nextConfig: NextConfig = {
   },
   serverExternalPackages: ['better-sqlite3'],
   turbopack: {
-    root: monorepoRoot,
+    ignoreIssue: [
+      {
+        path: "**/next.config.ts",
+        title: "Encountered unexpected file in NFT list",
+      },
+    ],
+  },
+  outputFileTracingExcludes: {
+    "/api/library/qmd-update": ["./next.config.ts"],
+    "/api/**/*": ["./next.config.ts"],
+    "/*": ["./next.config.ts"],
   },
 };
 
