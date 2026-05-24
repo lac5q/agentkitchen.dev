@@ -34,6 +34,7 @@ describe("runtime health route", () => {
   afterEach(() => {
     delete process.env.MEM0_URL;
     delete process.env.KNOWLEDGE_INDEX_HEALTH_TTL_MS;
+    delete process.env.KNOWLEDGE_INDEX_HEALTH_REQUEST_TIMEOUT_MS;
     delete process.env.NEO4J_PASSWORD;
     vi.unstubAllGlobals();
     vi.resetModules();
@@ -182,6 +183,38 @@ describe("runtime health route", () => {
     expect(knowledge.status).toBe("degraded");
     expect(knowledge.detail).toContain("63 pending embeddings");
     expect(knowledge.detail).toContain("missing qmd");
+  });
+
+  it("returns a bounded degraded result when knowledge indexing is still running", async () => {
+    process.env.KNOWLEDGE_INDEX_HEALTH_REQUEST_TIMEOUT_MS = "1";
+    vi.mocked(execFile).mockImplementation((_command, args, options, callback) => {
+      const done = typeof options === "function" ? options : callback;
+      if (!done) throw new Error("missing callback");
+      if (Array.isArray(args) && args.includes("--json")) {
+        return {} as ReturnType<typeof execFile>;
+      }
+      done(null, "", "");
+      return {} as ReturnType<typeof execFile>;
+    });
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        Response.json({
+          status: "ok",
+          vector_store: "connected",
+          memory_runtime: { status: "available" },
+          queue: { queued: 0 },
+        })
+      )
+    );
+    const { GET } = await loadRoute();
+
+    const response = await GET();
+    const body = await response.json();
+    const knowledge = body.services.find((service: { service: string }) => service.service === "Knowledge Index");
+
+    expect(knowledge.status).toBe("degraded");
+    expect(knowledge.detail).toContain("still running");
   });
 
   it("includes graph memory status in app health", async () => {

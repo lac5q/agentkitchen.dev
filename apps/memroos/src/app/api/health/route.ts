@@ -54,6 +54,12 @@ type KnowledgeIndexReport = {
 let knowledgeIndexCache:
   | { checkedAt: number; result: ServiceCheckResult }
   | null = null;
+let knowledgeIndexInflight: Promise<ServiceCheckResult> | null = null;
+
+function positiveNumber(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
 
 async function checkService(
   name: string,
@@ -113,16 +119,37 @@ async function checkMem0(): Promise<ServiceCheckResult> {
 
 async function checkKnowledgeIndexing(): Promise<ServiceCheckResult> {
   const now = Date.now();
-  const ttlMs = Number(process.env.KNOWLEDGE_INDEX_HEALTH_TTL_MS ?? 5 * 60 * 1000);
-  if (
-    knowledgeIndexCache &&
-    Number.isFinite(ttlMs) &&
-    ttlMs > 0 &&
-    now - knowledgeIndexCache.checkedAt < ttlMs
-  ) {
+  const ttlMs = positiveNumber(process.env.KNOWLEDGE_INDEX_HEALTH_TTL_MS, 5 * 60 * 1000);
+  if (knowledgeIndexCache && now - knowledgeIndexCache.checkedAt < ttlMs) {
     return knowledgeIndexCache.result;
   }
 
+  if (!knowledgeIndexInflight) {
+    knowledgeIndexInflight = runKnowledgeIndexingCheck(now).finally(() => {
+      knowledgeIndexInflight = null;
+    });
+  }
+
+  const requestTimeoutMs = positiveNumber(process.env.KNOWLEDGE_INDEX_HEALTH_REQUEST_TIMEOUT_MS, 2500);
+  const timeoutResult = new Promise<ServiceCheckResult>((resolve) => {
+    setTimeout(() => {
+      if (knowledgeIndexCache) {
+        resolve({
+          ...knowledgeIndexCache.result,
+          detail: knowledgeIndexCache.result.detail
+            ? `${knowledgeIndexCache.result.detail}; refresh still running`
+            : "refresh still running",
+        });
+        return;
+      }
+      resolve({ status: "degraded", detail: "knowledge indexing check still running" });
+    }, requestTimeoutMs);
+  });
+
+  return Promise.race([knowledgeIndexInflight, timeoutResult]);
+}
+
+async function runKnowledgeIndexingCheck(now: number): Promise<ServiceCheckResult> {
   const repoRoot = getRepoRoot();
   const scriptPath = path.join(repoRoot, "scripts", "check-knowledge-indexing.mjs");
   const days = process.env.MEMORY_INDEX_DAYS ?? "2";
@@ -139,7 +166,7 @@ async function checkKnowledgeIndexing(): Promise<ServiceCheckResult> {
       ],
       {
         cwd: repoRoot,
-        timeout: Number(process.env.KNOWLEDGE_INDEX_HEALTH_TIMEOUT_MS ?? 45_000),
+        timeout: positiveNumber(process.env.KNOWLEDGE_INDEX_HEALTH_TIMEOUT_MS, 45_000),
         env: {
           ...process.env,
           QMD_FORCE_CPU: process.env.QMD_FORCE_CPU ?? "1",

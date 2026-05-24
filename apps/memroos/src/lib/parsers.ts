@@ -414,6 +414,19 @@ async function aggregateJsonlFile(
   });
 }
 
+async function aggregateRecentJsonlFile(
+  filePath: string,
+  acc: Map<string, ModelUsageStat>,
+  seen: Set<string>,
+  since?: Date
+): Promise<void> {
+  if (since) {
+    const fileStat = await stat(filePath).catch(() => null);
+    if (!fileStat || fileStat.mtime < since) return;
+  }
+  await aggregateJsonlFile(filePath, acc, seen, since);
+}
+
 export async function parseModelUsage(since?: Date): Promise<ModelUsage> {
   const claudeProjectsPath = `${process.env.HOME}/.claude/projects`;
   const acc = new Map<string, ModelUsageStat>();
@@ -439,7 +452,7 @@ export async function parseModelUsage(since?: Date): Promise<ModelUsage> {
 
     for (const entry of entries) {
       if (entry.endsWith(".jsonl")) {
-        await aggregateJsonlFile(path.join(projectDir, entry), acc, seen, since);
+        await aggregateRecentJsonlFile(path.join(projectDir, entry), acc, seen, since);
       } else {
         // session dir — check for subagents/
         const subagentsDir = path.join(projectDir, entry, "subagents");
@@ -451,7 +464,7 @@ export async function parseModelUsage(since?: Date): Promise<ModelUsage> {
         }
         for (const saFile of saFiles) {
           if (saFile.endsWith(".jsonl")) {
-            await aggregateJsonlFile(path.join(subagentsDir, saFile), acc, seen, since);
+            await aggregateRecentJsonlFile(path.join(subagentsDir, saFile), acc, seen, since);
           }
         }
       }

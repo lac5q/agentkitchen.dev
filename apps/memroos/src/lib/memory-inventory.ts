@@ -119,6 +119,27 @@ const EMPTY_LABEL = {
   policy: null,
 };
 
+let categoryCountsCache:
+  | { checkedAt: number; categories: MemoryInventoryCategory[]; complete: boolean }
+  | null = null;
+let knowledgeCategoryCache:
+  | { checkedAt: number; category: MemoryInventoryCategory }
+  | null = null;
+let knowledgeCategoryInflight: Promise<MemoryInventoryCategory> | null = null;
+
+function positiveNumber(value: string | undefined, fallback: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function cloneCategory(entry: MemoryInventoryCategory): MemoryInventoryCategory {
+  return { ...entry, warnings: [...entry.warnings] };
+}
+
+function cloneCategories(categories: MemoryInventoryCategory[]): MemoryInventoryCategory[] {
+  return categories.map(cloneCategory);
+}
+
 function countStatus(count: number | null, warnings: string[] = []): MemoryInventoryStatus {
   if (warnings.length > 0) return "degraded";
   if (count === null) return "degraded";
@@ -496,15 +517,51 @@ async function knowledgeCategory(): Promise<MemoryInventoryCategory> {
   return category("knowledge_file", count, lastUpdated?.toISOString() ?? null, warnings);
 }
 
-async function categoryCounts(): Promise<MemoryInventoryCategory[]> {
+async function getKnowledgeCategory(waitForKnowledge: boolean): Promise<MemoryInventoryCategory> {
+  const now = Date.now();
+  const ttlMs = positiveNumber(process.env.MEMORY_INVENTORY_CATEGORY_TTL_MS, 60_000);
+  if (knowledgeCategoryCache && now - knowledgeCategoryCache.checkedAt < ttlMs) {
+    return cloneCategory(knowledgeCategoryCache.category);
+  }
+
+  if (!waitForKnowledge) {
+    return category("knowledge_file", null, null, ["Knowledge file count deferred until selected"]);
+  }
+
+  if (!knowledgeCategoryInflight) {
+    knowledgeCategoryInflight = knowledgeCategory()
+      .then((entry) => {
+        knowledgeCategoryCache = { checkedAt: Date.now(), category: entry };
+        categoryCountsCache = null;
+        return entry;
+      })
+      .finally(() => {
+        knowledgeCategoryInflight = null;
+      });
+  }
+
+  return cloneCategory(await knowledgeCategoryInflight);
+}
+
+async function categoryCounts(waitForKnowledge = false): Promise<MemoryInventoryCategory[]> {
+  const now = Date.now();
+  const ttlMs = positiveNumber(process.env.MEMORY_INVENTORY_CATEGORY_TTL_MS, 60_000);
+  if (
+    categoryCountsCache &&
+    now - categoryCountsCache.checkedAt < ttlMs &&
+    (categoryCountsCache.complete || !waitForKnowledge)
+  ) {
+    return cloneCategories(categoryCountsCache.categories);
+  }
+
   const db = getDb();
   const message = db.prepare("SELECT COUNT(*) AS count, MAX(timestamp) AS lastUpdated FROM messages").get() as { count: number; lastUpdated: string | null };
   const insights = db.prepare("SELECT COUNT(*) AS count, MAX(created_at) AS lastUpdated FROM memory_meta_insights").get() as { count: number; lastUpdated: string | null };
   const writes = db.prepare("SELECT COUNT(*) AS count, MAX(written_at) AS lastUpdated FROM agent_memory_writes").get() as { count: number; lastUpdated: string | null };
 
-  const [vector, graph, knowledge] = await Promise.all([vectorCategory(), graphCategory(), knowledgeCategory()]);
+  const [vector, graph, knowledge] = await Promise.all([vectorCategory(), graphCategory(), getKnowledgeCategory(waitForKnowledge)]);
 
-  return [
+  const categories = [
     vector,
     category("ingested_message", message.count, message.lastUpdated),
     category("consolidated_insight", insights.count, insights.lastUpdated),
@@ -512,6 +569,9 @@ async function categoryCounts(): Promise<MemoryInventoryCategory[]> {
     graph,
     knowledge,
   ];
+  const complete = knowledge.count !== null || !knowledge.warnings.some((warning) => warning.includes("refresh still running"));
+  categoryCountsCache = { checkedAt: now, categories, complete };
+  return cloneCategories(categories);
 }
 
 function filterOptions(rows: MemoryInventoryRow[], categories: MemoryInventoryCategory[]) {
@@ -530,12 +590,12 @@ function filterOptions(rows: MemoryInventoryRow[], categories: MemoryInventoryCa
 
 export async function buildMemoryInventory(url: URL): Promise<MemoryInventoryResponse> {
   const filters = parseFilters(url);
-  const categories = await categoryCounts();
+  const categories = await categoryCounts(filters.category === "knowledge_file");
   const rows = [
     ...messageRows(filters),
     ...insightRows(filters),
     ...episodicWriteRows(filters),
-    ...(await knowledgeRows(filters)),
+    ...(filters.category === "knowledge_file" ? await knowledgeRows(filters) : []),
   ]
     .filter((row) => !filters.degraded || categories.find((entry) => entry.id === row.category)?.status === filters.degraded)
     .sort((a, b) => (b.timestamp ?? "").localeCompare(a.timestamp ?? ""))

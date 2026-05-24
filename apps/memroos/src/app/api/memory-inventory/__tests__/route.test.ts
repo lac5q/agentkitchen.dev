@@ -117,7 +117,14 @@ describe("GET /api/memory-inventory", () => {
         expect.objectContaining({ id: "ingested_message", label: "Ingested messages", count: 2, backend: "SQLite messages" }),
         expect.objectContaining({ id: "consolidated_insight", label: "Consolidated insights", count: 1, backend: "SQLite memory_meta_insights" }),
         expect.objectContaining({ id: "episodic_write", label: "Episodic writes", count: 1, backend: "SQLite agent_memory_writes" }),
-        expect.objectContaining({ id: "knowledge_file", label: "Knowledge files", count: 1, backend: "qmd / knowledge collections" }),
+        expect.objectContaining({
+          id: "knowledge_file",
+          label: "Knowledge files",
+          count: null,
+          backend: "qmd / knowledge collections",
+          status: "degraded",
+          warnings: expect.arrayContaining([expect.stringMatching(/deferred/i)]),
+        }),
       ])
     );
     expect(body.definitions.ingested_message).toContain("Raw messages");
@@ -135,6 +142,24 @@ describe("GET /api/memory-inventory", () => {
     expect(body.rows.every((row: { category: string }) => row.category === "ingested_message")).toBe(true);
     expect(body.filters.categories).toContain("ingested_message");
     expect(JSON.stringify(body)).not.toContain("97 memories");
+  });
+
+  it("counts and returns knowledge files when the knowledge category is selected", async () => {
+    const { GET } = await import("../route");
+    const res = await GET(new Request("http://localhost/api/memory-inventory?category=knowledge_file") as unknown as import("next/server").NextRequest);
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.categories).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "knowledge_file", label: "Knowledge files", count: 1, backend: "qmd / knowledge collections", status: "live" }),
+      ])
+    );
+    expect(body.rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ category: "knowledge_file", source: "ops", workspace: "ops" }),
+      ])
+    );
   });
 
   it("reports vector inventory as degraded instead of inventing a count when mem0 omits one", async () => {
