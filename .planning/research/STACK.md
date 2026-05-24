@@ -1,236 +1,349 @@
-# Technology Stack — v4.0 Additions
+# Technology Stack — v5.0 Additions
 
-**Project:** Memroos v4.0 Orchestration Depth + Intelligence Uplift
-**Researched:** 2026-05-17
-**Scope:** NEW additions only. Existing validated stack (LangGraph, Pipecat, mem0, Qdrant, Neo4j, SQLite, Next.js 16.2.4, React Flow, Vitest) is not re-listed.
-
----
-
-## Feature Group 1: HIL Edit-and-Continue (HIL-01..03)
-
-**Verdict: No new libraries.**
-
-LangGraph 1.2.0 (latest on PyPI as of research date) ships everything needed:
-- `interrupt()` — pauses a node and surfaces `__interrupt__` in the graph output
-- `Command(resume=..., update=...)` — resumes execution and can inject state mutations simultaneously
-- `graph.update_state(config, values=..., as_node=...)` — patches state from outside the graph (operator-side edit before resume)
-
-The orchestration service `requirements.txt` pins `langgraph` unpinned. Pin it to `>=1.2,<2.0` to lock in `error_handler` support (added in 1.2) and `TimeoutPolicy`.
-
-**Integration point:** The existing `/api/langgraph` REST surface and `SqliteSaver` checkpointer already hold interrupted thread state. The edit-and-continue API endpoint calls `graph.update_state()` then `graph.invoke(Command(resume=...))` against the stored `thread_id`.
+**Project:** Memroos v5.0 Memory Trust + Operational Intelligence
+**Researched:** 2026-05-23
+**Scope:** NEW additions and changes ONLY. Existing validated stack (Next.js 16.2.4, LangGraph >=1.2, Pipecat, mem0, Qdrant Cloud, Neo4j, better-sqlite3, React Flow, Vitest, Playwright, jose, bcryptjs, Tailwind, @tanstack/react-query) is NOT re-listed.
 
 ---
 
-## Feature Group 2: HIL Timeout + Escalation Policies (HIL-04..06)
+## Feature Group 1: Memory Security Vault (MEMSEC-01..08)
 
-**Verdict: No new libraries. One version pin tightening.**
+### Envelope Encryption — TypeScript Side
 
-LangGraph 1.2.0 ships `TimeoutPolicy` (node-level idle timeout) and `NodeTimeoutError`. Combine with `RetryPolicy` on supervisor nodes:
+**Verdict: Use `node:crypto` built-ins only. Zero new npm dependency.**
 
-```python
-from langgraph.types import RetryPolicy, TimeoutPolicy
-builder.add_node(
-    "await_approval",
-    await_approval,
-    timeout=TimeoutPolicy(idle_timeout=<sla_seconds>),
-    retry_policy=RetryPolicy(max_attempts=1, retry_on=NodeTimeoutError),
-    error_handler=escalation_handler,
-)
+Node 26 (the runtime in use) ships `crypto.subtle` with stable support for:
+- `AES-GCM` — authenticated encryption for raw artifacts and sensitive JSON fields
+- `AES-KW` — key wrapping (wrapping a DEK under a KEK)
+- `crypto.getRandomValues()` — secure nonce/IV generation
+- `crypto.subtle.importKey / exportKey / wrapKey / unwrapKey` — full KEK/DEK lifecycle
+
+The envelope encryption pattern is: generate a 256-bit DEK per artifact, encrypt artifact with AES-GCM (96-bit random nonce), wrap the DEK with a KEK using AES-KW, persist `{ key_id, wrapped_dek, nonce, ciphertext, tag }`. No external library is needed or justified — `@node-forge/crypto` and similar packages add surface area for a problem the standard library solves.
+
+**KEK Provider interface (design decision for STACK):**
+
+```typescript
+interface KeyProvider {
+  id(): string;                                  // key_id stored in metadata
+  wrapDek(dek: CryptoKey): Promise<Uint8Array>;  // AES-KW or equivalent
+  unwrapDek(wrapped: Uint8Array): Promise<CryptoKey>;
+}
 ```
 
-SLA countdown tracking (persisting deadline timestamps, polling, sending escalation notifications) runs inside the existing `instrumentation.ts` 15-minute scheduler on the Next.js side, or as a background asyncio task in the FastAPI orchestration service. **Do not add APScheduler** — the asyncio background task pattern via FastAPI's lifespan events is sufficient and avoids a new dependency.
+Ship two concrete providers:
+- `LocalFileKeyProvider` — KEK in `~/.memroos/keys/<id>.key`, permissions 0600. Default for all profiles.
+- `EnvKeyProvider` — KEK from `MEMROOS_KEK_<id>` env var. Default for `cloud-https` / CI.
 
-**Integration point:** Escalation policies live in the SQLite `hil_policies` table (new table, no schema dep). The orchestration service reads them per-task-type at interrupt time.
+Do NOT introduce AWS KMS SDK, GCP KMS SDK, or HashiCorp Vault client in v5.0. Document the interface so a cloud KMS adapter can be added in v5.1 without touching callsites.
 
----
+**Key rotation path:** New KEK id is provisioned, old artifacts are re-wrapped lazily on access (background rotation job), `encryption_key_id` column drives which KEK unwraps each artifact.
 
-## Feature Group 3: Multi-Hop Retry + Rollback Compensation (ORCH-08..10)
+### Envelope Encryption — Python Side
 
-**Verdict: No new libraries. LangGraph 1.2.0 covers the pattern.**
-
-LangGraph 1.2.0 provides:
-- `RetryPolicy(max_attempts=N, retry_on=[ExceptionType])` on individual nodes
-- `error_handler` callback on nodes — receives `NodeError`, returns `Command(update=..., goto="compensation_node")` — this is the saga/compensation pattern natively
-
-For fine-grained exponential backoff within a single node's retry attempts, `tenacity` is available but **not needed** because `RetryPolicy` already supports `backoff_factor` and `jitter`. Only add tenacity if an external service call inside a node needs backoff that LangGraph's RetryPolicy can't express — defer that decision to phase implementation.
-
-**Integration point:** Each agent node in the multi-hop chain gets a `RetryPolicy` and a compensation node in the graph. The existing `SqliteSaver` checkpoint means partial rollbacks are recoverable — rewind to any prior checkpoint via `graph.get_state_history()`.
-
----
-
-## Feature Group 4: Memory Backend Pluggability (MEM-06..08)
-
-**Verdict: No new libraries. This is a Python ABC pattern.**
-
-Define a `MemoryBackend` abstract base class using `abc.ABC` (stdlib). Existing backends (mem0/Qdrant, Neo4j, SQLite episodic) become concrete implementations. New backends implement the same interface.
+**Verdict: `cryptography` >=46 (already installed, version 46.0.5 confirmed).**
 
 ```python
-from abc import ABC, abstractmethod
-
-class MemoryBackend(ABC):
-    @abstractmethod
-    async def store(self, key: str, value: dict) -> None: ...
-    @abstractmethod
-    async def retrieve(self, query: str, limit: int) -> list[dict]: ...
-    @abstractmethod
-    async def delete(self, key: str) -> None: ...
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.keywrap import aes_key_wrap, aes_key_unwrap
 ```
 
-**Do not add LlamaIndex** for this — it would pull a heavy dependency tree to solve what is a three-method interface. Pydantic (already a transitive dep of FastAPI) handles config schema for backend adapters.
+`AESGCM` handles authenticated encryption. `aes_key_wrap` / `aes_key_unwrap` handle DEK wrapping. Both are in `cryptography.hazmat` — no additional install. The Python service already lists `cryptography` (transitively from FastAPI/httpx); bump the pin to `>=46,<47` in memory service `requirements.txt`.
 
-**Integration point:** The memory service `services/memory/` becomes the host for the adapter registry. Backend selection is driven by environment config (already the pattern for `QDRANT_URL`).
+**Do NOT introduce:** PyCryptodome, PyNaCl, or any other crypto library. `cryptography` is the PyCA canonical library and is already present.
 
----
+### Compression for Raw Vault
 
-## Feature Group 5: Voice Meeting Bot (VOICE-06..08)
+**Verdict: `node:zlib` (built-in, zstd stable in Node 22+). Python: `zstandard` 0.25.0.**
 
-**Verdict: One new external service dependency (Recall.ai), Pipecat upgrade.**
+Node 26 ships `node:zlib` with stable zstd via `zlib.createZstdCompress()` / `zlib.createZstdDecompress()`. No npm package needed. Use level 3 (fast) for interactive ingestion paths, level 10 (high) for archival.
 
-### Pipecat upgrade
+Python vault writer uses `zstandard` 0.25.0 — Python 3.14 wheels confirmed available on PyPI (uploaded September 2025). Pin: `zstandard>=0.25,<1.0`.
 
-| Package | Current pin | New pin | Why |
-|---------|-------------|---------|-----|
-| `pipecat-ai` | `==1.0.0` | `>=1.2,<2.0` | 1.2.1 is latest on PyPI; includes stability fixes and transport improvements since 1.0 |
+**Do NOT add:** `@mongodb-js/zstd`, `fzstd`, `zstd-napi`, or any native npm module. The project already has one native-module incident (node-llama-cpp arm64); do not create another. Node's built-in is the correct choice.
 
-The voice server extras to add: `pipecat-ai[google,groq,cartesia,elevenlabs,websocket,kokoro,daily]` — add the `daily` extra for the Daily.co WebRTC transport, which is Pipecat's native meeting-room transport.
+### Raw Artifact Storage Layout
 
-### Recall.ai (SaaS — REST + WebSocket, no pip install)
+**Verdict: Content-addressed local filesystem + SQLite metadata index. No object storage SDK.**
 
-Recall.ai is the recommended bridge for joining Zoom, Google Meet, and Microsoft Teams as a bot participant. It:
-- Accepts a `meeting_url` and joins the meeting as a native participant
-- Streams per-participant audio via WebSocket to your endpoint (Pipecat voice server)
-- Supports Zoom, Google Meet, Microsoft Teams natively
-- Returns real-time transcripts with speaker diarization
+```
+~/.memroos/vault/<YYYY>/<MM>/<sha256-prefix-2>/<sha256-full>.ndjson.zst.enc
+```
 
-**Integration pattern:** Recall.ai sends audio chunks to a new WebSocket endpoint in the existing Pipecat FastAPI voice server. Pipecat processes audio through the existing STT/LLM/TTS pipeline. Meeting highlights are written to SQLite (same pattern as existing `voice_transcripts` table).
+Each file is an AES-GCM-encrypted zstd-compressed NDJSON stream. The SQLite table `raw_artifacts` holds: `id`, `sha256`, `artifact_path`, `source`, `actor`, `tenant_id`, `classification_labels`, `encryption_key_id`, `wrapped_dek`, `nonce`, `size_bytes`, `compression_type`, `retention_policy`, `created_at`, `chain_hash`. No new library needed — `fs.createWriteStream`, `node:zlib`, and `crypto.subtle` compose the full write path.
 
-**No pip package:** Recall.ai is HTTP REST + WebSocket, consumed via `httpx` and `websockets` (both already present as transitive deps). The `recallai` PyPI package (0.0.1) is a stub — use the REST API directly.
+### Classification Cascade (MEMSEC-02..03, CTX-FOLLOWUP-03)
 
-**Recall.ai pricing note:** Recall.ai is a paid SaaS. Flag for Luis: free tier exists for development, production requires a subscription. Alternative: MeetingBaas (open-source-friendly, supports Google Meet and Teams; Zoom not confirmed). Recall.ai is recommended because it has production diarization quality and the Pipecat community has confirmed integration patterns (GitHub issue #3272).
+**Layer 1 — Deterministic detectors: Extend existing `content-scanner.ts` + `iris-scanner.ts`**
 
-**Do not attempt:** Building a Zoom/Meet/Teams bot directly from browser automation (Puppeteer/Playwright). The platforms actively block headless bots and this path requires ongoing maintenance.
+The existing 18-pattern scanner (SEC-01, v1.5) and Iris pre-flight scanner (v2.1) already run regex + heuristic detection. Extend these TypeScript modules — do not replace them with a new library. Add:
+- Source-path classifier (Drive folder prefix, Gmail label, Slack channel → domain label)
+- MIME type gate (PDF/DOCX/audio → binary vault; plain text → inline)
+- Sender domain allowlist/denylist for `visibility` promotion
 
-| New addition | Type | Version | Why |
-|--------------|------|---------|-----|
-| Recall.ai | SaaS API | v1 REST (current) | Meeting platform join for Zoom/Meet/Teams |
-| `pipecat-ai[daily]` extra | pip extra | via pipecat-ai >=1.2 | Daily.co WebRTC transport for room-based meetings |
+**Layer 2 — NER/PII detection: `presidio-analyzer` 2.2.362 as a Python service endpoint**
 
----
+Presidio is a Python library (not a Node one). The correct integration is a thin FastAPI endpoint in the `services/memory/` service that accepts a text payload and returns detected entities with spans and confidence. Do not try to run Presidio in Node.js.
 
-## Feature Group 6: LLM-Powered Recall Scoring (RECALL-01..02)
+```
+npm package: none
+Python: presidio-analyzer>=2.2.362,<3.0
+Python: presidio-anonymizer>=2.2.362,<3.0
+Python: spacy>=3.7,<4.0  (en_core_web_lg model for NER)
+```
 
-**Verdict: One new Python library (`voyageai`). Uses existing Qdrant.**
+Install the spaCy model at service startup: `python -m spacy download en_core_web_lg`
 
-Replace BM25/QMD lexical scoring with embedding-based semantic ranking. The recommended model is `voyage-4-large` (Voyage AI's current general-purpose model as of research date, confirmed via Context7/official docs). Qdrant is already the vector store — no new infrastructure.
+The TypeScript side calls `/internal/classify` via `fetch` to the memory service, exactly like the existing mem0 HTTP-only pattern. This keeps the NER heavy lifting in Python where the ecosystem is strongest.
 
-| Package | Version | Purpose | Why |
-|---------|---------|---------|-----|
-| `voyageai` | `>=0.2,<1.0` (PyPI latest: 0.2.4) | Embedding generation | Voyage AI Python client; `voyage-4-large` is current best general embedder |
+**Layer 3 — Constrained LLM adjudication: Extend existing Anthropic SDK usage**
 
-**Integration pattern:** At ingest time, generate embeddings via `voyageai.Client().embed()` and upsert to Qdrant in a new `task_recall` collection (separate from `agent_memory` which is mem0-managed and read-only from app). At query time, embed the task query and run Qdrant nearest-neighbor search. Score = cosine similarity, replacing the BM25 `contextMatchSignal` multiplier chain.
+Use the existing `@anthropic-ai/sdk` (0.94.0) to call the adjudicator prompt. No new library. The adjudicator must: accept enumerated labels only, output strict JSON with `confidence`, `reason_code`, `evidence_span_ids`, and `abstain: true` when uncertain. Wire into the classification cascade after Presidio.
 
-**Alternative considered:** OpenAI `text-embedding-3-large` via the existing `@anthropic-ai/sdk` pattern. Rejected because: (1) adds a second OpenAI billing relationship, (2) Voyage AI's `voyage-code-3` variant is better for code/agent task recall specifically, (3) `voyageai` is a lighter client with no extra framework pull.
-
-**Do not add:** Cohere rerank as a second pass — adds latency and cost for marginal gain at current scale. Revisit at 10K+ tasks.
+**Do NOT add:** Guardrails AI, Rebuff, or any LLM output validation library. Strict JSON + Zod validation (already used in the codebase) is sufficient.
 
 ---
 
-## Feature Group 7: Cross-Project Recall (RECALL-03..04)
+## Feature Group 2: Auth Hardening (AUTH-FOLLOWUP-01..03)
 
-**Verdict: No new libraries.**
+### Decision: Keep Custom Auth Stack — Do NOT migrate to Better Auth or Auth.js
 
-Cross-project recall extends the embedding-based recall scoring from Feature Group 6. The same `voyageai` + Qdrant pipeline handles it by:
-1. Adding a `repo_path` metadata field to Qdrant task vectors
-2. At query time, omitting the `repo_path` filter (or setting it to `null`) to search all projects
-3. Re-ranking results by similarity score, annotating with source repo
+**Rationale:**
+- v3.0 shipped RBAC (jose, bcryptjs, custom session, refresh-token rotation, RBAC middleware, tenant model).
+- v3.1 fixed 8 critical security findings in this exact code (HttpOnly cookies, 5 missing auth guards, TOCTOU race, x-forwarded-host spoofing).
+- Migration to Better Auth means schema migration on a security-critical layer that was just hardened. Better Auth v1.6 has Next.js 16 support (confirmed via Context7: `proxy.ts` pattern), but migration risk far exceeds the benefit when the gap is only email delivery + OAuth providers.
+- The `team_invitations` table, refresh tokens, and RBAC roles are all already in SQLite — the primitive is there, just missing the email delivery wire.
 
-**File watching across repos:** `chokidar` is already a transitive dep in the Next.js ecosystem. A lightweight watcher in the orchestration service can use Python's `watchfiles` (already a transitive dep of uvicorn's reload mode) — no new dep needed.
+**What needs to be added:**
 
-**Integration point:** The existing `SimilarTaskPanel` on the Cookbooks page surfaces results; extend it to show `repo_path` badge. The `contextMatchSignal` TypeScript algorithm gets a `cross_project` flag that relaxes the `repo` filter.
+**Email delivery:**
+
+Add a pluggable `Mailer` interface to the auth layer, not a hard dependency:
+
+```typescript
+interface Mailer {
+  send(to: string, subject: string, html: string): Promise<void>;
+}
+```
+
+Two concrete implementations (selected by env/profile):
+- `ResendMailer` — uses `resend` SDK. Primary for cloud-https profile.
+- `SmtpMailer` — uses `nodemailer`. Fallback for single-host/private-network with existing SMTP server.
+
+| Library | Version | Why |
+|---------|---------|-----|
+| `resend` | 6.12.3 | Fastest path for cloud-https; native Next.js App Router integration; 45KB bundle; automatic bounce suppression |
+| `nodemailer` | 8.0.8 | SMTP fallback for self-hosted; 15M weekly downloads; stable; needed for non-Resend SMTP |
+| `@react-email/components` | 1.0.12 | React-based email templates; renders to HTML for both Resend and nodemailer; avoids raw HTML strings |
+| `react-email` | 6.3.2 | Dev preview server for email templates |
+
+Profile mapping: `MEMROOS_MAILER=resend|smtp`. If unset and `RESEND_API_KEY` is present, use Resend. If unset and `SMTP_HOST` is present, use SMTP. If both absent, log and no-op (invite URL still returned for manual delivery in local-dev).
+
+**What needs to be built (routes, no new libs):**
+- `POST /api/auth/password-reset/request` — same pattern as `invite/route.ts` (token_hash in `password_reset_tokens` table, email delivery)
+- `POST /api/auth/password-reset/confirm` — validate token, allow bcrypt re-hash
+- OAuth callback routes: `GET /api/auth/oauth/[provider]/authorize` and `GET /api/auth/oauth/[provider]/callback`
+
+**OAuth providers:**
+
+| Library | Version | Why |
+|---------|---------|-----|
+| `arctic` | 3.7.0 | Pure TypeScript, runtime-agnostic, Fetch-based; no DB opinion; handles Google/GitHub/Microsoft OIDC + PKCE + state; pairs cleanly with existing jose JWT session pattern |
+
+Arctic generates state + PKCE verifier, the callback validates the code, and the existing `signAccessToken` / `generateRefreshToken` session primitives handle session creation. The OAuth identity is stored as a new `oauth_accounts` table linking `provider`, `provider_user_id`, and `users.id`.
+
+**Defer enterprise SAML / WorkOS to v5.1+.** "OAuth/SSO" in the milestone means Google/GitHub OIDC. No SAML infrastructure is warranted at this stage.
+
+**Role-aware navigation gating:** No new library. Add `requireRole()` middleware (already in `middleware-roles.ts`) calls to navigation-level middleware/proxy. Next.js 16 proxy pattern is: `proxy.ts` (renamed from `middleware.ts`) uses `getSessionCookie` for optimistic redirect. Full session validation stays in route handlers.
 
 ---
 
-## Feature Group 8: True Behavioral W-Lift (SEAL-04..06)
+## Feature Group 3: Cron Health + Schedules Console (CRON-HEALTH-01..05, UX-FOLLOWUP-03)
 
-**Verdict: One new Python library (`deepeval`). Sandboxing via existing subprocess pattern.**
+**Verdict: Extend existing `instrumentation.ts` + `scheduler-singleton.ts` pattern. No new scheduler library.**
 
-The SEAL substrate needs to re-execute agent tasks with modified instructions and compare outcomes against a baseline. This requires:
+The project has a working in-process scheduler (consolidation 15m, decay, HIL SLA 60s, embedding job) behind a cross-process lock singleton. The gap is: no observable health state, no declarative job registry, no pause/resume controls.
 
-1. **Eval harness for outcome scoring** — `deepeval` is the recommendation.
-2. **Sandbox for re-execution** — Use subprocess isolation (existing pattern) or Docker (already in the stack for OSS users). Do not add microVM tooling.
+**Add to SQLite schema (`db-schema.ts`):**
+```sql
+CREATE TABLE IF NOT EXISTS cron_jobs (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  schedule_ms INTEGER NOT NULL,
+  status TEXT DEFAULT 'running',  -- running|paused|stopped|error
+  last_tick_at TEXT,
+  last_success_at TEXT,
+  last_error TEXT,
+  error_count INTEGER DEFAULT 0,
+  next_tick_at TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+```
 
-| Package | Version | Purpose | Why |
-|---------|---------|---------|-----|
-| `deepeval` | `>=4.0,<5.0` (PyPI latest: 4.0.2) | Agent behavioral evaluation | Supports `@observe` tracing, task completion metrics, custom LLM-judged metrics; does not require a hosted eval service |
+Each scheduler registers itself in this table at startup and updates `last_tick_at` + `last_success_at` on each tick. A watchdog check (added to the existing scheduler lock process) marks jobs as `warning` if `last_tick_at` is more than 2× the expected interval.
 
-**Integration pattern:** SEAL proposals trigger a shadow re-execution: the agent runs the same task with the proposed instruction variant. `deepeval` scores the output against the baseline using `TaskCompletionMetric` (LLM-judged). Delta in score = behavioral W-lift. Results write to the existing `eval_results` SQLite table.
+**New API endpoint:** `GET /api/cron-health` — reads the table, computes `status`, `caught_up`, and `lag_ms` per job. No new library.
 
-**Alternative considered:** `promptfoo` (TypeScript, CLI-first) — rejected because SEAL lives in the Python orchestration service and `deepeval` offers native Python `@observe` decorators that instrument LangGraph nodes without a separate process.
+**Controls:** `POST /api/cron-health/[id]/pause` and `/resume` — write `status` to the DB; each scheduler reads its status at tick start and skips the work body if `paused`. Pause/resume do not restart the interval timer; they gate the work, not the tick.
 
-**Alternative considered:** Anthropic's Inspect AI — high quality for Claude-specific evals, but less suited for multi-framework agents (Claude Code + LangGraph + A2A). Defer to v5.0 if Memroos becomes Claude-dominant.
+**Do NOT add:** `node-cron`, `croner`, `cron-parser`, BullMQ, or any scheduler library. The existing `setInterval` pattern is sufficient and avoids Redis dependency.
 
 ---
 
-## Feature Group 9: Cross-Harness Skills Portability
+## Feature Group 4: NOC Real-Data Wiring (NOC-01..14)
 
-**Verdict: No new libraries. Schema normalization only.**
+**Verdict: No new libraries. Extend existing SSE + React Query patterns.**
 
-Note: This feature is listed in the milestone research request but does not appear in `PROJECT.md`'s Active (v4.0) requirements list. Research conducted anyway per orchestrator request — flag for roadmap planner to confirm scope.
+The NOC real-data work is a wiring exercise: connect existing `/api/*` endpoints to the panels that currently import `noc-mock-data.ts`. The existing architecture already has all the primitives.
 
-The normalized skill definition format is a JSON Schema problem:
-- Claude Code skills use `SKILL.md` + frontmatter
-- OpenAI function-calling uses JSON Schema objects
-- Gemini function declarations use a similar JSON Schema variant
+**SSE telemetry streams (efficiency signals — NOC-10):**
 
-**Approach:** Define a `SkillDefinition` Pydantic model as the canonical form. Write adapters (plain Python functions, not a framework) for each harness format. Zod is already present in the Next.js side for runtime validation.
+New streams needed: retrieval-call counts, source re-read events, token ingest share, operator re-ask events. Pattern: `GET /api/telemetry/stream` — Next.js Route Handler returning `text/event-stream`. Matches the existing `/api/orchestration` SSE route from v4.0 (qmd flow trigger). Use `export const dynamic = "force-dynamic"` on all SSE routes.
 
-**Do not add:** An agent interop framework (e.g., `autogen`, `crewai`) — these would conflict with the existing A2A protocol hub and add a heavyweight dependency for what is a schema translation problem.
+**Client reconnect:** Native `EventSource` auto-reconnects; add 15-second heartbeat events from the server to detect stale connections (standard SSE practice).
+
+**Telemetry event store:** Add `efficiency_events` table to SQLite (same `db-schema.ts` pattern):
+```sql
+CREATE TABLE IF NOT EXISTS efficiency_events (
+  id TEXT PRIMARY KEY,
+  event_type TEXT NOT NULL,  -- retrieval_call|source_reread|token_ingest|user_reask|rediscovery
+  task_id TEXT,
+  agent_id TEXT,
+  payload TEXT,  -- JSON
+  created_at TEXT DEFAULT (datetime('now'))
+);
+```
+
+**Provenance metadata:** Add a `SourcedResponse<T>` TypeScript type:
+```typescript
+interface SourcedResponse<T> {
+  data: T;
+  source: string;       // e.g. "/api/memory-stats"
+  lastUpdated: string;  // ISO timestamp
+  window: string;       // e.g. "24h"
+  status: 'live' | 'empty' | 'degraded' | 'missing';
+  warnings?: string[];
+}
+```
+
+Wrap every NOC panel's API response in this type. No library needed.
+
+**Do NOT add:** WebSocket library, Socket.io, Redis pub/sub, Pusher, or any external streaming infrastructure. SSE scales to single-host deployments without Redis and matches the existing qmd/HIL SSE patterns.
+
+---
+
+## Feature Group 5: Harness Evidence Bundles
+
+**Verdict: No new libraries. CAS local filesystem + SQLite metadata.**
+
+Evidence bundles (Plan-Execute-Verify timelines, source/memory/tool read-write sets) are stored as content-addressed NDJSON files — the same vault pattern as raw artifacts, without encryption (unless they contain classified content, in which the classification gate applies).
+
+**Storage path:**
+```
+~/.memroos/evidence/<task_id>/<phase>-<sha256-prefix-8>.ndjson.zst
+```
+
+**SQLite metadata table:**
+```sql
+CREATE TABLE IF NOT EXISTS harness_evidence (
+  id TEXT PRIMARY KEY,
+  task_id TEXT NOT NULL,
+  phase TEXT NOT NULL,   -- plan|execute|verify
+  artifact_path TEXT NOT NULL,
+  sha256 TEXT NOT NULL,
+  read_set TEXT,   -- JSON array of memory/tool/source ids read
+  write_set TEXT,  -- JSON array of memory/tool/source ids written
+  assumptions TEXT, -- JSON
+  residual_risks TEXT, -- JSON
+  replay_handle TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+```
+
+Serialization: plain `JSON.stringify` per event, `\n`-joined, then `node:zlib` zstd compressed. No separate NDJSON library — the format is trivial. Read path uses a streaming line splitter (`readline.createInterface`).
+
+**Replay handles:** Store enough state (thread_id + checkpoint_id from LangGraph SqliteSaver) so any harness state can be restarted. No new infrastructure.
 
 ---
 
 ## What NOT to Add
 
-| Candidate | Why Not |
-|-----------|---------|
-| Redis / Celery | v2.4 decided "no Redis dependency"; in-memory LRU + asyncio background tasks cover the scheduling need |
-| Temporal | Overkill at current scale; LangGraph's native retry/compensation covers the same patterns |
-| LlamaIndex | 50+ transitive deps to solve a 3-method ABC interface |
-| APScheduler | asyncio lifespan background task is sufficient for timeout polling; APScheduler adds config surface area with no gain |
-| Cohere rerank | Two-stage rerank adds latency and cost; not warranted until recall query volume justifies it |
-| Qdrant replacement | Qdrant Cloud is working; no migration |
-| Puppeteer/Playwright for meeting bots | Platforms actively block headless bots; maintenance burden is prohibitive |
-| `recallai` PyPI package (0.0.1) | Stub package; use Recall.ai REST API directly via httpx |
-| Anthropic Inspect AI (for SEAL) | Claude-specific; Memroos is multi-framework |
-| `promptfoo` | TypeScript/CLI-first; SEAL is Python-resident |
-| AutoGen / CrewAI | Would conflict with A2A hub; not a harness normalization solution |
+| Category | Library | Reason |
+|----------|---------|--------|
+| Auth migration | Better Auth, Auth.js/NextAuth | v3.0/v3.1 custom stack just hardened; migration risk >> benefit |
+| Auth migration | WorkOS | Deferred to v5.1+; no SAML needed now |
+| Database encryption | SQLCipher | Spike explicitly defers; app-layer encryption is the boundary, not page encryption |
+| Cache/queue | Redis, BullMQ, node-cron | v2.4 decision: no Redis; in-process scheduler sufficient |
+| Node compression | @mongodb-js/zstd, fzstd, zstd-napi | Native modules; Node 26 built-in zstd is the answer |
+| Streaming | Socket.io, Pusher | SSE is sufficient and simpler for single-host profile |
+| PII detection (Node) | Any Node.js NER lib | Presidio in Python service is the correct boundary |
+| OCR / multimodal | Tesseract, pdf-parse | Out of scope for v5.0; spike says "text-first MVP" |
+| Cloud KMS | @aws-sdk/client-kms, @google-cloud/kms | LocalFileKeyProvider is sufficient; plug in v5.1+ |
+| Python crypto | PyCryptodome, PyNaCl | `cryptography` 46 already installed and sufficient |
 
 ---
 
-## Summary of Net New Dependencies
+## Version Pin Summary (New Dependencies Only)
 
-| Service/Package | Layer | Version | Feature |
-|----------------|-------|---------|---------|
-| `langgraph>=1.2,<2.0` | orchestration service (pin tightening) | 1.2.0 | HIL edit, timeout, retry, compensation |
-| `pipecat-ai[daily]>=1.2,<2.0` | voice service (upgrade + extra) | 1.2.1 | Meeting bot Daily transport |
-| Recall.ai | external SaaS API | v1 REST | Meeting platform join (Zoom/Meet/Teams) |
-| `voyageai>=0.2,<1.0` | memory service (new) | 0.2.4 | LLM-powered recall embeddings |
-| `deepeval>=4.0,<5.0` | orchestration service (new) | 4.0.2 | Behavioral W-lift eval harness |
+### TypeScript / npm
 
-Three of five v4.0 feature groups require zero new libraries. The two substantive Python additions (`voyageai`, `deepeval`) are lightweight single-purpose clients.
+| Package | Version | Purpose | Profile |
+|---------|---------|---------|---------|
+| `arctic` | `^3.7.0` | OAuth 2.0 PKCE clients (Google, GitHub, Microsoft) | Auth hardening |
+| `resend` | `^6.12.3` | Transactional email delivery (cloud-https profile) | Auth hardening |
+| `nodemailer` | `^8.0.8` | SMTP email fallback (single-host profile) | Auth hardening |
+| `@types/nodemailer` | `^6` | TypeScript types for nodemailer | Auth hardening dev dep |
+| `@react-email/components` | `^1.0.12` | React email templates | Auth hardening |
+| `react-email` | `^6.3.2` | Email template dev preview | Auth hardening dev dep |
+
+**No other npm packages.** All encryption, compression, telemetry SSE, evidence bundles, and cron health use Node.js built-ins or existing dependencies.
+
+### Python
+
+| Package | Version | Purpose | Service |
+|---------|---------|---------|---------|
+| `presidio-analyzer` | `>=2.2.362,<3.0` | PII/NER detection layer 2 of cascade | memory service |
+| `presidio-anonymizer` | `>=2.2.362,<3.0` | Redaction output | memory service |
+| `spacy` | `>=3.7,<4.0` | NER model backing Presidio | memory service |
+| `zstandard` | `>=0.25,<1.0` | Zstd compression for Python vault writer | memory service |
+
+**Pin tightening (existing):** `cryptography>=46,<47` in memory service (currently unpinned transitively).
+
+**spaCy model installation** (not a pip package — add to service startup or Dockerfile):
+```bash
+python -m spacy download en_core_web_lg
+```
+
+---
+
+## Integration Points
+
+| Feature | TypeScript Entry Point | Python Entry Point |
+|---------|----------------------|-------------------|
+| Envelope encryption | `src/lib/crypto/envelope.ts` (new) | `services/memory/crypto.py` (new) |
+| KEK provider | `src/lib/crypto/key-provider.ts` (new) | — |
+| Classification cascade | `src/lib/classification/cascade.ts` (new) → `fetch('/internal/classify')` | `services/memory/classify.py` FastAPI route (new) |
+| Presidio NER | — | `services/memory/presidio_service.py` (new) |
+| Raw vault write | `src/lib/vault/writer.ts` (new) | `services/memory/vault.py` (new) |
+| Email delivery | `src/lib/auth/mailer.ts` (new) | — |
+| OAuth callback | `src/app/api/auth/oauth/[provider]/` (new) | — |
+| Cron health | `src/lib/scheduler/cron-registry.ts` (new) | — |
+| Cron health API | `src/app/api/cron-health/route.ts` (new) | — |
+| NOC telemetry SSE | `src/app/api/telemetry/stream/route.ts` (new) | — |
+| Evidence bundles | `src/lib/harness/evidence.ts` (new) | — |
 
 ---
 
 ## Sources
 
-- LangGraph HIL, RetryPolicy, TimeoutPolicy, error_handler: Context7 `/websites/langchain_oss_python_langgraph` (HIGH confidence — official LangGraph docs)
-- LangGraph 1.2.0 on PyPI: verified via `pip index versions langgraph`
-- Pipecat 1.2.1 on PyPI: verified via `pip index versions pipecat-ai`
-- Pipecat Daily transport: Context7 `/pipecat-ai/docs` (HIGH confidence)
-- Recall.ai meeting bot API: Context7 `/websites/recall_ai` + https://docs.recall.ai (HIGH confidence)
-- MeetingBaas/Pipecat integration: https://github.com/Meeting-Baas/speaking-meeting-bot (MEDIUM confidence)
-- Pipecat + Recall.ai multi-participant issue: https://github.com/pipecat-ai/pipecat/issues/3272 (MEDIUM confidence)
-- Voyage AI models (`voyage-4-large`): Context7 `/websites/voyageai` + https://docs.voyageai.com (HIGH confidence)
-- `voyageai` 0.2.4 on PyPI: verified via `pip index versions voyageai`
-- DeepEval agent evaluation: Context7 `/confident-ai/deepeval` (HIGH confidence)
-- `deepeval` 4.0.2 on PyPI: verified via `pip index versions deepeval`
-- APScheduler 3.11.2: verified via `pip index versions apscheduler` (NOT recommended — documented for completeness)
+- Better Auth Next.js 16 proxy support: [Context7 /better-auth/better-auth docs](https://github.com/better-auth/better-auth)
+- Better Auth SQLite adapter: [Context7 /better-auth/better-auth SQLite docs](https://github.com/better-auth/better-auth/blob/main/docs/content/docs/adapters/sqlite.mdx)
+- Arctic OAuth clients: [Context7 /pilcrowonpaper/arctic](https://github.com/pilcrowonpaper/arctic), version 3.7.0 confirmed via npm
+- Resend Next.js App Router: [Context7 /websites/resend](https://resend.com/docs/send-with-nextjs), version 6.12.3 confirmed via npm
+- nodemailer version 8.0.8: [npm](https://www.npmjs.com/package/nodemailer)
+- @react-email/components 1.0.12: confirmed via npm
+- presidio-analyzer 2.2.362: [PyPI](https://pypi.org/project/presidio-analyzer/)
+- zstandard 0.25.0 Python 3.14 wheels: [PyPI](https://pypi.org/project/zstandard/) + [GitHub issue #286](https://github.com/indygreg/python-zstandard/issues/286)
+- Node.js zlib zstd stability: [Node.js v26 docs](https://nodejs.org/api/zlib.html), stability 2-Stable
+- cryptography 46.0.5: `pip show cryptography` (installed)
+- Microsoft Presidio: [GitHub](https://github.com/microsoft/presidio), [docs](https://microsoft.github.io/presidio/analyzer/)
+- PEP 784 (zstd in Python stdlib, future): [peps.python.org](https://peps.python.org/pep-0784/)

@@ -2,15 +2,16 @@
 gsd_state_version: 1.0
 milestone: v5.0
 milestone_name: Memory Trust + Operational Intelligence
-status: planning
-last_updated: "2026-05-24T00:21:08.098Z"
-last_activity: 2026-05-24
+status: complete
+stopped_at: v5.0 phases 74-82 completed through MVP verification; deploy and skill audit next
+last_updated: "2026-05-24T04:30:00.000Z"
+last_activity: 2026-05-24 -- Phases 77-82 closed with classification-aware FTS, MEMSEC-08 regression tests, NOC contract, cron health, evidence bundles, auth reset, and skill suggestions
 progress:
-  total_phases: 0
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 9
+  completed_phases: 9
+  total_plans: 10
+  completed_plans: 10
+  percent: 100
 ---
 
 # State: Memroos
@@ -20,27 +21,32 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 **Core value:** Any agent framework plugs into Memroos — and every agent, knowledge system, and skill becomes visible, connected, and self-improving.
-**Current focus:** Phase 73 — operator-ui-truth-phase-parity
+**Current focus:** v5.0 closeout verification, local/public deploy, and 30-day skill auto-promotion audit
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-05-24 — Milestone v5.0 started
+Phase: 82 — Auth Hardening
+Plan: 82-01
+Status: Complete — v5.0 MVP phases 74-82 are code-complete with focused verification
+Last activity: 2026-05-24 -- Phase 77 FTS projection/rebuild, Phase 78 regression tests, Phase 79 NOC contract, Phase 80 cron health, Phase 81 evidence bundles, Phase 82 password reset/auth telemetry, and skill suggestions landed
 
-## Roadmap Summary (v4.0)
+## Roadmap Summary (v5.0)
 
 | Phase | Goal | Requirements |
 |-------|------|--------------|
-| 70 | Foundation + Engine Core — HIL edit-and-continue, multi-hop retry/rollback, memory adapter interface (incl. WAL pragma fix) | HIL-01..03, ORCH-08..10, MEM-06..08 (9) |
-| 71 | Recall + HIL SLA + Voice — LLM semantic recall, SLA escalation timers, Daily.co meeting bot | RECALL-01..02, HIL-04..06, VOICE-06..08 (8) |
-| 72 | Cross-Project Recall + Behavioral W-lift + UI + Skills | RECALL-03..04, SEAL-04..06, UI-05..06, SKILL-01..04 (11) |
-| 73 | Operator UI Truth + Phase Parity | UI-PARITY-01..05 (5) |
+| 74 | Security Label Schema + Raw Vault — append-only vault, multi-dim labels, additive migrations with safe defaults | COMPLETE — MEMSEC-01, MEMSEC-02 (2) |
+| 75 | Classification Cascade + Ingestion Gate — fail-closed deterministic-first cascade + human review queue | COMPLETE — MEMSEC-03, CTX-FOLLOWUP-03 (2) |
+| 76 | Retrieval Authorization Gate — policy decision on every recall/export/dispatch path | COMPLETE — MEMSEC-04 (1) |
+| 77 | Safe Index Projections + Envelope Encryption — classification-aware FTS/vector/graph + AES-GCM rotation | COMPLETE — MEMSEC-05, MEMSEC-06, MEMSEC-07 (3) |
+| 78 | Security Regression Tests — negative-fixture suite proves no leak path | COMPLETE — MEMSEC-08 (1) |
+| 79 | NOC Telemetry + Real-Data Wiring — live NOC + provenance + efficiency telemetry | COMPLETE — NOC-01..14, OPS-AUDIT-01..04 (18) |
+| 80 | Cron Health Registry + Schedules Console — heartbeat, caught-up, pause/resume, source contracts | COMPLETE — CTX-FOLLOWUP-01..02, CRON-HEALTH-01..05, UX-FOLLOWUP-03 (8) |
+| 81 | Universal Evidence Bundles + Harness Control Plane — Plan-Execute-Verify timelines, shared state | COMPLETE — HARN-01..03 (3) |
+| 82 | Auth Hardening — email invites, password reset, OAuth/SSO, role-aware nav | COMPLETE — AUTH-FOLLOWUP-01..03 (3) |
 
-**Coverage:** 33/33 v4.0 requirements mapped, no orphans.
-**Current v4.0 completion:** Phase 70 through Phase 73 are complete. Broader Operations NOC live-data wiring remains tracked separately as NOC-01..11.
-**Completed so far:** Phase 34 through Phase 69 (v2.0–v3.1 shipped).
+**Coverage:** 41/41 v5.0 requirements mapped, no orphans.
+**Critical path:** 74 → 75 → 76 → 77 → 78. Phases 79, 80, 81, 82 run parallel (81 soft-depends on 74).
+**Completed so far:** Phase 34 through Phase 82 (v2.0–v5.0 shipped through MVP phase closeout).
 
 ## Performance Metrics
 
@@ -185,10 +191,10 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-22T07:35:51.122Z
-Stopped at: Phase 73 Plan 01 complete. UI-PARITY-01..05 closed.
-Resume file: None
-Next action: Run v4.0 milestone audit/closeout; keep unrelated dirty worktree changes separate from Phase 73.
+Last session: 2026-05-24T03:05:00.000Z
+Stopped at: v5.0 phase closeout
+Resume file: .planning/ROADMAP.md
+Next action: deploy locally/public repo, then audit 30-day skill auto-creation and promotion coverage.
 
 ## UAT Findings (2026-05-17)
 

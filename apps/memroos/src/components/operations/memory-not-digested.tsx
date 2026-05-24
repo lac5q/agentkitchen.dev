@@ -3,11 +3,20 @@
 import Link from "next/link";
 
 import { useMemoryStats, useMemoryTierHealth } from "@/lib/api-client";
+import { nocWindowToTimeSeriesWindow, type NocFilters } from "@/lib/noc-filters";
 import { NOC, NOC_FONT_MONO } from "@/lib/noc-theme";
 import { NocPanelHeader, Mono } from "./noc-primitives";
 
-export function MemoryNotDigested() {
-  const memory = useMemoryStats();
+interface MemoryNotDigestedProps {
+  filters?: NocFilters;
+}
+
+export function MemoryNotDigested({ filters }: MemoryNotDigestedProps) {
+  const effectiveFilters = filters ?? { window: "24h", workspace: "all" };
+  const memory = useMemoryStats({
+    window: nocWindowToTimeSeriesWindow(effectiveFilters.window),
+    workspace: effectiveFilters.workspace,
+  });
   const health = useMemoryTierHealth();
   const sources = memory.data?.sources ?? [];
   const lastRun = memory.data?.lastRun;

@@ -15,6 +15,12 @@ vi.mock("@/lib/memory/backends", () => ({
   queryGraphMemory: vi.fn(),
 }));
 
+vi.mock("@/lib/db", () => ({
+  getDb: vi.fn(() => ({
+    prepare: vi.fn(() => ({ run: vi.fn() })),
+  })),
+}));
+
 async function loadRoute() {
   vi.resetModules();
   return import("../multi-search/route");
@@ -44,7 +50,14 @@ describe("multi memory search route", () => {
       },
     ]);
     vi.mocked(backends.searchVectorMemory).mockResolvedValue({
-      results: [{ id: "v1", memory: "Vector memory result", score: 0.87 }],
+      results: [
+        {
+          id: "v1",
+          memory: "Vector memory result",
+          score: 0.87,
+          metadata: { visibility: "internal", policy: "agent_visible" },
+        },
+      ],
     });
     vi.mocked(backends.queryGraphMemory).mockResolvedValue({
       results: [
@@ -52,7 +65,11 @@ describe("multi memory search route", () => {
           data: [
             {
               row: [
-                { name: "Product", summary: "Graph memory result" },
+                {
+                  name: "Product",
+                  summary: "Graph memory result",
+                  metadata: { visibility: "internal", policy: "agent_visible" },
+                },
                 ["MENTIONS"],
                 [{ name: "Roadmap" }],
               ],
@@ -63,7 +80,7 @@ describe("multi memory search route", () => {
     });
   });
 
-  it("returns normalized vector, graph, and episodic search results", async () => {
+  it("returns only policy-authorized vector and graph search results", async () => {
     const { GET } = await loadRoute();
 
     const response = await GET(new Request("http://localhost/api/memory/multi-search?q=roadmap&limit=5"));
@@ -77,16 +94,31 @@ describe("multi memory search route", () => {
       ["graph", true],
       ["episodic", true],
     ]);
-    expect(body.results.map((result: { tier: string }) => result.tier)).toEqual([
-      "vector",
-      "graph",
-      "episodic",
+    expect(body.results.map((result: { tier: string }) => result.tier)).toEqual(["vector", "graph"]);
+    expect(body.tiers).toEqual([
+      { tier: "vector", ok: true, count: 1 },
+      { tier: "graph", ok: true, count: 1 },
+      { tier: "episodic", ok: true, count: 0 },
     ]);
-    expect(body.results[2]).toMatchObject({
-      tier: "episodic",
-      title: "project memory",
-      content: "Product roadmap memory survives across sessions",
+  });
+
+  it("fails closed for unlabeled external search results", async () => {
+    const backends = await import("@/lib/memory/backends");
+    vi.mocked(backends.searchVectorMemory).mockResolvedValue({
+      results: [{ id: "v1", memory: "Unclassified vector memory", score: 0.87 }],
     });
+    vi.mocked(backends.queryGraphMemory).mockResolvedValue({
+      results: [{ data: [{ row: [{ name: "Unclassified graph memory" }, [], []] }] }],
+    });
+
+    const { GET } = await loadRoute();
+
+    const response = await GET(new Request("http://localhost/api/memory/multi-search?q=memory&limit=5"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body.results).toEqual([]);
+    expect(body.tiers.map((tier: { count: number }) => tier.count)).toEqual([0, 0, 0]);
   });
 
   it("requires a query", async () => {

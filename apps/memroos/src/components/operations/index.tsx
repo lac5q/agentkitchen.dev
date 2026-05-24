@@ -1,6 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useMemo, useState } from "react";
+import type { NocFilters, NocWindow, NocWorkspace } from "@/lib/noc-filters";
 import { NOC, NOC_FONT_BODY } from "@/lib/noc-theme";
 import { NocHeader } from "./noc-header";
 import { PulseStrip } from "./pulse-strip";
@@ -77,6 +79,13 @@ const Waste = dynamic(
 );
 
 export function OperationsNoc() {
+  const [windowLabel, setWindowLabel] = useState<NocWindow>("24h");
+  const [workspace, setWorkspace] = useState<NocWorkspace>("all");
+  const filters = useMemo<NocFilters>(
+    () => ({ window: windowLabel, workspace }),
+    [windowLabel, workspace]
+  );
+
   return (
     <div
       style={{
@@ -87,10 +96,15 @@ export function OperationsNoc() {
       }}
     >
       {/* Header */}
-      <NocHeader />
+      <NocHeader
+        windowLabel={windowLabel}
+        workspace={workspace}
+        onWindowChange={setWindowLabel}
+        onWorkspaceChange={setWorkspace}
+      />
 
       {/* Row 1 — System pulse strip (6 KPIs) */}
-      <PulseStrip />
+      <PulseStrip filters={filters} />
 
       {/* Row 1.5 — Efficiency signals */}
       <EfficiencySignals />
@@ -104,8 +118,8 @@ export function OperationsNoc() {
           gap: 14,
         }}
       >
-        <MemoryConsumption />
-        <MemoryNotDigested />
+        <MemoryConsumption filters={filters} />
+        <MemoryNotDigested filters={filters} />
       </div>
 
       {/* Row 3 — Agent workload + Model utility + Activity heatmap */}
@@ -118,7 +132,7 @@ export function OperationsNoc() {
         }}
       >
         <AgentWorkload />
-        <ModelUtility />
+        <ModelUtility filters={filters} />
         <ActivityHeatmap />
       </div>
 

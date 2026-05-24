@@ -25,9 +25,19 @@ function makeDb(): Database.Database {
 function insertMessage(db: Database.Database, index: number): number {
   const result = db
     .prepare(
-      "INSERT INTO messages(session_id, project, agent_id, role, content, timestamp) VALUES(?, ?, ?, ?, ?, ?)"
+      `INSERT INTO messages(session_id, project, agent_id, role, content, timestamp, visibility, policy)
+       VALUES(?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run("embedding-job-test", "test-project", "test-agent", "user", `message ${index}`, new Date().toISOString());
+    .run(
+      "embedding-job-test",
+      "test-project",
+      "test-agent",
+      "user",
+      `message ${index}`,
+      new Date().toISOString(),
+      "public_approved",
+      "indexable"
+    );
   return result.lastInsertRowid as number;
 }
 

@@ -19,8 +19,8 @@
  */
 
 import { useState } from "react";
-import { useSkillRegistry } from "@/lib/api-client";
-import type { SkillRegistryItem } from "@/lib/api-client";
+import { useSkillRegistry, useSkillSuggestions } from "@/lib/api-client";
+import type { SkillRegistryItem, SkillSuggestion } from "@/lib/api-client";
 import { Card, PageHeader, Stat } from "@/components/shared/ui";
 import { NOC } from "@/lib/noc-theme";
 
@@ -71,6 +71,62 @@ function HarnessBadge({ harness }: { harness: string }) {
     >
       {harness}
     </span>
+  );
+}
+
+function SuggestionStatusBadge({ status }: { status: SkillSuggestion["status"] }) {
+  const palette: Record<SkillSuggestion["status"], { bg: string; color: string; label: string }> = {
+    proposed: { bg: NOC.infoBg, color: NOC.info, label: "Proposed" },
+    approved: { bg: NOC.warnBg, color: NOC.warn, label: "Approved" },
+    promoted: { bg: NOC.successBg, color: NOC.success, label: "Promoted" },
+    dismissed: { bg: NOC.fog, color: NOC.soft, label: "Dismissed" },
+  };
+  const p = palette[status];
+  return (
+    <span
+      className="inline-block px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+      style={{ background: p.bg, color: p.color }}
+    >
+      {p.label}
+    </span>
+  );
+}
+
+function SkillSuggestionRow({ suggestion }: { suggestion: SkillSuggestion }) {
+  const missingHarnesses = Object.entries(suggestion.comparedHarnesses)
+    .filter(([, value]) => !value.exists)
+    .map(([harness]) => harness);
+
+  return (
+    <div className="border-b py-4" style={{ borderColor: NOC.rule }}>
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-semibold text-sm" style={{ color: NOC.ink }}>
+              {suggestion.name}
+            </span>
+            <SuggestionStatusBadge status={suggestion.status} />
+            <span className="font-mono text-xs" style={{ color: NOC.success }}>
+              {Math.round(suggestion.confidence * 100)}%
+            </span>
+          </div>
+          <p className="mt-1 text-xs" style={{ color: NOC.muted }}>
+            {suggestion.recommendation}
+          </p>
+        </div>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-3 text-xs" style={{ color: NOC.soft }}>
+        <span>Pattern: <span className="font-mono">{suggestion.sourcePattern}</span></span>
+        {missingHarnesses.length > 0 && (
+          <span>Missing in: <span className="font-mono">{missingHarnesses.join(", ")}</span></span>
+        )}
+      </div>
+      {suggestion.evidence.length > 0 && (
+        <div className="mt-2 text-xs" style={{ color: NOC.muted }}>
+          Evidence: <span className="font-mono">{suggestion.evidence.slice(0, 2).join(" · ")}</span>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -211,6 +267,7 @@ export default function SkillsRegistryPage() {
     dispatch_status: filterStatus !== "all" ? filterStatus : undefined,
     source_harness: filterHarness !== "all" ? filterHarness : undefined,
   });
+  const suggestions = useSkillSuggestions(30);
 
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
@@ -227,8 +284,44 @@ export default function SkillsRegistryPage() {
       <PageHeader
         eyebrow="Skills"
         title="Governed Skill Registry"
-        hint="Cross-harness SKILL.md contracts imported into the registry. Completeness, dispatch readiness, and contract verification at a glance."
+        hint="MemRoOS-suggested skills, cross-harness SKILL.md contracts, dispatch readiness, and contract verification at a glance."
       />
+
+      <Card>
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold" style={{ color: NOC.ink }}>
+              Suggested Skills
+            </h2>
+            <p className="mt-1 text-xs" style={{ color: NOC.muted }}>
+              MemRoOS recommendations from the last 30 days of activity, compared against harness coverage.
+            </p>
+          </div>
+          <span className="text-xs font-mono" style={{ color: NOC.soft }}>
+            {suggestions.data?.timestamp
+              ? new Date(suggestions.data.timestamp).toLocaleString()
+              : "loading"}
+          </span>
+        </div>
+        {suggestions.isLoading && (
+          <div className="py-8 text-center text-sm" style={{ color: NOC.soft }}>
+            Loading suggested skills...
+          </div>
+        )}
+        {suggestions.isError && (
+          <p className="py-6 text-center text-sm" style={{ color: NOC.warn }}>
+            Failed to load suggested skills.
+          </p>
+        )}
+        {!suggestions.isLoading && !suggestions.isError && (suggestions.data?.suggestions.length ?? 0) === 0 && (
+          <p className="py-6 text-center text-sm" style={{ color: NOC.soft }}>
+            No activity-backed suggestions found for this window.
+          </p>
+        )}
+        {!suggestions.isLoading && !suggestions.isError && suggestions.data?.suggestions.map((suggestion) => (
+          <SkillSuggestionRow key={suggestion.id} suggestion={suggestion} />
+        ))}
+      </Card>
 
       {/* Summary stats */}
       <div className="grid gap-3 sm:grid-cols-3">

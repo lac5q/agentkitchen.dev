@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { POLL_INTERVALS } from "./constants";
+import type { NocWorkspace } from "./noc-filters";
 import type {
   HealthStatus,
   KnowledgeCollection,
@@ -808,6 +809,25 @@ export interface SkillRegistryResponse {
   offset: number;
 }
 
+export interface SkillSuggestion {
+  id: string;
+  name: string;
+  slug: string;
+  sourcePattern: string;
+  recommendation: string;
+  confidence: number;
+  evidence: string[];
+  comparedHarnesses: Record<string, { exists: boolean; path: string | null }>;
+  status: "proposed" | "approved" | "promoted" | "dismissed";
+}
+
+export interface SkillSuggestionsResponse {
+  ok: boolean;
+  windowDays: number;
+  suggestions: SkillSuggestion[];
+  timestamp: string;
+}
+
 export function useSkillRegistry(opts?: {
   offset?: number;
   limit?: number;
@@ -826,6 +846,15 @@ export function useSkillRegistry(opts?: {
     queryFn: () =>
       fetchJSON<SkillRegistryResponse>(`/api/skills/import?${params.toString()}`),
     staleTime: 30_000,
+  });
+}
+
+export function useSkillSuggestions(days = 30) {
+  return useQuery({
+    queryKey: ["skill-suggestions", days],
+    queryFn: () =>
+      fetchJSON<SkillSuggestionsResponse>(`/api/skills/suggestions?days=${days}`),
+    staleTime: 5 * 60_000,
   });
 }
 
@@ -1211,9 +1240,20 @@ export function useVoiceStatus() {
   });
 }
 
-export function useMemoryStats() {
+export interface MemoryStatsParams {
+  window?: TimeSeriesWindow;
+  workspace?: NocWorkspace;
+}
+
+export function useMemoryStats(params: MemoryStatsParams = {}) {
+  const workspace = params.workspace ?? "all";
+  const search = new URLSearchParams();
+  if (params.window) search.set("window", params.window);
+  if (params.workspace) search.set("workspace", params.workspace);
+  const query = search.toString();
+
   return useQuery({
-    queryKey: ["memory-stats"],
+    queryKey: ["memory-stats", params.window ?? "all-time", workspace],
     queryFn: () =>
       fetchJSON<{
         lastRun: {
@@ -1234,7 +1274,7 @@ export function useMemoryStats() {
         sources: Array<{ agent_id: string; cnt: number }>;
         recentFailures24h: number;
         timestamp: string;
-      }>("/api/memory-stats"),
+      }>(`/api/memory-stats${query ? `?${query}` : ""}`),
     refetchInterval: 30000,
   });
 }

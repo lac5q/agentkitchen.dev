@@ -8,6 +8,41 @@ vi.mock("@/lib/agent-registry", () => ({
 vi.mock("@/lib/dispatch/adapter-factory", () => ({
   selectAdapter: vi.fn(),
 }));
+vi.mock("@/app/api/chat/chat-runtime", () => ({
+  buildAgentContext: vi.fn(async (agentId: string) => ({
+    systemPrompt: "test",
+    source: agentId === "qwen-engineer" ? "knowledge" : "pmo",
+    dir: null,
+    agentInstructions: null,
+  })),
+  chatRuntimeStatus: vi.fn((runtime: { runner: string; model: string }) => {
+    if (runtime.runner === "opencode") {
+      return {
+        status: "blocked",
+        detail: "OpenCode runner is disabled. Set MEMROOS_ENABLE_OPENCODE=true for live chat.",
+      };
+    }
+    return {
+      status: "ready",
+      detail: "Anthropic chat is configured. Provider quota can still reject a live response.",
+    };
+  }),
+  resolveChatRuntimePlan: vi.fn(async (agentId: string) => {
+    if (agentId === "qwen-engineer") {
+      return {
+        primary: { runner: "opencode", model: "bailian/qwen3.5-plus", source: "registered-platform", detail: "registered platform" },
+        candidates: [{ runner: "opencode", model: "bailian/qwen3.5-plus", source: "registered-platform", detail: "registered platform" }],
+      };
+    }
+    return {
+      primary: { runner: "opencode", model: "bailian/qwen3.5-plus", source: "pmo-routing", detail: "PMO routing default" },
+      candidates: [
+        { runner: "opencode", model: "bailian/qwen3.5-plus", source: "pmo-routing", detail: "PMO routing default" },
+        { runner: "anthropic", model: "claude-sonnet-4-6", source: "registered-platform", detail: "registered platform" },
+      ],
+    };
+  }),
+}));
 
 const { POST } = await import("../route");
 const { getRemoteAgents, listRegisteredAgents } = await import("@/lib/agent-registry");
@@ -94,7 +129,13 @@ describe("POST /api/engagement/test", () => {
     expect(body.results).toHaveLength(1);
     expect(body.results[0]).toMatchObject({
       agentId: "claude-sonnet-engineer",
-      chat: { status: "ready", runner: "anthropic" },
+      chat: {
+        status: "warning",
+        runner: "opencode",
+        model: "bailian/qwen3.5-plus",
+        source: "pmo-routing",
+        fallbackRunner: "anthropic",
+      },
       dispatch: { status: "ready", adapter: "hive-poll" },
       voice: { status: "ready" },
     });
@@ -106,7 +147,7 @@ describe("POST /api/engagement/test", () => {
 
     expect(body.results[0]).toMatchObject({
       agentId: "qwen-engineer",
-      chat: { status: "blocked", runner: "opencode" },
+      chat: { status: "blocked", runner: "opencode", model: "bailian/qwen3.5-plus" },
     });
   });
 });

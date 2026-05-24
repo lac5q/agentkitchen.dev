@@ -3,6 +3,58 @@ import type Database from 'better-sqlite3';
 
 import { initBehavioralJobSchema } from './seal/behavioral-schema';
 
+const LABEL_TABLES = [
+  "messages",
+  "audit_log",
+  "hive_actions",
+  "agent_memory_writes",
+  "recall_log",
+] as const;
+
+function addSecurityLabelColumns(db: Database.Database): void {
+  for (const table of LABEL_TABLES) {
+    for (const statement of [
+      `ALTER TABLE ${table} ADD COLUMN visibility TEXT NOT NULL DEFAULT 'private'`,
+      `ALTER TABLE ${table} ADD COLUMN domain TEXT`,
+      `ALTER TABLE ${table} ADD COLUMN sensitivity TEXT`,
+      `ALTER TABLE ${table} ADD COLUMN policy TEXT NOT NULL DEFAULT 'sealed'`,
+    ]) {
+      try {
+        db.exec(statement);
+      } catch {
+        // Column already exists -- additive migration is safe to re-run.
+      }
+    }
+  }
+}
+
+function addEmbeddingProvenanceColumns(db: Database.Database): void {
+  for (const statement of [
+    "ALTER TABLE message_embeddings ADD COLUMN artifact_id TEXT",
+    "ALTER TABLE message_embeddings ADD COLUMN source_span TEXT",
+    "ALTER TABLE message_embeddings ADD COLUMN modality TEXT NOT NULL DEFAULT 'text'",
+    "ALTER TABLE message_embeddings ADD COLUMN model_version TEXT",
+    "ALTER TABLE message_embeddings ADD COLUMN label_version INTEGER NOT NULL DEFAULT 1",
+  ]) {
+    try {
+      db.exec(statement);
+    } catch {
+      // Column already exists -- additive migration is safe to re-run.
+    }
+  }
+}
+
+export function rebuildMessageFtsProjection(db: Database.Database): void {
+  db.exec(`
+    INSERT INTO messages_fts(messages_fts) VALUES('delete-all');
+    INSERT INTO messages_fts(rowid, content, project, timestamp, agent_id)
+    SELECT id, content, project, timestamp, agent_id
+    FROM messages
+    WHERE policy = 'indexable'
+      AND visibility IN ('internal','public_safe','public_approved');
+  `);
+}
+
 /**
  * Initializes the SQLite schema for the conversation store.
  * All DDL uses CREATE IF NOT EXISTS — safe to call on every startup.
@@ -24,6 +76,7 @@ export function initSchema(db: Database.Database): void {
       UNIQUE(session_id, request_id)
     );
   `);
+  addSecurityLabelColumns(db);
 
   // messages_fts: FTS5 external-content table pointing at messages
   // external content avoids duplicating large text in the FTS index
@@ -40,13 +93,45 @@ export function initSchema(db: Database.Database): void {
       );
   `);
 
-  // AFTER INSERT trigger keeps FTS index in sync with messages table
-  db.exec(`
-    CREATE TRIGGER IF NOT EXISTS messages_ai AFTER INSERT ON messages BEGIN
+  // Keep FTS index triggers in sync with classification labels. Run the DDL as
+  // one transaction so parallel test workers cannot interleave drop/create.
+  db.transaction(() => {
+    db.exec(`
+    DROP TRIGGER IF EXISTS messages_ai;
+    DROP TRIGGER IF EXISTS messages_au;
+    DROP TRIGGER IF EXISTS messages_au_delete;
+    DROP TRIGGER IF EXISTS messages_au_insert;
+    DROP TRIGGER IF EXISTS messages_ad;
+
+    CREATE TRIGGER messages_ai AFTER INSERT ON messages
+    WHEN new.policy = 'indexable' AND new.visibility IN ('internal','public_safe','public_approved')
+    BEGIN
       INSERT INTO messages_fts(rowid, content, project, timestamp, agent_id)
       VALUES (new.id, new.content, new.project, new.timestamp, new.agent_id);
     END;
+
+    CREATE TRIGGER messages_au_delete AFTER UPDATE ON messages
+    WHEN old.policy = 'indexable' AND old.visibility IN ('internal','public_safe','public_approved')
+    BEGIN
+      INSERT INTO messages_fts(messages_fts, rowid, content, project, timestamp, agent_id)
+      VALUES('delete', old.id, old.content, old.project, old.timestamp, old.agent_id);
+    END;
+
+    CREATE TRIGGER messages_au_insert AFTER UPDATE ON messages
+    WHEN new.policy = 'indexable' AND new.visibility IN ('internal','public_safe','public_approved')
+    BEGIN
+      INSERT INTO messages_fts(rowid, content, project, timestamp, agent_id)
+      VALUES (new.id, new.content, new.project, new.timestamp, new.agent_id);
+    END;
+
+    CREATE TRIGGER messages_ad AFTER DELETE ON messages
+    WHEN old.policy = 'indexable' AND old.visibility IN ('internal','public_safe','public_approved')
+    BEGIN
+      INSERT INTO messages_fts(messages_fts, rowid, content, project, timestamp, agent_id)
+      VALUES('delete', old.id, old.content, old.project, old.timestamp, old.agent_id);
+    END;
   `);
+  })();
 
   // ingest_meta: tracks JSONL file state for incremental ingestion
   db.exec(`
@@ -267,6 +352,77 @@ export function initSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS recall_log_ts ON recall_log(timestamp);
   `);
 
+  // raw_artifacts / artifact_labels: append-only raw evidence vault metadata (MEMSEC-01/02)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS raw_artifacts (
+      id                TEXT PRIMARY KEY,
+      tenant_id         TEXT    NOT NULL DEFAULT 'default-tenant',
+      project           TEXT,
+      source_type       TEXT    NOT NULL,
+      source_id         TEXT,
+      session_id        TEXT,
+      artifact_uri      TEXT    NOT NULL,
+      artifact_path     TEXT    NOT NULL,
+      content_hash      TEXT    NOT NULL,
+      compression       TEXT    NOT NULL DEFAULT 'zstd',
+      key_id            TEXT,
+      uncompressed_size INTEGER NOT NULL DEFAULT 0,
+      compressed_size   INTEGER NOT NULL DEFAULT 0,
+      replay_state      TEXT    NOT NULL DEFAULT 'complete'
+                        CHECK(replay_state IN ('pending','complete','failed')),
+      replay_metadata   TEXT    NOT NULL DEFAULT '{}',
+      retention_until   TEXT,
+      created_at        TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS raw_artifacts_tenant_created
+      ON raw_artifacts(tenant_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS raw_artifacts_source
+      ON raw_artifacts(source_type, source_id);
+    CREATE INDEX IF NOT EXISTS raw_artifacts_session
+      ON raw_artifacts(session_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS artifact_labels (
+      id            INTEGER PRIMARY KEY,
+      artifact_id   TEXT    NOT NULL REFERENCES raw_artifacts(id) ON DELETE CASCADE,
+      visibility    TEXT    NOT NULL DEFAULT 'private',
+      domain        TEXT,
+      sensitivity   TEXT,
+      policy        TEXT    NOT NULL DEFAULT 'sealed',
+      label_version INTEGER NOT NULL DEFAULT 1,
+      labeled_at    TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+      UNIQUE(artifact_id, label_version)
+    );
+    CREATE INDEX IF NOT EXISTS artifact_labels_artifact_version
+      ON artifact_labels(artifact_id, label_version DESC);
+
+    CREATE TABLE IF NOT EXISTS classification_reviews (
+      id                    TEXT PRIMARY KEY,
+      tenant_id             TEXT NOT NULL DEFAULT 'default-tenant',
+      artifact_id           TEXT NOT NULL REFERENCES raw_artifacts(id) ON DELETE CASCADE,
+      source_type           TEXT NOT NULL,
+      source_id             TEXT,
+      session_id            TEXT,
+      status                TEXT NOT NULL DEFAULT 'open'
+                            CHECK(status IN ('open','approved','denied','redacted')),
+      reason_codes_json     TEXT NOT NULL DEFAULT '[]',
+      evidence_spans_json   TEXT NOT NULL DEFAULT '[]',
+      proposed_visibility   TEXT NOT NULL DEFAULT 'private',
+      proposed_domain       TEXT,
+      proposed_sensitivity  TEXT,
+      proposed_policy       TEXT NOT NULL DEFAULT 'requires_human_review',
+      reviewer_id           TEXT,
+      decision              TEXT,
+      decision_note         TEXT,
+      decided_at            TEXT,
+      hil_escalation_id     TEXT,
+      created_at            TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS classification_reviews_status
+      ON classification_reviews(tenant_id, status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS classification_reviews_artifact
+      ON classification_reviews(artifact_id, status);
+  `);
+
   // message_embeddings: per-message vector storage for semantic recall (RECALL-01, RECALL-02)
   // Embeddings are packed as Float32 BLOBs to keep the table compact.
   // Qdrant is untouched — message embeddings live exclusively in conversations.db (D-02).
@@ -276,6 +432,11 @@ export function initSchema(db: Database.Database): void {
       model      TEXT    NOT NULL,
       dim        INTEGER NOT NULL,
       vector     BLOB    NOT NULL,
+      artifact_id TEXT,
+      source_span TEXT,
+      modality   TEXT    NOT NULL DEFAULT 'text',
+      model_version TEXT,
+      label_version INTEGER NOT NULL DEFAULT 1,
       created_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
     );
     CREATE INDEX IF NOT EXISTS message_embeddings_model
@@ -716,6 +877,81 @@ export function initSchema(db: Database.Database): void {
   // All DDL is guarded with IF NOT EXISTS — safe on every startup.
   initBehavioralJobSchema(db);
 
+  // Phase 80: declarative cron/sink health registry.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cron_health_jobs (
+      id                         TEXT PRIMARY KEY,
+      name                       TEXT NOT NULL,
+      source_family              TEXT NOT NULL,
+      schedule                   TEXT NOT NULL,
+      owner                      TEXT NOT NULL DEFAULT 'memroos',
+      status                     TEXT NOT NULL DEFAULT 'active'
+                                 CHECK(status IN ('active','paused','stopped')),
+      health_endpoint            TEXT,
+      expected_interval_minutes  INTEGER NOT NULL DEFAULT 60,
+      last_run_at                TEXT,
+      last_success_at            TEXT,
+      last_failure_at            TEXT,
+      items_processed            INTEGER NOT NULL DEFAULT 0,
+      warning                    TEXT,
+      metadata_json              TEXT NOT NULL DEFAULT '{}',
+      updated_at                 TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS cron_health_jobs_status_updated
+      ON cron_health_jobs(status, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS cron_health_jobs_source
+      ON cron_health_jobs(source_family, status);
+  `);
+
+  // Phase 81: universal task evidence bundles keyed to dispatched/A2A task ids.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS task_evidence_bundles (
+      id                            TEXT PRIMARY KEY,
+      task_id                       TEXT NOT NULL,
+      tenant_id                     TEXT NOT NULL DEFAULT 'default-tenant'
+                                    REFERENCES tenants(id),
+      status                        TEXT NOT NULL DEFAULT 'open'
+                                    CHECK(status IN ('open','verified','failed','superseded')),
+      plan_json                     TEXT NOT NULL DEFAULT '[]',
+      context_json                  TEXT NOT NULL DEFAULT '[]',
+      permissions_json              TEXT NOT NULL DEFAULT '[]',
+      tools_json                    TEXT NOT NULL DEFAULT '[]',
+      actions_json                  TEXT NOT NULL DEFAULT '[]',
+      verification_json             TEXT NOT NULL DEFAULT '[]',
+      memories_json                 TEXT NOT NULL DEFAULT '[]',
+      sources_json                  TEXT NOT NULL DEFAULT '[]',
+      assumptions_json              TEXT NOT NULL DEFAULT '[]',
+      residual_risks_json           TEXT NOT NULL DEFAULT '[]',
+      replay_handle                 TEXT,
+      rollback_handle               TEXT,
+      created_at                    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+      updated_at                    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS task_evidence_bundles_task
+      ON task_evidence_bundles(task_id, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS task_evidence_bundles_tenant_status
+      ON task_evidence_bundles(tenant_id, status, updated_at DESC);
+  `);
+
+  // Skill promotion audit: MemRoOS-native suggestions from recent activity.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS skill_suggestions (
+      id                         TEXT PRIMARY KEY,
+      name                       TEXT NOT NULL,
+      source_pattern             TEXT NOT NULL,
+      recommendation             TEXT NOT NULL,
+      confidence                 REAL NOT NULL DEFAULT 0,
+      evidence_json              TEXT NOT NULL DEFAULT '[]',
+      compared_harnesses_json    TEXT NOT NULL DEFAULT '{}',
+      status                     TEXT NOT NULL DEFAULT 'proposed'
+                                 CHECK(status IN ('proposed','approved','promoted','dismissed')),
+      created_at                 TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+      promoted_at                TEXT
+    );
+    CREATE INDEX IF NOT EXISTS skill_suggestions_status_confidence
+      ON skill_suggestions(status, confidence DESC, created_at DESC);
+  `);
+
   // Phase 63: human team member auth tables
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
@@ -771,6 +1007,37 @@ export function initSchema(db: Database.Database): void {
       created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
     );
     CREATE INDEX IF NOT EXISTS inv_token ON team_invitations(token_hash, used_at);
+
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id         TEXT PRIMARY KEY,
+      user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token_hash TEXT NOT NULL UNIQUE,
+      expires_at TEXT NOT NULL,
+      used_at    TEXT,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS prt_hash ON password_reset_tokens(token_hash, used_at);
+
+    CREATE TABLE IF NOT EXISTS user_email_verifications (
+      id         TEXT PRIMARY KEY,
+      user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      email      TEXT NOT NULL,
+      token_hash TEXT NOT NULL UNIQUE,
+      verified_at TEXT,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS uev_user ON user_email_verifications(user_id, verified_at);
+
+    CREATE TABLE IF NOT EXISTS auth_events (
+      id          TEXT PRIMARY KEY,
+      user_id     TEXT,
+      event_type  TEXT NOT NULL,
+      metadata_json TEXT NOT NULL DEFAULT '{}',
+      created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS auth_events_type_created
+      ON auth_events(event_type, created_at DESC);
   `);
 
   // Phase 64: audit_entries unified immutable log (AUDIT-01)
@@ -1002,4 +1269,8 @@ export function initSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS skill_registry_imported
       ON skill_registry(imported_at DESC);
   `);
+
+  addSecurityLabelColumns(db);
+  addEmbeddingProvenanceColumns(db);
+  rebuildMessageFtsProjection(db);
 }

@@ -65,10 +65,19 @@ describe("ChatGPT Actions bridge", () => {
     const parsers = await import("@/lib/parsers");
 
     vi.mocked(backends.searchVectorMemory).mockResolvedValue([
-      { id: "v1", content: "MemRoOS exposes a mobile actions bridge", score: 0.9 },
+      {
+        id: "v1",
+        content: "MemRoOS exposes a mobile actions bridge",
+        score: 0.9,
+        metadata: { visibility: "internal", policy: "agent_visible" },
+      },
     ]);
     vi.mocked(backends.queryGraphMemory).mockResolvedValue([
-      { id: "g1", content: "ChatGPT mobile connects through GPT Actions" },
+      {
+        id: "g1",
+        content: "ChatGPT mobile connects through GPT Actions",
+        metadata: { visibility: "internal", policy: "agent_visible" },
+      },
     ]);
     vi.mocked(parsers.parseClaudeMemory).mockResolvedValue([
       {
@@ -179,6 +188,33 @@ describe("ChatGPT Actions bridge", () => {
       title: "Semantic memory",
       text: "MemRoOS exposes a mobile actions bridge",
       tier: "vector",
+    });
+  });
+
+  it("fails closed when fetching an encoded result without a policy label", async () => {
+    const legacyId = `memroos:${Buffer.from(
+      JSON.stringify({
+        title: "Legacy memory",
+        text: "Old result id without labels",
+        tier: "vector",
+        source: "mem0",
+      }),
+      "utf8"
+    ).toString("base64url")}`;
+
+    const fetchRoute = await loadFetchRoute();
+    const fetchResponse = await fetchRoute.POST(
+      new Request("http://localhost/api/chatgpt/actions/fetch", {
+        method: "POST",
+        body: JSON.stringify({ id: legacyId }),
+      })
+    );
+    const fetchBody = await fetchResponse.json();
+
+    expect(fetchResponse.status).toBe(400);
+    expect(fetchBody).toMatchObject({
+      ok: false,
+      error: "MemRoOS result is not authorized for ChatGPT action fetch",
     });
   });
 

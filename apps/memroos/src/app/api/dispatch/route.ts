@@ -10,6 +10,11 @@ import { writeAuditLog } from "@/lib/audit";
 import { authenticateAgentHeaders, getRemoteAgents, listRegisteredAgents } from "@/lib/agent-registry";
 import { selectAdapter } from "@/lib/dispatch/adapter-factory";
 import { lookupSkillContract, buildSkillEvidence } from "@/lib/dispatch/skill-lookup";
+import {
+  extractMemoryLabelSnapshot,
+  filterAuthorizedMemoryItems,
+  type MemoryUseActor,
+} from "@/lib/memory/policy-gate";
 import type { DispatchTask } from "@/lib/dispatch/types";
 import type { RegisteredAgent, RemoteAgentConfig } from "@/types";
 
@@ -62,6 +67,58 @@ function agentToDispatchConfig(agent: RegisteredAgent, remote?: RemoteAgentConfi
       outputModes: ["text"],
     })),
   };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function dispatchMemoryActor(actorId: string): MemoryUseActor {
+  if (actorId.startsWith("agent:")) {
+    return { id: actorId, role: "agent", capability: "dispatch" };
+  }
+  if (actorId.startsWith("user:")) {
+    return { id: actorId, role: "operator", capability: "dispatch" };
+  }
+  return { id: actorId, role: "system", capability: "dispatch" };
+}
+
+function gateDispatchMemoryInput(
+  db: ReturnType<typeof getDb>,
+  input: unknown,
+  actor: MemoryUseActor
+): Record<string, unknown> | undefined {
+  if (!isRecord(input)) return undefined;
+
+  const memoryKeys = [
+    "memory",
+    "memories",
+    "memory_context",
+    "memoryContext",
+    "context_pack",
+    "contextPack",
+  ];
+  const next = { ...input };
+
+  for (const key of memoryKeys) {
+    const value = next[key];
+    if (!Array.isArray(value)) continue;
+    next[key] = filterAuthorizedMemoryItems(
+      db,
+      value,
+      actor,
+      "dispatch",
+      extractMemoryLabelSnapshot,
+      (item, index) => {
+        if (isRecord(item) && (typeof item.id === "string" || typeof item.id === "number")) {
+          return `dispatch:${key}:${item.id}`;
+        }
+        return `dispatch:${key}:${index}`;
+      }
+    );
+  }
+
+  return next;
 }
 
 export async function POST(req: NextRequest | Request) {
@@ -222,7 +279,7 @@ export async function POST(req: NextRequest | Request) {
     from_agent,
     to_agent: body.to_agent,
     task_summary: scan.cleanContent,
-    input: body.input,
+    input: gateDispatchMemoryInput(db, body.input, dispatchMemoryActor(from_agent)),
     priority,
     dispatched_at,
     skill_name: skillName,

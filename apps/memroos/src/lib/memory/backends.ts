@@ -3,6 +3,7 @@ import type { MemoryTier } from "./tiers";
 import type { MemoryAdapter, MemoryCapability, MemorySearchResult } from "./adapter";
 import { getAdapters, registerAdapter } from "./registry";
 import { getDb } from "@/lib/db";
+import { filterAuthorizedMessageRows } from "@/lib/memory/policy-gate";
 
 export interface MemoryTierHealth {
   tier: MemoryTier;
@@ -259,7 +260,13 @@ export class EpisodicMemoryAdapter implements MemoryAdapter {
     const { recallByKeyword } = await import("@/lib/db-ingest");
     const db = this.#dbFactory();
     const results = await Promise.resolve(recallByKeyword(db, query, limit));
-    return results.map((r) => ({
+    const allowed = filterAuthorizedMessageRows(
+      db,
+      results,
+      { id: "memory-adapter:episodic", role: "system", capability: "memory_search" },
+      "memory_search"
+    );
+    return allowed.map((r) => ({
       id: r.id,
       content: r.snippet,
       metadata: {

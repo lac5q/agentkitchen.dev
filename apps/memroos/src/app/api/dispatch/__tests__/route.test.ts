@@ -325,4 +325,35 @@ describe("POST /api/dispatch", () => {
     expect(body.task_id).toBe("fixed-task-id");
     expect(body.context_id).toBe("fixed-ctx-id");
   });
+
+  it("policy-gates memory context before handing dispatch input to an agent", async () => {
+    const allowedMemory = {
+      id: "visible-memory",
+      content: "approved context",
+      metadata: { visibility: "internal", policy: "agent_visible" },
+    };
+
+    const res = await POST(makeRequest({
+      to_agent: "sophia",
+      task_summary: "Draft blog post",
+      input: {
+        memory_context: [
+          { id: "unlabeled-memory", content: "unclassified context" },
+          allowedMemory,
+        ],
+        prompt: "Use the allowed context",
+      },
+    }) as any);
+
+    expect(res.status).toBe(200);
+    expect(hivePollStub.dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: {
+          memory_context: [allowedMemory],
+          prompt: "Use the allowed context",
+        },
+      }),
+      expect.anything()
+    );
+  });
 });

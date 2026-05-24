@@ -21,9 +21,19 @@ import { getDb, closeDb } from "@/lib/db";
 
 function insertTestMessage(db: Database.Database, sessionId: string, n: number): number {
   const stmt = db.prepare(
-    "INSERT INTO messages(session_id, project, agent_id, role, content, timestamp) VALUES(?, ?, ?, ?, ?, ?)"
+    `INSERT INTO messages(session_id, project, agent_id, role, content, timestamp, visibility, policy)
+     VALUES(?, ?, ?, ?, ?, ?, ?, ?)`
   );
-  const result = stmt.run(sessionId, "test-project", "test-agent", "user", `message ${n}`, new Date().toISOString());
+  const result = stmt.run(
+    sessionId,
+    "test-project",
+    "test-agent",
+    "user",
+    `message ${n}`,
+    new Date().toISOString(),
+    "public_approved",
+    "indexable"
+  );
   return result.lastInsertRowid as number;
 }
 
@@ -48,6 +58,41 @@ describe("message_embeddings store (RECALL-02)", () => {
     expect(row!.model).toBe("nomic-embed-text");
     expect(row!.dim).toBe(4);
   });
+
+  it("upsertEmbedding stores source provenance and inherited label version", () => {
+    const db = getDb();
+    const msgId = insertTestMessage(db, `sess-${Date.now()}-prov`, 101);
+
+    upsertEmbedding(db, msgId, [0.2, 0.4], "nomic-embed-text", {
+      artifactId: "artifact-1",
+      sourceSpan: "line:1-2",
+      modality: "text",
+      modelVersion: "nomic-embed-text@2026-05",
+      labelVersion: 3,
+    });
+
+    const row = db
+      .prepare(
+        `SELECT artifact_id, source_span, modality, model_version, label_version
+         FROM message_embeddings WHERE message_id = ?`
+      )
+      .get(msgId) as {
+      artifact_id: string | null;
+      source_span: string | null;
+      modality: string;
+      model_version: string | null;
+      label_version: number;
+    };
+
+    expect(row).toEqual({
+      artifact_id: "artifact-1",
+      source_span: "line:1-2",
+      modality: "text",
+      model_version: "nomic-embed-text@2026-05",
+      label_version: 3,
+    });
+  });
+
 
   it("upsertEmbedding updates (no duplicate) on a second call for the same message_id", () => {
     const db = getDb();
@@ -115,5 +160,28 @@ describe("message_embeddings store (RECALL-02)", () => {
 
     const needsEmbedding = messagesNeedingEmbedding(db, 2);
     expect(needsEmbedding.length).toBeLessThanOrEqual(2);
+  });
+
+  it("messagesNeedingEmbedding skips private sealed messages", () => {
+    const db = getDb();
+    const publicId = insertTestMessage(db, `sess-${Date.now()}-g`, 201);
+    const privateId = db.prepare(
+      `INSERT INTO messages(session_id, project, agent_id, role, content, timestamp, visibility, policy)
+       VALUES(?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      `sess-${Date.now()}-g`,
+      "test-project",
+      "test-agent",
+      "user",
+      "private message",
+      new Date().toISOString(),
+      "private",
+      "sealed"
+    ).lastInsertRowid as number;
+
+    const needsEmbedding = messagesNeedingEmbedding(db, 100);
+
+    expect(needsEmbedding).toContain(publicId);
+    expect(needsEmbedding).not.toContain(privateId);
   });
 });

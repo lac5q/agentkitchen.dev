@@ -17,6 +17,7 @@ async function loadRoute() {
   vi.stubEnv("PMO_AGENT_CONFIGS_PATH", pmoAgentsPath);
   vi.stubEnv("PMO_MODEL_ROUTING_PATH", pmoModelRoutingPath);
   vi.stubEnv("SQLITE_DB_PATH", testDbPath);
+  vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
   vi.stubEnv("CONSOLIDATION_MODEL", "MiniMax-M2.7");
   return import("../chat-runtime");
 }
@@ -27,6 +28,7 @@ async function loadPostRouteWithAnthropicFailure(errorMessage: string) {
   vi.stubEnv("PMO_AGENT_CONFIGS_PATH", pmoAgentsPath);
   vi.stubEnv("PMO_MODEL_ROUTING_PATH", pmoModelRoutingPath);
   vi.stubEnv("SQLITE_DB_PATH", testDbPath);
+  vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
   vi.doMock("@anthropic-ai/sdk", () => ({
     default: class MockAnthropic {
       messages = {
@@ -36,6 +38,50 @@ async function loadPostRouteWithAnthropicFailure(errorMessage: string) {
       };
     },
   }));
+  return import("../route");
+}
+
+async function loadPostRouteWithAnthropicFailureAndOpenCodeSuccess(errorMessage: string) {
+  vi.resetModules();
+  vi.stubEnv("AGENT_CONFIGS_PATH", agentConfigsPath);
+  vi.stubEnv("PMO_AGENT_CONFIGS_PATH", pmoAgentsPath);
+  vi.stubEnv("PMO_MODEL_ROUTING_PATH", pmoModelRoutingPath);
+  vi.stubEnv("SQLITE_DB_PATH", testDbPath);
+  vi.stubEnv("ANTHROPIC_API_KEY", "test-key");
+  vi.stubEnv("MEMROOS_ENABLE_OPENCODE", "true");
+  vi.doMock("@anthropic-ai/sdk", () => ({
+    default: class MockAnthropic {
+      messages = {
+        stream: vi.fn(async () => {
+          throw new Error(errorMessage);
+        }),
+      };
+    },
+  }));
+  vi.doMock("child_process", async () => {
+    const { EventEmitter } = await import("events");
+    return {
+      execFile: vi.fn(),
+      spawn: vi.fn(() => {
+        const child = new EventEmitter() as EventEmitter & {
+          stdout: EventEmitter;
+          stderr: EventEmitter;
+          pid: number;
+          exitCode: number | null;
+        };
+        child.stdout = new EventEmitter();
+        child.stderr = new EventEmitter();
+        child.pid = 12345;
+        child.exitCode = null;
+        queueMicrotask(() => {
+          child.stdout.emit("data", Buffer.from("Qwen fallback response"));
+          child.exitCode = 0;
+          child.emit("close", 0, null);
+        });
+        return child;
+      }),
+    };
+  });
   return import("../route");
 }
 
@@ -121,7 +167,7 @@ describe("chat route model resolution", () => {
     expect(runtime).toEqual({ runner: "opencode", model: "bailian/qwen3.5-plus" });
   });
 
-  it("does not apply the PMO catch-all Qwen model to a registered Hermes agent", async () => {
+  it("standardizes registered PMO agents on the PMO routing model before platform defaults", async () => {
     mkdirSync(path.join(pmoAgentsPath, "alba"), { recursive: true });
     writeFileSync(path.join(pmoAgentsPath, "alba", "AGENTS.md"), "# Alba\n\nAlways-on async operations agent.\n");
     const { buildAgentContext, resolveChatRuntime } = await loadRoute();
@@ -136,7 +182,31 @@ describe("chat route model resolution", () => {
     const runtime = await resolveChatRuntime("alba", context);
 
     expect(context.source).toBe("pmo");
-    expect(runtime).toEqual({ runner: "anthropic", model: "claude-haiku-4-5-20251001" });
+    expect(runtime).toEqual({ runner: "opencode", model: "bailian/qwen3.5-plus" });
+  });
+
+  it("exposes a runtime plan with primary and fallback candidates", async () => {
+    mkdirSync(path.join(pmoAgentsPath, "alba"), { recursive: true });
+    writeFileSync(path.join(pmoAgentsPath, "alba", "AGENTS.md"), "# Alba\n\nAlways-on async operations agent.\n");
+    const { buildAgentContext, resolveChatRuntimePlan } = await loadRoute();
+    await registerTestAgent({
+      id: "alba",
+      name: "Alba",
+      role: "Head Chef",
+      platform: "hermes",
+    });
+
+    const context = await buildAgentContext("alba");
+    const plan = await resolveChatRuntimePlan("alba", context);
+
+    expect(plan.primary).toMatchObject({
+      runner: "opencode",
+      model: "bailian/qwen3.5-plus",
+      source: "pmo-routing",
+    });
+    expect(plan.candidates).toEqual(expect.arrayContaining([
+      expect.objectContaining({ runner: "anthropic", source: "registered-platform" }),
+    ]));
   });
 
   it("still routes registered OpenCode-class agents through OpenCode", async () => {
@@ -156,7 +226,7 @@ describe("chat route model resolution", () => {
     expect(runtime).toEqual({ runner: "opencode", model: "bailian/qwen3.5-plus" });
   });
 
-  it("uses named Claude model hints from registered agents", async () => {
+  it("keeps PMO routing ahead of registered Claude name hints", async () => {
     mkdirSync(path.join(pmoAgentsPath, "claude-sonnet-engineer"), { recursive: true });
     writeFileSync(path.join(pmoAgentsPath, "claude-sonnet-engineer", "AGENTS.md"), "# Claude Sonnet Engineer\n");
     const { buildAgentContext, resolveChatRuntime } = await loadRoute();
@@ -170,10 +240,10 @@ describe("chat route model resolution", () => {
     const context = await buildAgentContext("claude-sonnet-engineer");
     const runtime = await resolveChatRuntime("claude-sonnet-engineer", context);
 
-    expect(runtime).toEqual({ runner: "anthropic", model: "claude-sonnet-4-6" });
+    expect(runtime).toEqual({ runner: "opencode", model: "bailian/qwen3.5-plus" });
   });
 
-  it("uses Gemini routing for registered Gemini agents", async () => {
+  it("keeps PMO routing ahead of registered Gemini platform hints", async () => {
     mkdirSync(path.join(pmoAgentsPath, "gemini-senior-engineer"), { recursive: true });
     writeFileSync(path.join(pmoAgentsPath, "gemini-senior-engineer", "AGENTS.md"), "# Gemini Senior Engineer\n");
     const { buildAgentContext, resolveChatRuntime } = await loadRoute();
@@ -187,7 +257,7 @@ describe("chat route model resolution", () => {
     const context = await buildAgentContext("gemini-senior-engineer");
     const runtime = await resolveChatRuntime("gemini-senior-engineer", context);
 
-    expect(runtime).toEqual({ runner: "opencode", model: "google/gemini-2.0-pro-exp" });
+    expect(runtime).toEqual({ runner: "opencode", model: "bailian/qwen3.5-plus" });
   });
 
   it("keeps memory consolidation model out of chat model selection", () => {
@@ -247,7 +317,33 @@ describe("chat route model resolution", () => {
     expect(text).toContain("Claude Sonnet Engineer local check-in");
     expect(text).toContain("Yesterday:");
     expect(text).toContain("Today:");
-    expect(text).toContain("Blocked: usage limit exceeded (2056)");
+    expect(text).toContain("usage limit exceeded (2056)");
     expect(text).not.toContain("Chat unavailable");
+  });
+
+  it("falls through to an enabled OpenCode candidate when Anthropic is quota-blocked", async () => {
+    mkdirSync(path.join(pmoAgentsPath, "alba"), { recursive: true });
+    writeFileSync(path.join(pmoAgentsPath, "alba", "AGENTS.md"), "# Alba\n\nmodel: claude-haiku-4-5\n");
+    await registerTestAgent({
+      id: "alba",
+      name: "Alba",
+      role: "Head Chef",
+      platform: "hermes",
+    });
+    const { POST } = await loadPostRouteWithAnthropicFailureAndOpenCodeSuccess("usage limit exceeded (2056)");
+
+    const res = await POST(new NextRequest("http://localhost/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        agentId: "alba",
+        message: "test",
+        history: [],
+      }),
+      headers: { "content-type": "application/json" },
+    }));
+    const text = await readStream(res);
+
+    expect(res.status).toBe(200);
+    expect(text).toContain("Qwen fallback response");
   });
 });

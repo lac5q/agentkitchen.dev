@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import type { NocWindow, NocWorkspace } from "@/lib/noc-filters";
 import { NOC, NOC_FONT_MONO } from "@/lib/noc-theme";
 
 const QUICK_LINKS = [
@@ -11,9 +11,14 @@ const QUICK_LINKS = [
   { label: "Governance", href: "/audit" },
 ];
 
-export function NocHeader() {
-  const [windowLabel, setWindowLabel] = useState("24h");
-  const [workspace, setWorkspace] = useState("all");
+interface NocHeaderProps {
+  windowLabel: NocWindow;
+  workspace: NocWorkspace;
+  onWindowChange: (value: NocWindow) => void;
+  onWorkspaceChange: (value: NocWorkspace) => void;
+}
+
+export function NocHeader({ windowLabel, workspace, onWindowChange, onWorkspaceChange }: NocHeaderProps) {
   function exportReport() {
     const payload = {
       surface: "operations-noc",
@@ -121,7 +126,7 @@ export function NocHeader() {
           <select
             aria-label="NOC date range"
             value={windowLabel}
-            onChange={(event) => setWindowLabel(event.target.value)}
+            onChange={(event) => onWindowChange(event.target.value as NocWindow)}
             style={{
               background: "transparent",
               border: 0,
@@ -142,7 +147,7 @@ export function NocHeader() {
           <select
             aria-label="NOC workspace"
             value={workspace}
-            onChange={(event) => setWorkspace(event.target.value)}
+            onChange={(event) => onWorkspaceChange(event.target.value as NocWorkspace)}
             style={{
               background: "transparent",
               border: 0,

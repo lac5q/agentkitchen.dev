@@ -3,6 +3,7 @@ import { getDb } from '@/lib/db';
 import { recallByKeyword, type RecallResult } from '@/lib/db-ingest';
 import { embedText } from '@/lib/embeddings/provider';
 import { hybridRecall, semanticRecall } from '@/lib/embeddings/recall';
+import { filterAuthorizedMessageRows, type MemoryUseActor } from '@/lib/memory/policy-gate';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,12 @@ function normalizeMode(mode: string | null): RecallMode {
 
 function safeLimit(value: number): number {
   return Number.isFinite(value) ? Math.min(Math.max(1, value), 100) : 20;
+}
+
+function recallActor(agentId: string | null): MemoryUseActor {
+  return agentId
+    ? { id: `agent:${agentId}`, role: "agent", capability: "recall" }
+    : { id: "anonymous", role: "anonymous", capability: "recall" };
 }
 
 /**
@@ -126,7 +133,8 @@ export async function GET(req: NextRequest) {
       id: number; session_id: string; project: string; agent_id: string;
       role: string; content: string; timestamp: string;
     }>;
-    return Response.json({ results: rows, agent_id: agentId, timestamp, recall_scope: scope });
+    const results = filterAuthorizedMessageRows(db, rows, recallActor(agentId), "recall");
+    return Response.json({ results, agent_id: agentId, timestamp, recall_scope: scope });
   }
 
   // Return empty results for blank query (no agent_id filter either)
@@ -136,6 +144,7 @@ export async function GET(req: NextRequest) {
 
   const db = getDb();
   const limit = safeLimit(limitParam);
+  const actor = recallActor(agentId);
 
   const bm25Results = (): Array<RecallResult & { source_project: string }> => {
     const rawResults = recallByKeyword(db, q, limit);
@@ -148,8 +157,9 @@ export async function GET(req: NextRequest) {
         allowedProjectIds.includes(r.project)
       );
     }
+    const allowed = filterAuthorizedMessageRows(db, filtered, actor, "recall");
     // Annotate with source_project for consistent cross-project response shape (RECALL-04)
-    return filtered.map((r: RecallResult) => ({
+    return allowed.map((r: RecallResult) => ({
       ...r,
       source_project: r.project,
     }));
@@ -191,10 +201,11 @@ export async function GET(req: NextRequest) {
   const results = agentId
     ? rawResults.filter((r: { agent_id: string }) => r.agent_id === agentId)
     : rawResults;
+  const allowedResults = filterAuthorizedMessageRows(db, results, actor, "recall");
 
-  recordRecallSideEffects(db, q, results);
+  recordRecallSideEffects(db, q, allowedResults);
   return Response.json({
-    results,
+    results: allowedResults,
     query: q,
     mode,
     degraded: false,

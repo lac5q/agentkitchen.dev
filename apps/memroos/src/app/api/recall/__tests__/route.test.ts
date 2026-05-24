@@ -103,8 +103,18 @@ describe('GET /api/recall -- access_count increment', () => {
     const db = getDb();
 
     const msgId = db.prepare(
-      "INSERT INTO messages(session_id, project, agent_id, role, content, timestamp) VALUES(?,?,?,?,?,?)"
-    ).run('sess-ac1', 'p1', 'agent', 'user', 'zypherium keyword unique', '2024-01-01T00:00:00Z').lastInsertRowid as number;
+      `INSERT INTO messages(session_id, project, agent_id, role, content, timestamp, visibility, policy)
+       VALUES(?,?,?,?,?,?,?,?)`
+    ).run(
+      'sess-ac1',
+      'p1',
+      'agent',
+      'user',
+      'zypherium keyword unique',
+      '2024-01-01T00:00:00Z',
+      'public_approved',
+      'indexable'
+    ).lastInsertRowid as number;
 
     // Seed memory_salience with access_count=0
     db.prepare('INSERT OR IGNORE INTO memory_salience(message_id, access_count) VALUES(?, 0)').run(msgId);
@@ -227,8 +237,18 @@ describe('GET /api/recall -- cross-project contract (RECALL-03, RECALL-04)', () 
     const { getDb } = await import('@/lib/db');
     const db = getDb();
     db.prepare(
-      "INSERT INTO messages(session_id, project, agent_id, role, content, timestamp) VALUES(?,?,?,?,?,?)"
-    ).run('sess-xp1', 'project-cross-src', 'agent', 'user', 'cross project recall annotation test unique', '2024-01-01T00:00:00Z');
+      `INSERT INTO messages(session_id, project, agent_id, role, content, timestamp, visibility, policy)
+       VALUES(?,?,?,?,?,?,?,?)`
+    ).run(
+      'sess-xp1',
+      'project-cross-src',
+      'agent',
+      'user',
+      'cross project recall annotation test unique',
+      '2024-01-01T00:00:00Z',
+      'public_approved',
+      'indexable'
+    );
 
     vi.resetModules();
     const { GET } = await import('../route');

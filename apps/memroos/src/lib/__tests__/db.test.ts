@@ -90,6 +90,32 @@ describe('SQLite DB layer', () => {
     expect(colNames).toContain('request_id');
   });
 
+  it('Test 5b: messages FTS projection only indexes promoted indexable rows', () => {
+    const db = getDb();
+    const sealedNeedle = `sealed${crypto.randomUUID().replace(/-/g, '')}`;
+    const publicNeedle = `public${crypto.randomUUID().replace(/-/g, '')}`;
+
+    db.prepare(
+      `INSERT INTO messages(session_id, project, agent_id, role, content, timestamp, visibility, policy)
+       VALUES
+       (?, 'test-project', 'test-agent', 'user', ?, ?, 'private', 'sealed'),
+       (?, 'test-project', 'test-agent', 'user', ?, ?, 'public_approved', 'indexable')`
+    ).run(
+      `sealed-${sealedNeedle}`,
+      `restricted ${sealedNeedle}`,
+      new Date().toISOString(),
+      `public-${publicNeedle}`,
+      `approved ${publicNeedle}`,
+      new Date().toISOString()
+    );
+
+    const sealed = db.prepare("SELECT rowid FROM messages_fts WHERE messages_fts MATCH ?").all(sealedNeedle);
+    const approved = db.prepare("SELECT rowid FROM messages_fts WHERE messages_fts MATCH ?").all(publicNeedle);
+
+    expect(sealed).toHaveLength(0);
+    expect(approved).toHaveLength(1);
+  });
+
   it('Test 6: WAL mode is enabled', () => {
     const db = getDb();
     const result = db.pragma('journal_mode') as { journal_mode: string }[];

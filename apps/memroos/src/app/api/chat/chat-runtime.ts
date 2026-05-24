@@ -13,6 +13,26 @@ export type AgentContext = {
 export type ChatRuntime =
   | { runner: "anthropic"; model: string }
   | { runner: "opencode"; model: string };
+export type ChatRuntimeSource =
+  | "operator-override"
+  | "agent-instructions"
+  | "pmo-routing"
+  | "registered-platform"
+  | "instruction-hint"
+  | "default";
+export type ChatRuntimeCandidate = ChatRuntime & {
+  source: ChatRuntimeSource;
+  detail: string;
+};
+export type ChatRuntimePlan = {
+  primary: ChatRuntimeCandidate;
+  candidates: ChatRuntimeCandidate[];
+};
+export type ChatRuntimeStatus = {
+  status: "ready" | "blocked" | "warning";
+  detail: string;
+  lastError?: string;
+};
 
 const AGENT_CONFIGS_PATH =
   process.env.AGENT_CONFIGS_PATH ||
@@ -49,6 +69,15 @@ const MODEL_ALIASES: Record<string, string> = {
   "claude-opus": "claude-opus-4-6",
   "gemini-pro": "google/gemini-2.0-pro-exp",
 };
+const RUNTIME_FAILURE_COOLDOWN_MS = Number.parseInt(
+  process.env.MEMROOS_CHAT_FAILURE_COOLDOWN_MS ?? `${10 * 60 * 1000}`,
+  10
+);
+const runtimeFailures = new Map<string, { error: string; failedAt: number; providerLimited: boolean }>();
+
+export function isProviderLimitError(message: string): boolean {
+  return /rate_limit_error|usage limit exceeded|credit balance is too low|quota|429/i.test(message);
+}
 
 async function tryRead(filePath: string, maxLines = 150): Promise<string | null> {
   try {
@@ -170,6 +199,66 @@ function modelToRuntime(model: string): ChatRuntime {
   return { runner: "anthropic", model: normalized };
 }
 
+function runtimeKey(runtime: ChatRuntime): string {
+  return `${runtime.runner}:${runtime.model}`;
+}
+
+function toCandidate(model: string, source: ChatRuntimeSource, detail: string): ChatRuntimeCandidate {
+  return { ...modelToRuntime(model), source, detail };
+}
+
+function pushUniqueCandidate(candidates: ChatRuntimeCandidate[], candidate: ChatRuntimeCandidate) {
+  if (candidates.some((existing) => existing.runner === candidate.runner && existing.model === candidate.model)) return;
+  candidates.push(candidate);
+}
+
+function stripCandidate(candidate: ChatRuntimeCandidate): ChatRuntime {
+  return { runner: candidate.runner, model: candidate.model } as ChatRuntime;
+}
+
+export function recordChatRuntimeFailure(runtime: ChatRuntime, error: string) {
+  runtimeFailures.set(runtimeKey(runtime), {
+    error,
+    failedAt: Date.now(),
+    providerLimited: isProviderLimitError(error),
+  });
+}
+
+export function recordChatRuntimeSuccess(runtime: ChatRuntime) {
+  runtimeFailures.delete(runtimeKey(runtime));
+}
+
+export function chatRuntimeStatus(runtime: ChatRuntime): ChatRuntimeStatus {
+  const failure = runtimeFailures.get(runtimeKey(runtime));
+  if (failure && Date.now() - failure.failedAt <= RUNTIME_FAILURE_COOLDOWN_MS) {
+    return {
+      status: failure.providerLimited ? "blocked" : "warning",
+      detail: failure.providerLimited
+        ? `Last provider attempt was quota-blocked: ${failure.error}`
+        : `Last provider attempt failed: ${failure.error}`,
+      lastError: failure.error,
+    };
+  }
+
+  if (runtime.runner === "opencode") {
+    const enabled = process.env.MEMROOS_ENABLE_OPENCODE === "true";
+    return {
+      status: enabled ? "ready" : "blocked",
+      detail: enabled
+        ? `OpenCode runner is enabled for ${runtime.model}.`
+        : `OpenCode runner is disabled for ${runtime.model}. Set MEMROOS_ENABLE_OPENCODE=true for live chat.`,
+    };
+  }
+
+  const configured = Boolean(process.env.ANTHROPIC_API_KEY);
+  return {
+    status: configured ? "ready" : "blocked",
+    detail: configured
+      ? `Anthropic chat is configured for ${runtime.model}. Provider quota can still reject a live response.`
+      : "ANTHROPIC_API_KEY is missing.",
+  };
+}
+
 function anthropicModelForRegisteredAgent(agent: { id: string; name: string; role: string }): string {
   const haystack = `${agent.id} ${agent.name} ${agent.role}`.toLowerCase();
   if (haystack.includes("opus")) return normalizeModel("claude-opus");
@@ -214,9 +303,16 @@ async function pmoDefaultModelForAgent(agentId: string): Promise<string | null> 
   return defaultRule?.[1] ? normalizeModel(defaultRule[1]) : null;
 }
 
-export async function resolveChatRuntime(agentId: string, context: AgentContext): Promise<ChatRuntime> {
+export async function resolveChatRuntimePlan(agentId: string, context: AgentContext): Promise<ChatRuntimePlan> {
+  const candidates: ChatRuntimeCandidate[] = [];
   const operatorOverride = process.env.MEMROOS_CHAT_MODEL;
-  if (operatorOverride) return modelToRuntime(operatorOverride);
+  if (operatorOverride) {
+    pushUniqueCandidate(candidates, toCandidate(
+      operatorOverride,
+      "operator-override",
+      "MEMROOS_CHAT_MODEL operator override."
+    ));
+  }
 
   const registeredAgent = getRegisteredAgent(agentId);
   const registeredRuntime = registeredAgent
@@ -224,17 +320,51 @@ export async function resolveChatRuntime(agentId: string, context: AgentContext)
     : null;
   const instructions = context.agentInstructions ?? "";
   const explicitModel = instructions.match(/(?:default_model|default model|model)\s*[:=]\s*`?([a-zA-Z0-9_.:/+-]+)/i)?.[1];
-  if (explicitModel) return modelToRuntime(explicitModel);
-
-  if (!registeredRuntime && /qwen|bailian/i.test(instructions)) {
-    return modelToRuntime(DEFAULT_PAPERCLIP_CHAT_MODEL);
+  if (explicitModel) {
+    pushUniqueCandidate(candidates, toCandidate(
+      explicitModel,
+      "agent-instructions",
+      "Agent instructions specify an explicit chat model."
+    ));
   }
-
-  if (registeredRuntime) return registeredRuntime;
 
   if (context.source === "pmo") {
-    return modelToRuntime((await pmoDefaultModelForAgent(agentId)) ?? DEFAULT_PAPERCLIP_CHAT_MODEL);
+    pushUniqueCandidate(candidates, toCandidate(
+      (await pmoDefaultModelForAgent(agentId)) ?? DEFAULT_PAPERCLIP_CHAT_MODEL,
+      "pmo-routing",
+      "PMO model routing default for this agent."
+    ));
   }
 
-  return modelToRuntime(DEFAULT_ANTHROPIC_CHAT_MODEL);
+  if (!registeredRuntime && /qwen|bailian/i.test(instructions)) {
+    pushUniqueCandidate(candidates, toCandidate(
+      DEFAULT_PAPERCLIP_CHAT_MODEL,
+      "instruction-hint",
+      "Agent instructions mention Qwen/Bailian."
+    ));
+  }
+
+  if (registeredRuntime) {
+    pushUniqueCandidate(candidates, {
+      ...registeredRuntime,
+      source: "registered-platform",
+      detail: `Registered ${registeredAgent?.platform ?? "agent"} platform default.`,
+    });
+  }
+
+  pushUniqueCandidate(candidates, toCandidate(
+    DEFAULT_ANTHROPIC_CHAT_MODEL,
+    "default",
+    "MemRoOS default Anthropic chat model."
+  ));
+
+  return {
+    primary: candidates[0],
+    candidates,
+  };
+}
+
+export async function resolveChatRuntime(agentId: string, context: AgentContext): Promise<ChatRuntime> {
+  const plan = await resolveChatRuntimePlan(agentId, context);
+  return stripCandidate(plan.primary);
 }

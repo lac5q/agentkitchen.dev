@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo } from "react";
 import { Spark } from "@/components/shared/charts";
 import { useDelegations, useHiveFeed, useMemoryStats, useModelUsage } from "@/lib/api-client";
 import { NOC } from "@/lib/noc-theme";
+import { nocWindowToSinceIso, nocWindowToTimeSeriesWindow, type NocFilters } from "@/lib/noc-filters";
 import { Eyebrow, Delta, Mono } from "./noc-primitives";
 
 function compactNumber(value: number): string {
@@ -17,12 +18,17 @@ function sparkFromPoints(points: number[], fallback: number) {
   return points.length >= 2 ? points : [0, fallback];
 }
 
-export function PulseStrip() {
-  const [since24h] = useState(() => new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString());
+interface PulseStripProps {
+  filters: NocFilters;
+}
+
+export function PulseStrip({ filters }: PulseStripProps) {
+  const timeWindow = nocWindowToTimeSeriesWindow(filters.window);
+  const since = useMemo(() => nocWindowToSinceIso(filters.window), [filters.window]);
   const hive = useHiveFeed(200);
   const delegations = useDelegations(200);
-  const memory = useMemoryStats();
-  const modelUsage = useModelUsage(since24h);
+  const memory = useMemoryStats({ window: timeWindow, workspace: filters.workspace });
+  const modelUsage = useModelUsage(since);
 
   const actions = hive.data?.actions ?? [];
   const delegationRows = delegations.data?.delegations ?? [];
@@ -60,7 +66,7 @@ export function PulseStrip() {
       color: NOC.ink,
     },
     {
-      label: "Model tokens · 24h",
+      label: `Model tokens · ${filters.window}`,
       value: compactNumber(tokenTotal),
       delta: modelUsage.isError ? "failed" : modelUsage.data?.usage.total.requests ? "live" : "empty",
       spark: sparkFromPoints(modelUsage.data?.usage.models.slice(0, 12).map((m) => m.totalTokens) ?? [], tokenTotal),
