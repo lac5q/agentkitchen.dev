@@ -35,6 +35,13 @@ describe('jwt', () => {
     expect(payload!.role).toBe(role);
   });
 
+  it('signAccessToken uses the operator session lifetime', async () => {
+    const token = await signAccessToken('user-ttl', 'operator');
+    const payload = await verifyAccessToken(token);
+    expect(payload).not.toBeNull();
+    expect(payload!.exp! - payload!.iat!).toBe(12 * 60 * 60);
+  });
+
   it('verifyAccessToken returns null for expired token', async () => {
     // Build a token with a past expiry by temporarily shimming SignJWT
     // We test this by generating with a short expiry using a forged token string

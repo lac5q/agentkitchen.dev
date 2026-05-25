@@ -2,6 +2,13 @@ import { createHash, randomBytes } from 'crypto';
 import { getDb } from '@/lib/db';
 import { signAccessToken } from '@/lib/auth/jwt';
 import { checkAuthRateLimit } from '@/lib/auth/rate-limit';
+import {
+  ACCESS_TOKEN_COOKIE_MAX_AGE_SECONDS,
+  ACCESS_TOKEN_COOKIE_NAME,
+  REFRESH_TOKEN_COOKIE_MAX_AGE_SECONDS,
+  REFRESH_TOKEN_COOKIE_NAME,
+  REFRESH_TOKEN_TTL_DAYS,
+} from '@/lib/auth/session-limits';
 import type { UserRole } from '@/lib/auth/types';
 
 type TokenRow = {
@@ -11,9 +18,6 @@ type TokenRow = {
   revoked_at: string | null;
 };
 type RoleRow = { role: UserRole };
-
-const COOKIE_NAME = 'memroos_refresh';
-const REFRESH_TTL_DAYS = 7;
 
 function parseCookie(cookieHeader: string | null, name: string): string | null {
   if (!cookieHeader) return null;
@@ -25,7 +29,7 @@ export async function POST(req: Request) {
   const rateLimited = checkAuthRateLimit(req, 'refresh');
   if (rateLimited) return rateLimited;
 
-  const rawToken = parseCookie(req.headers.get('cookie'), COOKIE_NAME);
+  const rawToken = parseCookie(req.headers.get('cookie'), REFRESH_TOKEN_COOKIE_NAME);
   if (!rawToken) {
     return Response.json({ error: 'refresh token required' }, { status: 401 });
   }
@@ -38,14 +42,13 @@ export async function POST(req: Request) {
     .get(tokenHash) as TokenRow | undefined;
 
   if (!tokenRow || tokenRow.revoked_at || new Date(tokenRow.expires_at) < new Date()) {
-    // Clear invalid cookie
-    return Response.json(
+    const response = Response.json(
       { error: 'invalid or expired refresh token' },
-      {
-        status: 401,
-        headers: { 'Set-Cookie': `${COOKIE_NAME}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0` },
-      }
+      { status: 401 }
     );
+    response.headers.append('Set-Cookie', `${REFRESH_TOKEN_COOKIE_NAME}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`);
+    response.headers.append('Set-Cookie', `${ACCESS_TOKEN_COOKIE_NAME}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0`);
+    return response;
   }
 
   // Rotate: revoke old token
@@ -57,7 +60,7 @@ export async function POST(req: Request) {
   // Issue new refresh token
   const newRaw = randomBytes(32).toString('hex');
   const newHash = createHash('sha256').update(newRaw).digest('hex');
-  const expiresAt = new Date(Date.now() + REFRESH_TTL_DAYS * 86400_000).toISOString();
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 86400_000).toISOString();
   const newId = randomBytes(8).toString('hex');
 
   db.prepare(
@@ -72,19 +75,29 @@ export async function POST(req: Request) {
   const accessToken = await signAccessToken(tokenRow.user_id, role);
 
   const isProd = process.env.NODE_ENV === 'production';
-  const cookieValue = [
-    `${COOKIE_NAME}=${newRaw}`,
+  const refreshCookie = [
+    `${REFRESH_TOKEN_COOKIE_NAME}=${newRaw}`,
     'HttpOnly',
     'SameSite=Lax',
     isProd ? 'Secure' : '',
     'Path=/',
-    `Max-Age=${REFRESH_TTL_DAYS * 86400}`,
+    `Max-Age=${REFRESH_TOKEN_COOKIE_MAX_AGE_SECONDS}`,
+  ]
+    .filter(Boolean)
+    .join('; ');
+  const accessCookie = [
+    `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}`,
+    'HttpOnly',
+    'SameSite=Lax',
+    isProd ? 'Secure' : '',
+    'Path=/',
+    `Max-Age=${ACCESS_TOKEN_COOKIE_MAX_AGE_SECONDS}`,
   ]
     .filter(Boolean)
     .join('; ');
 
-  return Response.json(
-    { accessToken },
-    { status: 200, headers: { 'Set-Cookie': cookieValue } }
-  );
+  const response = Response.json({ accessToken }, { status: 200 });
+  response.headers.append('Set-Cookie', refreshCookie);
+  response.headers.append('Set-Cookie', accessCookie);
+  return response;
 }

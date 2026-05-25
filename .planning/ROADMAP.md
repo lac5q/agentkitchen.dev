@@ -375,15 +375,21 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
    - Requirements and candidates: Full 50+ task behavioral W-lift golden set, Third-party eval adapter, `EVAL-FOLLOWUP-01`, `EVAL-API-FOLLOWUP-01..02`, `MEMGEN-FOLLOWUP-01`, `SEAL-FOLLOWUP-01..02`, and `AGENTGEN-FOLLOWUP-01`.
    - Goal: move beyond small held-out eval samples into broader behavioral coverage, provider-backed judges, safety eval packs, non-fixture memory-autogen validation, and governed SEAL/agent trajectory workflows.
 
-7. **P2 — Plan Meeting Ingestion Expansion.**
+7. **P1 — Spike SkillOpt-governed skill optimization.**
+   - Research intake: SkillOpt (Microsoft, arXiv:2605.23904) shows an offline loop for improving `SKILL.md` artifacts through scored rollouts, reflections, bounded edits, rejected-edit buffers, and held-out validation.
+   - Source note: `.planning/notes/skillopt-skill-optimization-spike.md`.
+   - Requirement: `SKILLOPT-FOLLOWUP-01` in `.planning/REQUIREMENTS.md`.
+   - Goal: test SkillOpt as an optional MemRoOS optimizer worker that emits governed skill revision proposals, with train/validation/held-out split tracking, W non-regression gates, operator approval, rollback handles, and safe runtime export only after promotion.
+
+8. **P2 — Plan Meeting Ingestion Expansion.**
    - Requirements and candidates: Recall.ai bridge for Zoom/Teams/Meet, multi-participant meeting bot, and voice meeting bot follow-ups.
    - Goal: extend beyond the Daily-only, listener-only v4.0 path while preserving consent, transcript attribution, source provenance, and memory-ingestion boundaries.
 
-8. **P2 — Plan Semantic Recall + Embedding Quality Upgrade.**
+9. **P2 — Plan Semantic Recall + Embedding Quality Upgrade.**
    - Requirements and candidates: Voyage AI `voyage-4-large` embedding upgrade and LLM-powered recall scoring upgrade.
    - Goal: improve recall quality behind provider flags while preserving Ollama local as the default path and avoiding vendor lock-in or unreviewed embedding of sensitive content.
 
-9. **P2 — Plan integration modernization: unified MCP + FastMCP v3.x + dependency drift.**
+10. **P2 — Plan integration modernization: unified MCP + FastMCP v3.x + dependency drift.**
    - Source finding: current configs already register unified `memroos` MCP, but legacy `services/memory/mcp-mem0.py` and `mcp-mem0-wrapper.sh` still exist as a standalone mem0-only adapter and one capability manifest still advertises standalone-only memory tools.
    - Source finding: `services/knowledge-mcp` runs FastMCP 2.14.7 while PyPI latest is 3.3.1; v3 migration must move HTTP/path/stateless/auth options to the v3-compatible runtime API rather than doing a blind pin bump.
    - Source finding: `services/memory` uses `mem0ai` 0.1.118 while PyPI latest is 2.0.2; this is a separate memory-backend migration from the FastMCP upgrade.
@@ -391,16 +397,16 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
    - Requirements: `INT-FOLLOWUP-01..07` in `.planning/REQUIREMENTS.md`.
    - Goal: keep one canonical MemRoOS MCP connection, remove stale memory adapters, upgrade FastMCP and mem0ai deliberately, validate A2A/ADK and Next proxy boundaries against current specs, and stage SDK/toolchain majors before they become operational debt. Pull any integration task forward if it blocks P0 memory/security work.
 
-10. **P2 — Plan Phase 70 follow-up topology closure.**
+11. **P2 — Plan Phase 70 follow-up topology closure.**
    - Source note: `.planning/phases/70-foundation-engine-core/deferred-items.md`.
    - Requirement: `ORCH-FOLLOWUP-01` in `.planning/REQUIREMENTS.md`.
    - Goal: close deferred LangGraph multi-hop topology and rollback-compensation gaps before claiming full multi-hop orchestration depth. Pull forward only if a live workflow needs multi-hop compensation.
 
-11. **P3 — Plan commercial/product/backend expansion.**
+12. **P3 — Plan commercial/product/backend expansion.**
    - Requirements: `PRODUCT-01..02`, `VERTICAL-01`, and `L3-FOLLOWUP-01..03`.
    - Goal: decide Eval Engine packaging, pricing/commercialization, second vertical, and live Salesforce/Zendesk/NetSuite/business-outcome adapters after the memory trust and evidence substrate is credible.
 
-12. **P3 — Plan recent-deferred hardening sweep.**
+13. **P3 — Plan recent-deferred hardening sweep.**
    - Source notes: Phase 57-64 context/summary deferred sections plus `.planning/PROJECT.md` v5 candidates.
    - Requirements: remaining `AUTH-FOLLOWUP-01..03`, `AUDIT-FOLLOWUP-01..03`, `UX-FOLLOWUP-01..06`, and any deferred items not already pulled into P0-P2.
    - Goal: prevent recent deferred notes from living only in phase-local context by turning them into plan-ready backlog requirements.

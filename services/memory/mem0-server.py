@@ -14,7 +14,9 @@ import sqlite3
 from datetime import datetime
 from typing import Any, Optional
 from pathlib import Path
+from urllib.parse import urljoin
 
+import httpx
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -376,6 +378,24 @@ def check_mem0_runtime() -> dict:
         return {"status": "unavailable", "error": str(exc)}
 
 
+def check_qdrant_vector_store(vector_cfg: dict[str, Any]) -> str:
+    """Check Qdrant over HTTP without relying on qdrant-client package metadata."""
+    api_key_env = vector_cfg.get("api_key_env")
+    api_key = vector_cfg.get("api_key") or (os.environ.get(api_key_env) if api_key_env else None)
+    headers = {"api-key": api_key} if api_key else {}
+    url = vector_cfg.get("url")
+    if url:
+        endpoint = urljoin(str(url).rstrip("/") + "/", "collections")
+    else:
+        host = vector_cfg.get("host", "localhost")
+        port = vector_cfg.get("port", 6333)
+        endpoint = f"http://{host}:{port}/collections"
+
+    response = httpx.get(endpoint, headers=headers, timeout=5)
+    response.raise_for_status()
+    return "connected"
+
+
 # ---------------------------------------------------------------------------
 # Exception Handler
 # ---------------------------------------------------------------------------
@@ -528,19 +548,9 @@ def health():
 
     runtime_status = check_mem0_runtime()
     vector_status = "unknown"
-    if vector_provider == "qdrant" and QDRANT_AVAILABLE:
+    if vector_provider == "qdrant":
         try:
-            url = vector_cfg.get("url")
-            api_key_env = vector_cfg.get("api_key_env")
-            api_key = vector_cfg.get("api_key") or (os.environ.get(api_key_env) if api_key_env else None)
-            if url:
-                client = QdrantClient(url=url, api_key=api_key, timeout=5)
-            else:
-                host = vector_cfg.get("host", "localhost")
-                port = vector_cfg.get("port", 6333)
-                client = QdrantClient(host=host, port=port, timeout=2)
-            client.get_collections()
-            vector_status = "connected"
+            vector_status = check_qdrant_vector_store(vector_cfg)
         except Exception as e:
             logger.warning(f"Qdrant health check failed: {e}")
             vector_status = "disconnected"
@@ -706,7 +716,6 @@ async def _qdrant_health_checker():
     - Auto-resets the memory client so requests succeed again
     - Silences old failure alerts once the system is healthy for a while
     """
-    import httpx
     consecutive_healthy = 0
     HEALTH_THRESHOLD = 3  # must be healthy N consecutive checks before clearing
 
@@ -717,7 +726,7 @@ async def _qdrant_health_checker():
                 resp = await client.get("http://localhost:3201/health")
                 data = resp.json()
 
-            qdrant_ok = data.get("qdrant") == "connected"
+            qdrant_ok = data.get("vector_store") == "connected"
             disk_ok = not data.get("disk", {}).get("critical", False)
 
             if qdrant_ok and disk_ok:
