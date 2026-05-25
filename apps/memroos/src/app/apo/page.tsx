@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useApo } from "@/lib/api-client";
 import { CycleStatus } from "@/components/apo/cycle-status";
 import { ProposalCard } from "@/components/apo/proposal-card";
@@ -30,28 +31,17 @@ const EMPTY_STATS = {
   recentLogLines: [],
 };
 
-function initialTabFromLocation(): TabFilter {
-  if (typeof window === "undefined") return "all";
-  const tab = new URLSearchParams(window.location.search).get("tab");
+function parseTabFilter(tab: string | null): TabFilter {
   return TABS.some((item) => item.value === tab) ? (tab as TabFilter) : "all";
 }
 
-function cameFromFlow(): boolean {
-  if (typeof window === "undefined") return false;
-  return new URLSearchParams(window.location.search).get("source") === "flow";
-}
-
-export default function ApoPage() {
+function ApoPageContent() {
+  const searchParams = useSearchParams();
   const { data, isLoading, error } = useApo();
-  const [tab, setTab] = useState<TabFilter>("all");
+  const [tab, setTab] = useState<TabFilter>(() => parseTabFilter(searchParams.get("tab")));
   const [selected, setSelected] = useState<ApoProposal | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [showFlowContext, setShowFlowContext] = useState(false);
-
-  useEffect(() => {
-    setTab(initialTabFromLocation());
-    setShowFlowContext(cameFromFlow());
-  }, []);
+  const showFlowContext = searchParams.get("source") === "flow";
 
   const allProposals = data?.proposals ?? [];
   const stats = data?.stats ?? EMPTY_STATS;
@@ -187,5 +177,13 @@ export default function ApoPage() {
       />
     </div>
     </TooltipProvider>
+  );
+}
+
+export default function ApoPage() {
+  return (
+    <Suspense fallback={null}>
+      <ApoPageContent />
+    </Suspense>
   );
 }

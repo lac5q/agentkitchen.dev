@@ -30,6 +30,10 @@ vi.mock("@/lib/api-client", () => ({
   }),
 }));
 
+vi.mock("next/navigation", () => ({
+  useSearchParams: () => new URLSearchParams(window.location.search),
+}));
+
 vi.mock("@/components/apo/cycle-status", () => ({
   CycleStatus: () => <div>Cycle status</div>,
 }));

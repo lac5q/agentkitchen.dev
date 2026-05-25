@@ -283,15 +283,8 @@ def test_health_degrades_when_memory_queue_has_pending_saves(monkeypatch, tmp_pa
 def test_health_degrades_when_mem0_runtime_is_unavailable(monkeypatch, tmp_path):
     module = load_mem0_server(monkeypatch, "mem0_server_runtime_health_under_test")
 
-    class FakeQdrantClient:
-        def __init__(self, *args, **kwargs):
-            pass
-
-        def get_collections(self):
-            return []
-
     monkeypatch.setattr(module, "QDRANT_AVAILABLE", True)
-    monkeypatch.setattr(module, "QdrantClient", FakeQdrantClient)
+    monkeypatch.setattr(module, "check_qdrant_vector_store", lambda _vector_cfg: "connected")
     monkeypatch.setattr(module, "QUEUE_DB_PATH", tmp_path / "queue.db")
     monkeypatch.setattr(module, "check_disk_space", lambda: {"critical": False})
     monkeypatch.setattr(module, "check_sqlite_db", lambda: {"status": "healthy"})

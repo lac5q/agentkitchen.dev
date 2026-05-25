@@ -10,10 +10,14 @@ PYTHON_BIN="${PYTHON_BIN:-$ROOT_DIR/.venv/bin/python3}"
 if [ ! -x "$PYTHON_BIN" ]; then
   PYTHON_BIN="$(command -v python3)"
 fi
+PYTEST_CMD=("$PYTHON_BIN" -m pytest)
 if ! "$PYTHON_BIN" -m pytest --version >/dev/null 2>&1; then
   SYSTEM_PYTHON_BIN="$(command -v python3)"
   if [ -n "$SYSTEM_PYTHON_BIN" ] && "$SYSTEM_PYTHON_BIN" -m pytest --version >/dev/null 2>&1; then
     PYTHON_BIN="$SYSTEM_PYTHON_BIN"
+    PYTEST_CMD=("$PYTHON_BIN" -m pytest)
+  elif command -v uv >/dev/null 2>&1; then
+    PYTEST_CMD=(uv run --with pytest --with httpx -- python -m pytest)
   fi
 fi
 
@@ -24,7 +28,7 @@ node --test scripts/check-knowledge-indexing.test.mjs
 node --test scripts/check-recall-anchors.test.mjs
 
 echo "[memory-degradation] checking mem0 queue and health degradation"
-"$PYTHON_BIN" -m pytest services/memory/tests/test_mem0_queue.py
+"${PYTEST_CMD[@]}" services/memory/tests/test_mem0_queue.py
 if [ -n "${MEMROOS_RECALL_ANCHORS_PATH:-}" ] || [ -f evals/memory-recall/critical-anchors.local.json ]; then
   node scripts/check-recall-anchors.mjs --require-mem0
 else
