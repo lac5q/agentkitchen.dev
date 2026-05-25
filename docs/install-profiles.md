@@ -103,6 +103,15 @@ npm run check:knowledge-indexing -- --days=2
 
 The check covers recent Google Drive exports, meeting recordings, Spark notes, emails, Slack source files, project meetings, journals, and analysis content.
 
+Memroos also supports client-specific recall contracts for "must not forget" memories. The public repo ships a synthetic example; private deployments should copy it to `evals/memory-recall/critical-anchors.local.json` or set `MEMROOS_RECALL_ANCHORS_PATH`.
+
+```bash
+npm run check:recall-anchors
+npm run check:recall-anchors:live
+```
+
+Use `check:recall-anchors` for public/example verification and `check:recall-anchors:live` after a client has seeded real anchors into mem0. See `docs/client/recall-contracts.md`.
+
 ## Optional Progressive Capabilities
 
 Memroos can also check bundled-but-optional capabilities during setup:

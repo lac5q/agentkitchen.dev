@@ -23,6 +23,7 @@ try:
     from qdrant_client import QdrantClient
     QDRANT_AVAILABLE = True
 except ImportError:
+    QdrantClient = None
     QDRANT_AVAILABLE = False
 
 # ---------------------------------------------------------------------------

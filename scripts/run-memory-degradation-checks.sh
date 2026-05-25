@@ -10,14 +10,26 @@ PYTHON_BIN="${PYTHON_BIN:-$ROOT_DIR/.venv/bin/python3}"
 if [ ! -x "$PYTHON_BIN" ]; then
   PYTHON_BIN="$(command -v python3)"
 fi
+if ! "$PYTHON_BIN" -m pytest --version >/dev/null 2>&1; then
+  SYSTEM_PYTHON_BIN="$(command -v python3)"
+  if [ -n "$SYSTEM_PYTHON_BIN" ] && "$SYSTEM_PYTHON_BIN" -m pytest --version >/dev/null 2>&1; then
+    PYTHON_BIN="$SYSTEM_PYTHON_BIN"
+  fi
+fi
 
 echo "[memory-degradation] checking shell and launchd configs"
 bash -n services/memory/healthcheck.sh
 node scripts/install-memory-resilience.mjs check
 node --test scripts/check-knowledge-indexing.test.mjs
+node --test scripts/check-recall-anchors.test.mjs
 
 echo "[memory-degradation] checking mem0 queue and health degradation"
 "$PYTHON_BIN" -m pytest services/memory/tests/test_mem0_queue.py
+if [ -n "${MEMROOS_RECALL_ANCHORS_PATH:-}" ] || [ -f evals/memory-recall/critical-anchors.local.json ]; then
+  node scripts/check-recall-anchors.mjs --require-mem0
+else
+  node scripts/check-recall-anchors.mjs --skip-mem0
+fi
 
 echo "[memory-degradation] checking Memroos memory health UI/API"
 npm --prefix apps/memroos run test -- --run \
