@@ -16,6 +16,8 @@ process.env.SQLITE_DB_PATH = TEST_DB_PATH;
 let getDb: () => import('better-sqlite3').Database;
 let closeDb: () => void;
 let SQLITE_DB_PATH: string;
+let initSchema: (db: import('better-sqlite3').Database) => void;
+let rebuildMessageFtsProjection: (db: import('better-sqlite3').Database) => void;
 
 describe('SQLite DB layer', () => {
   beforeEach(async () => {
@@ -24,9 +26,12 @@ describe('SQLite DB layer', () => {
     // Re-import fresh module to reset singleton
     const dbModule = await import('../db');
     const constantsModule = await import('../constants');
+    const schemaModule = await import('../db-schema');
     getDb = dbModule.getDb;
     closeDb = dbModule.closeDb;
     SQLITE_DB_PATH = constantsModule.SQLITE_DB_PATH;
+    initSchema = schemaModule.initSchema;
+    rebuildMessageFtsProjection = schemaModule.rebuildMessageFtsProjection;
   });
 
   afterAll(() => {
@@ -114,6 +119,32 @@ describe('SQLite DB layer', () => {
 
     expect(sealed).toHaveLength(0);
     expect(approved).toHaveLength(1);
+  });
+
+  it('Test 5c: repeat schema initialization does not rebuild the messages FTS projection', () => {
+    const db = getDb();
+    const needle = `repeatinit${crypto.randomUUID().replace(/-/g, '')}`;
+    const timestamp = new Date().toISOString();
+    const info = db.prepare(
+      `INSERT INTO messages(session_id, project, agent_id, role, content, timestamp, visibility, policy)
+       VALUES (?, 'test-project', 'test-agent', 'user', ?, ?, 'public_approved', 'indexable')`
+    ).run(`repeat-${needle}`, `approved ${needle}`, timestamp);
+    const rowid = Number(info.lastInsertRowid);
+
+    expect(db.prepare("SELECT rowid FROM messages_fts WHERE messages_fts MATCH ?").all(needle)).toHaveLength(1);
+
+    db.prepare(
+      `INSERT INTO messages_fts(messages_fts, rowid, content, project, timestamp, agent_id)
+       VALUES('delete', ?, ?, 'test-project', ?, 'test-agent')`
+    ).run(rowid, `approved ${needle}`, timestamp);
+
+    expect(db.prepare("SELECT rowid FROM messages_fts WHERE messages_fts MATCH ?").all(needle)).toHaveLength(0);
+
+    initSchema(db);
+    expect(db.prepare("SELECT rowid FROM messages_fts WHERE messages_fts MATCH ?").all(needle)).toHaveLength(0);
+
+    rebuildMessageFtsProjection(db);
+    expect(db.prepare("SELECT rowid FROM messages_fts WHERE messages_fts MATCH ?").all(needle)).toHaveLength(1);
   });
 
   it('Test 6: WAL mode is enabled', () => {

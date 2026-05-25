@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import type { UserRole, JwtPayload } from './types';
+import { ACCESS_TOKEN_TTL } from './session-limits';
 
 function getSecret(): Uint8Array {
   const secret = process.env.MEMROOS_JWT_SECRET;
@@ -10,7 +11,7 @@ function getSecret(): Uint8Array {
 }
 
 /**
- * Signs a 15-minute HS256 access token.
+ * Signs an HS256 access token for the operator session window.
  */
 export async function signAccessToken(userId: string, role: UserRole): Promise<string> {
   const secret = getSecret();
@@ -18,7 +19,7 @@ export async function signAccessToken(userId: string, role: UserRole): Promise<s
     .setProtectedHeader({ alg: 'HS256' })
     .setSubject(userId)
     .setIssuedAt()
-    .setExpirationTime('15m')
+    .setExpirationTime(ACCESS_TOKEN_TTL)
     .sign(secret);
 }
 

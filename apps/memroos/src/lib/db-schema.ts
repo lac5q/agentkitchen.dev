@@ -1272,5 +1272,6 @@ export function initSchema(db: Database.Database): void {
 
   addSecurityLabelColumns(db);
   addEmbeddingProvenanceColumns(db);
-  rebuildMessageFtsProjection(db);
+  // FTS projection repair is intentionally explicit. Rebuilding it here blocks
+  // the Next.js event loop during cold starts and makes unrelated screens hang.
 }

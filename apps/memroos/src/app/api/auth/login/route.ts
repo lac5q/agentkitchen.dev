@@ -4,6 +4,13 @@ import { getDb } from '@/lib/db';
 import { verifyPassword } from '@/lib/auth/password';
 import { signAccessToken } from '@/lib/auth/jwt';
 import { checkAuthRateLimit } from '@/lib/auth/rate-limit';
+import {
+  ACCESS_TOKEN_COOKIE_MAX_AGE_SECONDS,
+  ACCESS_TOKEN_COOKIE_NAME,
+  REFRESH_TOKEN_COOKIE_MAX_AGE_SECONDS,
+  REFRESH_TOKEN_COOKIE_NAME,
+  REFRESH_TOKEN_TTL_DAYS,
+} from '@/lib/auth/session-limits';
 import type { UserRole } from '@/lib/auth/types';
 
 interface LoginBody {
@@ -18,9 +25,6 @@ type UserRow = {
   password_hash: string;
 };
 type RoleRow = { role: UserRole };
-
-const REFRESH_TTL_DAYS = 7;
-const COOKIE_NAME = 'memroos_refresh';
 
 export async function POST(req: NextRequest) {
   const rateLimited = checkAuthRateLimit(req, 'login');
@@ -65,7 +69,7 @@ export async function POST(req: NextRequest) {
   // Issue refresh token
   const rawToken = randomBytes(32).toString('hex');
   const tokenHash = createHash('sha256').update(rawToken).digest('hex');
-  const expiresAt = new Date(Date.now() + REFRESH_TTL_DAYS * 86400_000).toISOString();
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_DAYS * 86400_000).toISOString();
   const tokenId = randomBytes(8).toString('hex');
 
   db.prepare(
@@ -80,9 +84,9 @@ export async function POST(req: NextRequest) {
   const isProd = process.env.NODE_ENV === 'production';
   const secureFlag = isProd ? '; Secure' : '';
 
-  const refreshCookie = `${COOKIE_NAME}=${rawToken}; HttpOnly; SameSite=Lax${secureFlag}; Path=/; Max-Age=${REFRESH_TTL_DAYS * 86400}`;
+  const refreshCookie = `${REFRESH_TOKEN_COOKIE_NAME}=${rawToken}; HttpOnly; SameSite=Lax${secureFlag}; Path=/; Max-Age=${REFRESH_TOKEN_COOKIE_MAX_AGE_SECONDS}`;
   // CR-01 fix: set access token as HttpOnly so JS cannot read it (XSS protection)
-  const accessCookie = `access_token=${accessToken}; HttpOnly; SameSite=Lax${secureFlag}; Path=/; Max-Age=900`;
+  const accessCookie = `${ACCESS_TOKEN_COOKIE_NAME}=${accessToken}; HttpOnly; SameSite=Lax${secureFlag}; Path=/; Max-Age=${ACCESS_TOKEN_COOKIE_MAX_AGE_SECONDS}`;
 
   const response = Response.json(
     {

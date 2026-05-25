@@ -22,6 +22,8 @@
     "eval:memory-degradation": "bash scripts/run-memory-degradation-checks.sh",
     "eval:marketplace-memory": "node scripts/run-marketplace-memory-evals.mjs",
     "check:knowledge-indexing": "node scripts/check-knowledge-indexing.mjs",
+    "check:recall-anchors": "node scripts/check-recall-anchors.mjs --skip-mem0",
+    "check:recall-anchors:live": "node scripts/check-recall-anchors.mjs --require-mem0",
     "install:runtime-services": "node scripts/install-runtime-services.mjs install",
     "setup:multica-memroos": "node scripts/setup-multica-memroos.mjs",
     "lint": "npm --prefix apps/memroos run lint",

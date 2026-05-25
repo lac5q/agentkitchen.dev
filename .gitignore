@@ -65,3 +65,13 @@ services/**/logs/
 .codex/
 .agents/
 .gemini/
+
+# Private client recall contracts
+evals/memory-recall/critical-anchors.local.json
+
+# Local workspace memory; public repos should ship examples/docs instead.
+/SOUL.md
+/USER.md
+/MEMORY.md
+/memory/*.md
+!/memory/.gitkeep

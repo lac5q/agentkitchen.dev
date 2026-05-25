@@ -132,9 +132,23 @@ export function NodeDetailRail({ nodeId }: NodeDetailRailProps) {
         )}
 
         <div style={{ marginTop: 10, display: "flex", gap: 6 }}>
-          <Link href={route} style={{ ...pillBtn(NOC.paper, NOC.ink, NOC.ruleStrong), textDecoration: "none" }}>
-            Open page
-          </Link>
+          {route === "/flow" ? (
+            <span
+              style={{
+                color: NOC.soft,
+                fontFamily: NOC_FONT_MONO,
+                fontSize: 11,
+                letterSpacing: "0.04em",
+                textTransform: "uppercase",
+              }}
+            >
+              Already on map
+            </span>
+          ) : (
+            <Link href={route} style={{ ...pillBtn(NOC.paper, NOC.ink, NOC.ruleStrong), textDecoration: "none" }}>
+              Open page
+            </Link>
+          )}
         </div>
       </div>
 
@@ -162,8 +176,13 @@ export function NodeDetailRail({ nodeId }: NodeDetailRailProps) {
           <strong>62% → 44%</strong>.
         </div>
         <Link
-          href="/apo"
-          style={{ ...pillBtn(NOC.terraDeep, NOC.cream, NOC.terraDeep, "4px 10px", 11), marginTop: 8 }}
+          href="/apo?tab=pending&source=flow"
+          style={{
+            ...pillBtn(NOC.terraDeep, NOC.cream, NOC.terraDeep, "4px 10px", 11),
+            display: "inline-flex",
+            marginTop: 8,
+            textDecoration: "none",
+          }}
         >
           Apply via APO
         </Link>

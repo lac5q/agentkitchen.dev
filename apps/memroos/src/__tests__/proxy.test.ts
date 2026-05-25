@@ -84,4 +84,17 @@ describe("proxy", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("location")).toBeNull();
   });
+
+  it("allows Google Analytics collection endpoints in the content security policy", async () => {
+    const response = await proxy(
+      new NextRequest("https://memroos.com/", {
+        headers: { host: "memroos.com" },
+      })
+    );
+
+    const csp = response.headers.get("Content-Security-Policy");
+    expect(csp).toContain("https://www.googletagmanager.com");
+    expect(csp).toContain("https://www.google-analytics.com");
+    expect(csp).toContain("https://region1.google-analytics.com");
+  });
 });

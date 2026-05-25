@@ -174,11 +174,13 @@ function run(command, args, options = {}) {
     "/opt/homebrew/bin",
     "/usr/local/bin",
   ].filter(Boolean).join(path.delimiter);
+  const timeoutMs = Number(process.env.QMD_HEALTH_COMMAND_TIMEOUT_MS || options.timeoutMs || 10_000);
 
   return spawnSync(command, args, {
     cwd: options.cwd ?? repoRoot,
     encoding: "utf8",
     maxBuffer: 64 * 1024 * 1024,
+    timeout: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : 10_000,
     env: {
       ...process.env,
       PATH: pathPrefix ? `${pathPrefix}${path.delimiter}${process.env.PATH || ""}` : process.env.PATH,
@@ -245,10 +247,11 @@ Options:
 function qmd(args, options) {
   const result = run(options.qmdBin, args, options);
   if (result.error) {
+    const timedOut = result.error.code === "ETIMEDOUT";
     return {
       ok: false,
       stdout: "",
-      stderr: result.error.message,
+      stderr: timedOut ? `qmd ${args.join(" ")} timed out` : result.error.message,
       status: 127,
     };
   }

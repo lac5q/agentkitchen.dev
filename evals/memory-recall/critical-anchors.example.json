@@ -1,0 +1,33 @@
+[
+  {
+    "id": "example-client-decision-2026-01-15",
+    "description": "Example recall contract for a source-backed client decision",
+    "path": "./docs/client/example-recall-anchor.md",
+    "qmdCollections": [
+      {
+        "collection": "memroos",
+        "root": "."
+      }
+    ],
+    "searchQueries": [
+      "example client billing workflow human approval",
+      "source backed billing workflow human approval"
+    ],
+    "mem0Queries": [
+      "example client billing workflow human approval"
+    ],
+    "requiredTerms": [
+      "Example Client",
+      "billing workflow",
+      "human approval",
+      "source-backed"
+    ],
+    "mem0RequiredTerms": [
+      "Example Client",
+      "billing workflow"
+    ],
+    "sourceArtifacts": [
+      "./docs/client/example-recall-anchor.md"
+    ]
+  }
+]

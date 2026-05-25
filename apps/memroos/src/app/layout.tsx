@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { GoogleAnalyticsTracking } from "@/components/analytics/google-analytics";
 import { Shell } from "@/components/layout/shell";
 import { Providers } from "./providers";
 
@@ -27,6 +28,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Shell publicLandingHost={isPublicLandingHost(host)}>{children}</Shell>
         </Providers>
       </body>
+      <GoogleAnalyticsTracking />
     </html>
   );
 }
