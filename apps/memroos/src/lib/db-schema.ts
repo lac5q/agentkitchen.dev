@@ -1272,6 +1272,71 @@ export function initSchema(db: Database.Database): void {
 
   addSecurityLabelColumns(db);
   addEmbeddingProvenanceColumns(db);
+
+  // Phase 85: SkillForge — governed skill optimization tables (SKILLFORGE-01)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS skillforge_proposals (
+      id                  TEXT    PRIMARY KEY,
+      seal_proposal_id    TEXT    REFERENCES seal_proposals(id),
+      source_skill_id     TEXT    NOT NULL,
+      source_version      TEXT    NOT NULL,
+      proposed_diff       TEXT    NOT NULL,
+      status              TEXT    NOT NULL DEFAULT 'pending'
+                          CHECK(status IN ('pending','analyzing','eval_running','gated','pending_approval','approved','rejected','applied','exported')),
+      train_split_id      TEXT,
+      validation_results  TEXT,
+      held_out_results    TEXT,
+      w_delta             REAL,
+      rejected_edits      TEXT    NOT NULL DEFAULT '[]',
+      residual_risks      TEXT    NOT NULL DEFAULT '[]',
+      created_at          TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+      updated_at          TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS skillforge_proposals_status
+      ON skillforge_proposals(status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS skillforge_proposals_skill
+      ON skillforge_proposals(source_skill_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS skillforge_splits (
+      id          TEXT    PRIMARY KEY,
+      skill_id    TEXT    NOT NULL,
+      split_type  TEXT    NOT NULL
+                  CHECK(split_type IN ('train','validation','held_out')),
+      task_samples TEXT   NOT NULL DEFAULT '[]',
+      created_at  TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS skillforge_splits_skill
+      ON skillforge_splits(skill_id, split_type);
+
+    CREATE TABLE IF NOT EXISTS skillforge_rejected_edits (
+      id          TEXT    PRIMARY KEY,
+      skill_id    TEXT    NOT NULL,
+      edit_hash   TEXT    NOT NULL UNIQUE,
+      reason      TEXT    NOT NULL,
+      rejected_at TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+      expires_at  TEXT    NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS skillforge_rejected_edits_skill
+      ON skillforge_rejected_edits(skill_id, expires_at);
+    CREATE INDEX IF NOT EXISTS skillforge_rejected_edits_hash
+      ON skillforge_rejected_edits(edit_hash);
+
+    CREATE TABLE IF NOT EXISTS skillforge_run_log (
+      id                  INTEGER PRIMARY KEY,
+      run_id              TEXT    NOT NULL UNIQUE,
+      started_at          TEXT    NOT NULL,
+      completed_at        TEXT    NOT NULL,
+      status              TEXT    NOT NULL
+                          CHECK(status IN ('success','partial','failure')),
+      entries_processed   INTEGER NOT NULL DEFAULT 0,
+      proposals_created   INTEGER NOT NULL DEFAULT 0,
+      proposals_submitted INTEGER NOT NULL DEFAULT 0,
+      errors              TEXT    NOT NULL DEFAULT '[]'
+    );
+    CREATE INDEX IF NOT EXISTS skillforge_run_log_completed
+      ON skillforge_run_log(completed_at DESC);
+  `);
+
   // FTS projection repair is intentionally explicit. Rebuilding it here blocks
   // the Next.js event loop during cold starts and makes unrelated screens hang.
 }

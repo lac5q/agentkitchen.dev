@@ -1,16 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v5.2
-milestone_name: Competitive Memory Target Architecture Summary — COMPLETE
-status: verifying
-stopped_at: context exhaustion at 76% (2026-05-24)
-last_updated: "2026-05-24T10:42:47.948Z"
-last_activity: 2026-05-24 -- Phase 84 added a public-evidence marketplace benchmark, documented the target architecture, and hardened recall evals until the authenticated local full suite passed 8/8 with p95 below 500ms
+milestone: v6.0
+milestone_name: SkillForge — Governed Skill Optimization
+status: in_progress
+stopped_at: ""
+last_updated: "2026-05-26T02:25:00.000Z"
+last_activity: 2026-05-26 -- Phase 85 SkillForge Foundation implemented: types, intake, proposal, worker, API routes, tests (15/15 passing), schema extended, SEAL proposal type added
 progress:
-  total_phases: 58
-  completed_phases: 52
-  total_plans: 87
-  completed_plans: 94
+  total_phases: 59
+  completed_phases: 53
+  total_plans: 88
+  completed_plans: 95
   percent: 90
 ---
 
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 ## Current Position
 
-Phase: 84 — Competitive Memory Target Architecture
-Plan: 84-01
-Status: Complete — v5.2 target architecture is implemented with marketplace scoring and live recall verification
-Last activity: 2026-05-24 -- Phase 84 added a public-evidence marketplace benchmark, documented the target architecture, and hardened recall evals until the authenticated local full suite passed 8/8 with p95 below 500ms
+Phase: 85 — SkillForge Foundation
+Plan: 85-01
+Status: Complete — SkillForge Foundation implemented with types, intake pipeline, proposal generation, worker, API routes, and 15/15 passing tests
+Last activity: 2026-05-26 -- Phase 85 added skillforge types, intake, proposal, worker, trigger/status API routes, 4 DB tables, SEAL skill_revision proposal type, and full test coverage (15/15 passing)
 
-## Roadmap Summary (v5.0)
+## Roadmap Summary (v5.0 + v6.0)
 
 | Phase | Goal | Requirements |
 |-------|------|--------------|
@@ -45,10 +45,11 @@ Last activity: 2026-05-24 -- Phase 84 added a public-evidence marketplace benchm
 | 82 | Auth Hardening — email invites, password reset, OAuth/SSO, role-aware nav | COMPLETE — AUTH-FOLLOWUP-01..03 (3) |
 | 83 | Memory Inventory + Listing Clarity — category-specific counts, provenance rows, filters, degraded count honesty | COMPLETE — MEMLIST-01..05 (5) |
 | 84 | Competitive Memory Target Architecture — marketplace comparison plus live recall hardening | COMPLETE — MEMTARGET-01 (1) |
+| 85 | SkillForge Foundation — intake, proposal, worker, API routes, schema, tests | COMPLETE — SKILLFORGE-01 (1) |
 
-**Coverage:** 47/47 v5.0-v5.2 requirements mapped, no orphans.
+**Coverage:** 48/48 v5.0-v6.0 requirements mapped, no orphans.
 **Critical path:** 74 → 75 → 76 → 77 → 78. Phases 79, 80, 81, 82 run parallel (81 soft-depends on 74).
-**Completed so far:** Phase 34 through Phase 82 (v2.0–v5.0 shipped through MVP phase closeout).
+**Completed so far:** Phase 34 through Phase 85 (v2.0–v6.0 shipped through SkillForge Foundation).
 
 ## Performance Metrics
 
@@ -193,10 +194,10 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-24T10:42:47.939Z
-Stopped at: context exhaustion at 76% (2026-05-24)
+Last session: 2026-05-26T02:25:00.000Z
+Stopped at: Phase 85 complete, ready for Phase 86 (SkillForge Analyzer Engine)
 Resume file: None
-Next action: deploy locally/public repo, then audit 30-day skill auto-creation and promotion coverage.
+Next action: Phase 86 — implement pattern detection engine for skill optimization proposals
 
 ## UAT Findings (2026-05-17)
 

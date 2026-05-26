@@ -21,8 +21,20 @@
 - ✅ **v5.0 Memory Trust + Operational Intelligence** — Phases 74-82 (MVP phase closeout completed 2026-05-24)
 - ✅ **v5.1 Memory Inventory Clarity** — Phase 83 (shipped 2026-05-24)
 - ✅ **v5.2 Competitive Memory Target Architecture** — Phase 84 (shipped 2026-05-24)
+- 🔄 **v6.0 SkillForge — Governed Skill Optimization** — Phases 85-90 (in progress)
 
 ## Phases
+
+### Current v6.0 SkillForge — Governed Skill Optimization Summary — IN PROGRESS
+
+- [ ] **Phase 85: SkillForge Foundation** — SKILLFORGE-01; worker, intake pipeline, SEAL skill_revision proposal type
+- [ ] **Phase 86: SkillForge Analysis** — SKILLFORGE-02; pattern detection, SkillFailImproveLoop
+- [ ] **Phase 87: SkillForge Proposal Generation** — SKILLFORGE-03; bounded edits, textual LR, rejected-edit buffer
+- [ ] **Phase 88: SkillForge Evaluation** — SKILLFORGE-04; train/val/held-out splits, W delta, behavioral eval
+- [ ] **Phase 89: SkillForge Governance** — SKILLFORGE-05; operator UI, approval gate, rollback handles
+- [ ] **Phase 90: SkillForge Integration** — SKILLFORGE-06; cross-modal eval, SkillCycle, runtime export
+
+Full v6.0 detail in the `## v6.0 SkillForge — Governed Skill Optimization` section below.
 
 ### Current v5.0 Memory Trust + Operational Intelligence Summary — COMPLETE
 
@@ -375,11 +387,11 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
    - Requirements and candidates: Full 50+ task behavioral W-lift golden set, Third-party eval adapter, `EVAL-FOLLOWUP-01`, `EVAL-API-FOLLOWUP-01..02`, `MEMGEN-FOLLOWUP-01`, `SEAL-FOLLOWUP-01..02`, and `AGENTGEN-FOLLOWUP-01`.
    - Goal: move beyond small held-out eval samples into broader behavioral coverage, provider-backed judges, safety eval packs, non-fixture memory-autogen validation, and governed SEAL/agent trajectory workflows.
 
-7. **P1 — Spike SkillOpt-governed skill optimization.**
-   - Research intake: SkillOpt (Microsoft, arXiv:2605.23904) shows an offline loop for improving `SKILL.md` artifacts through scored rollouts, reflections, bounded edits, rejected-edit buffers, and held-out validation.
-   - Source note: `.planning/notes/skillopt-skill-optimization-spike.md`.
-   - Requirement: `SKILLOPT-FOLLOWUP-01` in `.planning/REQUIREMENTS.md`.
-   - Goal: test SkillOpt as an optional MemRoOS optimizer worker that emits governed skill revision proposals, with train/validation/held-out split tracking, W non-regression gates, operator approval, rollback handles, and safe runtime export only after promotion.
+7. **P1 — SkillForge: Governed Skill Optimization (v6.0).**
+   - Research intake: GBrain's `skillify` meta-skill (11-item checklist, cross-modal eval gate, fail-improve loop, dream cycle); Microsoft SkillOpt's textual learning rate and bounded edit loop; Memroos's existing eval engine, SEAL governance, and skill registry.
+   - Source notes: `.planning/notes/skillopt-skill-optimization-spike.md`, `~/github/knowledge/content/skill-optimization-v2/SKILL-OPTIMIZATION-RESEARCH.md`.
+   - Requirements: `SKILLFORGE-01..06` in `.planning/REQUIREMENTS.md` (supersedes `SKILLOPT-FOLLOWUP-01`).
+   - Goal: Build a Memroos-native governed skill optimization system (SkillForge) that leverages existing infrastructure. Phases 85-90: Foundation → Analysis → Proposal Generation → Evaluation → Governance → Integration. All skill changes go through SEAL proposal lifecycle with operator approval, non-regression gates, and safe runtime export.
 
 8. **P2 — Plan Meeting Ingestion Expansion.**
    - Requirements and candidates: Recall.ai bridge for Zoom/Teams/Meet, multi-participant meeting bot, and voice meeting bot follow-ups.
@@ -908,3 +920,133 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|----------|---------------|--------|-----------|
 | 84 | v5.2 | 1/1 | Complete | 2026-05-24 |
+
+---
+
+## v6.0 SkillForge — Governed Skill Optimization
+
+### Phase 85: SkillForge Foundation
+**Goal**: Build the SkillForge worker infrastructure, intake pipeline, and SEAL `skill_revision` proposal type so skill optimization proposals are governed from the first byte.
+**Depends on**: Phase 58 (SEAL self-improvement), Phase 72 (skill registry), Phase 57 (eval engine)
+**Requirements**: SKILLFORGE-01
+**Prerequisite tasks**:
+  - Create `lib/skillforge/` directory with worker, intake, and proposal modules.
+  - Define `SkillForgeWorker` class: cron-triggered or event-driven, consumes `skill_registry`, `eval_candidates`, and SEAL evidence bundles.
+  - Add `skill_revision` to SEAL proposal type enum with fields: `source_skill_id`, `source_version`, `proposed_diff`, `train_split_id`, `validation_results`, `held_out_results`, `w_delta`, `rejected_edits`, `residual_risks`.
+  - Implement intake pipeline: privacy redaction gates (reuse Phase 74-77 security layer), trace normalization, skill-scope filtering.
+  - Add database migrations for `skillforge_proposals`, `skillforge_splits`, `skillforge_rejected_edits`.
+  - Wire worker into existing cron health registry (Phase 80) with heartbeat and caught-up status.
+**Success Criteria** (what must be TRUE):
+  1. `SkillForgeWorker` runs on schedule and produces no errors on empty/intake-only runs.
+  2. `skill_revision` proposals are created as SEAL proposals with correct metadata and audit trail.
+  3. Intake pipeline redacts sensitive traces before analysis (negative fixture: restricted memory never reaches optimizer).
+  4. Worker appears in cron health registry with last-run, success/failure, and items-processed.
+**Plans**: 0/1 complete
+**UI hint**: no (backend-only)
+
+### Phase 86: SkillForge Analysis
+**Goal**: Build pattern detection and the deterministic-first `SkillFailImproveLoop` for skill failure analysis.
+**Depends on**: Phase 85
+**Requirements**: SKILLFORGE-02
+**Prerequisite tasks**:
+  - Implement failure pattern detection: trigger mismatches, resolver routing errors, contract violations, tool misuse.
+  - Adapt GBrain's `FailImproveLoop` for skill trigger classification: `execute(operation, input, deterministicFn, llmFallbackFn)`.
+  - Log routing failures to `skillforge_failures.jsonl` with timestamp, operation, input, deterministic_result, llm_result.
+  - Group failures by pattern (first 50 chars of input, normalized).
+  - Generate test cases from LLM fallback successes.
+  - Propose deterministic trigger/rule improvements before LLM reflection.
+  - Add `SkillForgeAnalyzer` class with `analyze(skillId)`, `getPatterns()`, `generateTests()` methods.
+**Success Criteria** (what must be TRUE):
+  1. Analyzer identifies at least 3 distinct failure patterns from historical telemetry.
+  2. Deterministic trigger matching improves by ≥10% after applying generated rules.
+  3. Failure logs are structured, queryable, and include replay handles.
+  4. No LLM fallback is invoked when deterministic rules match (fail-closed for performance).
+**Plans**: 0/1 complete
+**UI hint**: no (backend-only)
+
+### Phase 87: SkillForge Proposal Generation
+**Goal**: Generate bounded SKILL.md edits with textual learning rate control and rejected-edit buffer.
+**Depends on**: Phase 86
+**Requirements**: SKILLFORGE-03
+**Prerequisite tasks**:
+  - Implement `SkillEditGenerator` with textual learning rate (controls edit magnitude: 0.1=conservative, 1.0=aggressive).
+  - Edit scopes: triggers, contract clauses, phase steps, anti-patterns, tool declarations.
+  - Constrained edit: cannot mutate security policy, governance policy, AGENTS.md directives, owner-protection instructions.
+  - Rejected-edit buffer: hash + reason stored, prevents re-trying failed edits for 30 days.
+  - Diff format: unified diff against source SKILL.md.
+  - LLM reflection only when deterministic edit generation fails.
+**Success Criteria** (what must be TRUE):
+  1. Generated diffs are syntactically valid SKILL.md (parsable frontmatter + markdown).
+  2. No edit mutates security/governance/owner-protection content (negative fixture).
+  3. Rejected edits are tracked and not re-proposed within 30 days.
+  4. Textual LR controls edit magnitude: conservative edits change ≤3 lines, aggressive ≤20 lines.
+**Plans**: 0/1 complete
+**UI hint**: no (backend-only)
+
+### Phase 88: SkillForge Evaluation
+**Goal**: Implement train/validation/held-out split tracking and W delta computation for skill proposals.
+**Depends on**: Phase 87, Phase 57 (eval engine), Phase 72 (behavioral eval)
+**Requirements**: SKILLFORGE-04
+**Prerequisite tasks**:
+  - Implement split tracking: `skillforge_splits` table with `split_type` (train/validation/held_out), `skill_id`, `task_samples`, `created_at`.
+  - Training: historical traces + existing golden sets.
+  - Validation: deterministic scorer (trigger routing accuracy, contract completeness, resolver reachability).
+  - Held-out: behavioral eval via sandboxed agent with no-op tool stubs, 10-20 task samples.
+  - W delta: reuse `EvalService.rescoreForProposal()` with modeled + behavioral components.
+  - Non-regression gate: held-out pass rate ≥ baseline, no security/policy violations.
+**Success Criteria** (what must be TRUE):
+  1. Splits are disjoint: no task sample appears in more than one split.
+  2. Validation scorer runs deterministically (no LLM calls, sub-100ms per skill).
+  3. Held-out behavioral eval completes in <5 minutes for 20 tasks.
+  4. W delta is computed for every proposal; negative W proposals are auto-rejected.
+**Plans**: 0/1 complete
+**UI hint**: no (backend-only)
+
+### Phase 89: SkillForge Governance
+**Goal**: Build operator-visible UI for skill revision approval with diff, evidence, W delta, and promotion gate.
+**Depends on**: Phase 88, Phase 58 (SEAL governance)
+**Requirements**: SKILLFORGE-05
+**Prerequisite tasks**:
+  - Add `/skills/forge` page with proposal list, diff viewer, evidence bundle, W delta chart.
+  - Operator actions: approve, reject, request changes, rollback.
+  - SEAL lifecycle: queued → analyzing → eval-running → gated → pending_approval → approved → applied → exported.
+  - Rollback handle: preserve previous version, one-click restore.
+  - Auto-apply: disabled for all skill revisions (operator approval required).
+  - Residual risks: display rejected edits, known gaps, and safety warnings.
+**Success Criteria** (what must be TRUE):
+  1. Operator can view full diff, evidence bundle, and W delta before approving.
+  2. Rollback restores previous skill version in <30 seconds.
+  3. No skill revision is applied without explicit operator approval (negative fixture).
+  4. UI shows clear status through SEAL lifecycle stages.
+**Plans**: 0/1 complete
+**UI hint**: yes
+
+### Phase 90: SkillForge Integration
+**Goal**: Cross-modal eval integration, SkillCycle maintenance, and safe runtime export.
+**Depends on**: Phase 89, Phase 57 (eval engine)
+**Requirements**: SKILLFORGE-06
+**Prerequisite tasks**:
+  - Cross-modal eval: 3-model, multi-provider scoring on 5 dimensions (goal, depth, specificity, safety, correctness).
+  - Integrate with Memroos eval engine (existing judge, scorers, drift guard).
+  - SkillCycle: lint → sync → analyze → propose → eval → gate → embed → orphans → purge.
+  - Export to Codex/Claude/OpenClaw runtime projections only after SEAL approval.
+  - Update `skill_registry` with revision history, eval receipts, rollback pointers.
+  - Add `npm run skillforge:cycle` CLI command.
+**Success Criteria** (what must be TRUE):
+  1. Cross-modal eval produces receipts with per-dimension scores and improvement suggestions.
+  2. SkillCycle runs end-to-end without errors on a test skill.
+  3. Exported skills are functional in target runtime (Codex/Claude/OpenClaw).
+  4. Revision history is queryable and includes all eval results and approval events.
+**Plans**: 0/1 complete
+**UI hint**: yes
+
+### v6.0 Progress
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|----------|---------------|--------|-----------|
+| 85 | v6.0 | 0/1 | In Progress | — |
+| 86 | v6.0 | 0/1 | Pending | — |
+| 87 | v6.0 | 0/1 | Pending | — |
+| 88 | v6.0 | 0/1 | Pending | — |
+| 89 | v6.0 | 0/1 | Pending | — |
+| 90 | v6.0 | 0/1 | Pending | — |

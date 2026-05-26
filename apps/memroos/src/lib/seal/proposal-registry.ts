@@ -172,6 +172,71 @@ export const PROPOSAL_TYPES = {
   },
 
   /**
+   * Proposes a revision to an existing skill's SKILL.md artifact.
+   * Shadow apply writes a new skill_registry row (is_active=1) and flips the
+   * previous row (is_active=0) inside a SQLite transaction.
+   * Requires skill_id to be embedded in diff so applyShadow can locate the target skill.
+   * Phase 85: Foundation — stub applyShadow; full implementation in Phase 89.
+   */
+  skill_revision: {
+    type: "skill_revision",
+    label: "Skill revision",
+    description: "Propose a revision to an existing skill's SKILL.md artifact.",
+    buildDraft: ({ traceId, runId, agentId, baselineW, baselineLayers }) => ({
+      traceId,
+      runId,
+      agentId,
+      diff: {
+        kind: "skill_revision",
+        skillId: null,
+        sourceVersion: null,
+        proposedDiff: null,
+        trainSplitId: null,
+        validationResults: null,
+        heldOutResults: null,
+        wDelta: 0,
+        rejectedEdits: [],
+        residualRisks: [],
+        note: "Proposed skill revision based on failure pattern analysis.",
+      },
+      rationale: `Composite W ${baselineW.toFixed(3)} is below threshold; a skill revision may improve trigger matching and contract completeness.`,
+      forecastWDelta: 0.05,
+      baselineW,
+      baselineRunId: runId,
+      baselineLayers,
+    }),
+    applyShadow: (diff, dbHandle) => {
+      const db = resolveDb(dbHandle);
+      const skillId = diff["skillId"] as string | undefined;
+      const proposedDiff = diff["proposedDiff"] as string | null | undefined;
+      if (!skillId) return { applied: false, reason: "Missing skillId in diff" };
+
+      // Phase 85: stub — write to skillforge_proposals instead of skill_registry
+      const info = db.prepare(
+        "INSERT INTO skillforge_proposals (id, source_skill_id, source_version, proposed_diff, status)" +
+        " VALUES (?, ?, ?, ?, 'applied')"
+      ).run(
+        `sf-${Date.now()}`,
+        skillId,
+        (diff["sourceVersion"] as string) ?? "1.0.0",
+        proposedDiff ?? ""
+      );
+
+      return {
+        applied: true,
+        skillId,
+        staged: true,
+        insertedId: Number(info.lastInsertRowid),
+      };
+    },
+    rollbackShadow: (_diff, applyResult, dbHandle) => {
+      const insertedId = applyResult["insertedId"] as number | undefined;
+      if (!insertedId) return;
+      resolveDb(dbHandle).prepare("DELETE FROM skillforge_proposals WHERE id = ?").run(insertedId);
+    },
+  },
+
+  /**
    * Proposes an edit to the agent's system prompt / operating instructions.
    * Shadow apply writes a new agent_instructions row (is_active=1) and flips the
    * previous row (is_active=0) inside a SQLite transaction.
