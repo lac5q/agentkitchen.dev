@@ -246,7 +246,13 @@ install_memory_service_deps() {
 
   if [[ ! -d ".venv" ]]; then
     echo "🐍 Creating Python virtual environment..."
-    python3 -m venv .venv
+    python3.11 -m venv .venv
+  fi
+
+  # Skip pip install if key packages are already present
+  if .venv/bin/python3 -c "import fastapi, uvicorn, httpx, mem0, qdrant_client, chromadb" 2>/dev/null; then
+    echo "✅ Python dependencies already installed"
+    return
   fi
 
   echo "📦 Installing memory service dependencies..."

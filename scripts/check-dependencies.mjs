@@ -49,12 +49,15 @@ const deps = [
     name: 'Python 3',
     minVersion: '3.10.0',
     check: () => {
-      try {
-        const v = execSync('python3 --version', { encoding: 'utf8' }).trim();
-        return { ok: true, version: v };
-      } catch {
-        return { ok: false };
+      // Try python3.11, then python3.10, then python3 (macOS ships 3.9)
+      const cmds = ['python3.11 --version', 'python3.10 --version', 'python3 --version'];
+      for (const cmd of cmds) {
+        try {
+          const v = execSync(cmd, { encoding: 'utf8' }).trim();
+          return { ok: true, version: v, cmd };
+        } catch { /* try next */ }
       }
+      return { ok: false };
     },
     install: {
       darwin: 'brew install python@3.11',
