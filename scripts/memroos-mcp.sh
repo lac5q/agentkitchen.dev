@@ -7,6 +7,20 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 export MEMROOS_ROOT="${MEMROOS_ROOT:-$ROOT}"
+MEMROOS_MCP_DEP_CHECK_TIMEOUT_SEC="${MEMROOS_MCP_DEP_CHECK_TIMEOUT_SEC:-90}"
+
+run_with_timeout() {
+  local seconds="$1"
+  shift
+
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$seconds" "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then
+    gtimeout "$seconds" "$@"
+  else
+    "$@"
+  fi
+}
 
 if [[ -z "${KNOWLEDGE_ROOT:-}" ]]; then
   if [[ -d "$HOME/github/knowledge" ]]; then
@@ -95,7 +109,7 @@ if [[ -z "$PYTHON" ]]; then
   fi
 fi
 
-if ! "$PYTHON" - <<'PY' >/dev/null 2>&1
+if ! run_with_timeout "$MEMROOS_MCP_DEP_CHECK_TIMEOUT_SEC" "$PYTHON" - <<'PY' >/dev/null 2>&1
 try:
     import fastmcp  # noqa: F401
 except Exception:
@@ -104,6 +118,7 @@ import httpx  # noqa: F401
 import yaml  # noqa: F401
 PY
 then
+  echo "Memroos MCP dependency check failed or timed out after ${MEMROOS_MCP_DEP_CHECK_TIMEOUT_SEC}s; refreshing requirements." >&2
   "$PYTHON" -m pip install -q -r "$MEMROOS_ROOT/services/knowledge-mcp/requirements.txt" >&2
 fi
 

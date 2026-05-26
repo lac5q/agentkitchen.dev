@@ -13,6 +13,9 @@
 #   QMD_FORCE_CPU=1      disable Metal/GPU offload for qmd model calls
 #   QMD_MAX_DOCS_PER_BATCH cap docs loaded per embedding batch
 #   QMD_MAX_BATCH_MB       cap UTF-8 MB loaded per embedding batch
+#   QMD_UPDATE_TIMEOUT_SEC hard cap for qmd update
+#   QMD_EMBED_TIMEOUT_SEC  hard cap for each qmd embed call
+#   QMD_LOCK_STALE_SEC     remove stale lock dirs after this many seconds
 #
 # Usage:
 #   ./scripts/batch-embed.sh [--dry-run]
@@ -41,6 +44,9 @@ QMD_MIN_FREE_GB="${QMD_MIN_FREE_GB:-4}"
 QMD_MAX_LOAD_PER_CPU="${QMD_MAX_LOAD_PER_CPU:-0.75}"
 QMD_MAX_DOCS_PER_BATCH="${QMD_MAX_DOCS_PER_BATCH:-80}"
 QMD_MAX_BATCH_MB="${QMD_MAX_BATCH_MB:-8}"
+QMD_UPDATE_TIMEOUT_SEC="${QMD_UPDATE_TIMEOUT_SEC:-900}"
+QMD_EMBED_TIMEOUT_SEC="${QMD_EMBED_TIMEOUT_SEC:-1800}"
+QMD_LOCK_STALE_SEC="${QMD_LOCK_STALE_SEC:-7200}"
 export QMD_FORCE_CPU="${QMD_FORCE_CPU:-1}"
 
 mkdir -p "$LOG_DIR"
@@ -63,17 +69,34 @@ run_cmd() {
   "$@"
 }
 
+run_with_timeout() {
+  local seconds="$1"
+  shift
+
+  if command -v timeout >/dev/null 2>&1; then
+    timeout "$seconds" "$@"
+  elif command -v gtimeout >/dev/null 2>&1; then
+    gtimeout "$seconds" "$@"
+  else
+    "$@"
+  fi
+}
+
 run_awake() {
+  local timeout_seconds="$1"
+  shift
+
   if [[ "$DRY_RUN" == "1" ]]; then
-    log "+ $*"
+    log "+ timeout ${timeout_seconds}s $*"
     return 0
   fi
 
   if command -v caffeinate >/dev/null 2>&1; then
-    log "+ caffeinate -s $*"
-    caffeinate -s "$@"
+    log "+ timeout ${timeout_seconds}s caffeinate -s $*"
+    run_with_timeout "$timeout_seconds" caffeinate -s "$@"
   else
-    run_cmd "$@"
+    log "+ timeout ${timeout_seconds}s $*"
+    run_with_timeout "$timeout_seconds" "$@"
   fi
 }
 
@@ -113,9 +136,26 @@ cleanup() {
 }
 
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
-  log "Another batch embedding run is already active; exiting."
-  exit 0
+  lock_mtime="$(stat -f %m "$LOCK_DIR" 2>/dev/null || echo 0)"
+  now="$(date +%s)"
+  lock_age=$(( now - lock_mtime ))
+  lock_pid="$(cat "$LOCK_DIR/pid" 2>/dev/null || true)"
+
+  lock_owner_dead=0
+  if [[ -n "$lock_pid" ]] && ! kill -0 "$lock_pid" 2>/dev/null; then
+    lock_owner_dead=1
+  fi
+
+  if [[ "$lock_age" -gt "$QMD_LOCK_STALE_SEC" ]] || [[ "$lock_owner_dead" == "1" ]]; then
+    log "Removing stale batch embedding lock age=${lock_age}s pid=${lock_pid:-unknown}."
+    rm -rf "$LOCK_DIR"
+    mkdir "$LOCK_DIR"
+  else
+    log "Another batch embedding run is already active age=${lock_age}s pid=${lock_pid:-unknown}; exiting."
+    exit 0
+  fi
 fi
+printf '%s\n' "$$" > "$LOCK_DIR/pid"
 trap cleanup EXIT
 
 main() {
@@ -135,7 +175,7 @@ main() {
   run_cmd qmd status
 
   if [[ "$QMD_UPDATE_FIRST" == "1" ]]; then
-    run_awake qmd update
+    run_awake "$QMD_UPDATE_TIMEOUT_SEC" qmd update
   else
     log "Skipping qmd update; set QMD_UPDATE_FIRST=1 to refresh collections first."
   fi
@@ -148,10 +188,10 @@ main() {
   if [[ -n "$QMD_EMBED_COLLECTIONS" ]]; then
     local collection
     for collection in $QMD_EMBED_COLLECTIONS; do
-      run_awake qmd embed -c "$collection" "${embed_args[@]}"
+      run_awake "$QMD_EMBED_TIMEOUT_SEC" qmd embed -c "$collection" "${embed_args[@]}"
     done
   else
-    run_awake qmd embed "${embed_args[@]}"
+    run_awake "$QMD_EMBED_TIMEOUT_SEC" qmd embed "${embed_args[@]}"
   fi
 
   run_cmd qmd status

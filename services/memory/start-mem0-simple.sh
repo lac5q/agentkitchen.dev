@@ -29,8 +29,22 @@ elif [ -f "${KNOWLEDGE_VENV:-$HOME/github/knowledge/.venv}/bin/activate" ]; then
 fi
 
 PYTHON_BIN="${PYTHON_BIN:-$(command -v python3 || command -v python)}"
+MEM0_DEP_CHECK_TIMEOUT_SEC="${MEM0_DEP_CHECK_TIMEOUT_SEC:-180}"
 
-if ! "$PYTHON_BIN" - <<'PY' >> "$LOG_FILE" 2>&1
+run_with_timeout() {
+    local seconds="$1"
+    shift
+
+    if command -v timeout >/dev/null 2>&1; then
+        timeout "$seconds" "$@"
+    elif command -v gtimeout >/dev/null 2>&1; then
+        gtimeout "$seconds" "$@"
+    else
+        "$@"
+    fi
+}
+
+if ! run_with_timeout "$MEM0_DEP_CHECK_TIMEOUT_SEC" "$PYTHON_BIN" - <<'PY' >> "$LOG_FILE" 2>&1
 import importlib
 import sys
 
@@ -48,7 +62,7 @@ if missing:
     sys.exit(1)
 PY
 then
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: memory service dependencies missing." | tee -a "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: memory service dependency check failed or timed out after ${MEM0_DEP_CHECK_TIMEOUT_SEC}s." | tee -a "$LOG_FILE"
     echo "Run: cd \"$SCRIPT_DIR/../..\" && .venv/bin/python3 -m pip install -r services/memory/requirements.txt" | tee -a "$LOG_FILE"
     exit 1
 fi
