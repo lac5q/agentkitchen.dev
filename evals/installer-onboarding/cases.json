@@ -1,0 +1,133 @@
+[
+  {
+    "id": "dep-checker-python-detection",
+    "category": "dependency-checker",
+    "scenario": "Python version checker finds python3.11 when python3 is too old",
+    "test": "node scripts/check-dependencies.mjs 2>&1 || true",
+    "timeout": 5,
+    "expectedOutput": ["Python 3", "3.11"],
+    "notExpectedOutput": ["3.9"]
+  },
+  {
+    "id": "setup-demo-skip-pip",
+    "category": "setup-script",
+    "scenario": "setup.sh --demo skips pip install when packages already present",
+    "test": "INSTALL_MEMORY_SERVICE_DEPS=1 START_SERVICES=0 ./setup.sh --demo 2>&1 || true",
+    "timeout": 20,
+    "expectedOutput": ["Python dependencies already installed"],
+    "notExpectedOutput": ["Installing memory service dependencies"]
+  },
+  {
+    "id": "setup-check-standalone",
+    "category": "setup-script",
+    "scenario": "setup.sh --check runs dependency check and exits cleanly",
+    "test": "./setup.sh --check 2>&1 || true",
+    "timeout": 10,
+    "expectedOutput": ["Node.js", "Python 3"]
+  },
+  {
+    "id": "setup-demo-venv-python",
+    "category": "setup-script",
+    "scenario": ".venv uses Python 3.11, not macOS default 3.9",
+    "test": ".venv/bin/python --version 2>&1",
+    "timeout": 3,
+    "expectedOutput": ["Python 3.11"]
+  },
+  {
+    "id": "setup-demo-imports-work",
+    "category": "setup-script",
+    "scenario": "All Python dependencies importable in venv",
+    "test": ".venv/bin/python3 -c 'import fastapi, uvicorn, httpx, mem0, qdrant_client, chromadb; print(\"OK\")' 2>&1",
+    "timeout": 5,
+    "expectedOutput": ["OK"]
+  },
+  {
+    "id": "install-sh-script-exists",
+    "category": "curl-installer",
+    "scenario": "install.sh exists and is executable",
+    "test": "test -x install.sh && echo 'executable'",
+    "timeout": 3,
+    "expectedOutput": ["executable"]
+  },
+  {
+    "id": "install-sh-wraps-setup",
+    "category": "curl-installer",
+    "scenario": "install.sh references setup.sh",
+    "test": "grep 'setup' install.sh | head -1",
+    "timeout": 3,
+    "expectedOutput": ["setup"]
+  },
+  {
+    "id": "demo-compose-no-qdrant",
+    "category": "docker-compose",
+    "scenario": "docker-compose.demo.yml does not require Qdrant Cloud service",
+    "test": "grep -i 'qdrant:' docker-compose.demo.yml && echo 'has-qdrant' || echo 'no-qdrant'",
+    "timeout": 3,
+    "expectedOutput": ["no-qdrant"]
+  },
+  {
+    "id": "demo-compose-has-mem0",
+    "category": "docker-compose",
+    "scenario": "demo compose has mem0 service for local vector storage",
+    "test": "grep 'mem0:' docker-compose.demo.yml && echo 'has-mem0' || echo 'no-mem0'",
+    "timeout": 3,
+    "expectedOutput": ["has-mem0"]
+  },
+  {
+    "id": "wizard-script-exists",
+    "category": "wizard",
+    "scenario": "First-run wizard script exists",
+    "test": "test -f scripts/first-run-wizard.mjs && echo 'exists'",
+    "timeout": 3,
+    "expectedOutput": ["exists"]
+  },
+  {
+    "id": "status-script-exists",
+    "category": "setup-script",
+    "scenario": "Status display script exists",
+    "test": "test -f scripts/show-status.mjs && echo 'exists'",
+    "timeout": 3,
+    "expectedOutput": ["exists"]
+  },
+  {
+    "id": "demo-compose-valid-file",
+    "category": "docker-compose",
+    "scenario": "docker-compose.demo.yml exists and is non-empty",
+    "test": "test -s docker-compose.demo.yml && echo 'exists' || echo 'missing'",
+    "timeout": 3,
+    "expectedOutput": ["exists"]
+  },
+  {
+    "id": "main-compose-valid-file",
+    "category": "docker-compose",
+    "scenario": "docker-compose.yml exists and is non-empty",
+    "test": "test -s docker-compose.yml && echo 'exists' || echo 'missing'",
+    "timeout": 3,
+    "expectedOutput": ["exists"]
+  },
+  {
+    "id": "package-version-defined",
+    "category": "packaging",
+    "scenario": "package.json defines a version for memroos",
+    "test": "node -e 'console.log(require(\"./package.json\").version)' 2>&1",
+    "timeout": 3,
+    "expectedOutput": ["0."],
+    "notExpectedOutput": ["undefined"]
+  },
+  {
+    "id": "requirements-all-deps",
+    "category": "packaging",
+    "scenario": "requirements.txt contains all core dependencies",
+    "test": "grep -E 'fastapi|uvicorn|qdrant|mem0ai|chromadb|ollama' services/memory/requirements.txt | wc -l",
+    "timeout": 3,
+    "expectedOutput": ["6"]
+  },
+  {
+    "id": "mem0-health-responding",
+    "category": "service-health",
+    "scenario": "mem0 API health endpoint responds when services are running",
+    "test": "curl -sf http://localhost:3201/health 2>&1 | head -1",
+    "timeout": 5,
+    "expectedOutput": ["status"]
+  }
+]
