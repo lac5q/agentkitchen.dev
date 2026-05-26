@@ -1,9 +1,12 @@
 import type { MetadataRoute } from "next";
 import { BASE_URL } from "@/lib/metadata";
+import { getAllPostSlugs } from "@/lib/blog";
 
 const staticRoutes: MetadataRoute.Sitemap = [
   { url: BASE_URL, lastModified: new Date(), changeFrequency: "weekly", priority: 1.0 },
   { url: `${BASE_URL}/platform`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.9 },
+  { url: `${BASE_URL}/vs`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
+  { url: `${BASE_URL}/use-cases`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
   { url: `${BASE_URL}/use-cases/product`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
   { url: `${BASE_URL}/use-cases/sales`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
   { url: `${BASE_URL}/use-cases/engineering`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
@@ -19,20 +22,12 @@ const staticRoutes: MetadataRoute.Sitemap = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  let blogRoutes: MetadataRoute.Sitemap = [];
-  try {
-    // Dynamically import to avoid build errors before blog content exists
-    // @ts-expect-error — blog module may not exist during early builds
-    const { getAllPostSlugs } = await import("@/lib/blog");
-    const slugs: string[] = getAllPostSlugs();
-    blogRoutes = slugs.map((slug: string) => ({
-      url: `${BASE_URL}/blog/${slug}`,
-      lastModified: new Date(),
-      changeFrequency: "monthly" as const,
-      priority: 0.7,
-    }));
-  } catch {
-    // blog content not yet created — skip
-  }
+  const slugs = getAllPostSlugs();
+  const blogRoutes: MetadataRoute.Sitemap = slugs.map((slug) => ({
+    url: `${BASE_URL}/blog/${slug}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.7,
+  }));
   return [...staticRoutes, ...blogRoutes];
 }
