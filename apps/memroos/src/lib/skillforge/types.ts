@@ -130,15 +130,31 @@ export interface SkillForgeSplit {
   createdAt: Date;
 }
 
-export interface SkillForgeFailureLog {
-  id: string;
-  operation: string;
-  input: string;
-  deterministicResult: string | null;
-  llmResult: string | null;
-  pattern: string;
-  skillId: string;
-  timestamp: Date;
+export interface CrossModalEvalResult {
+  provider: string;
+  model: string;
+  dimensions: {
+    goal: number;
+    depth: number;
+    specificity: number;
+    safety: number;
+    correctness: number;
+  };
+  overallScore: number;
+  suggestions: string[];
+}
+
+export interface SkillCycleResult {
+  lintPassed: boolean;
+  syncComplete: boolean;
+  analysisComplete: boolean;
+  proposalsGenerated: number;
+  evalsRun: number;
+  gatedCount: number;
+  approvedCount: number;
+  embeddedCount: number;
+  orphansPurged: number;
+  errors: string[];
 }
 
 export interface SkillForgeAnalysisResult {

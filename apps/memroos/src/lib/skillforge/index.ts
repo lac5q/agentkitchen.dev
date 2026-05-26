@@ -8,6 +8,11 @@
 export { SkillForgeWorker } from "./worker";
 export { runIntakePipeline } from "./intake";
 export { generateProposals, persistProposals, buildSealPayload } from "./proposal";
+export { analyzeTelemetry, logFailure } from "./analyzer";
+export { generateEditProposal, generateEditProposals } from "./edit-generator";
+export { createSplits, runValidation, runHeldOutEval, computeWDelta, runEvalGate } from "./eval-gate";
+export { listProposals, getProposal, applyApprovalAction, markApplied } from "./operator-approval";
+export { runCrossModalEval, exportToRuntime, updateSkillRegistry, runSkillCycle } from "./integration";
 export { DEFAULT_SKILLFORGE_CONFIG } from "./types";
 export type {
   SkillForgeConfig,
@@ -23,5 +28,6 @@ export type {
   RejectedEdit,
   SecurityLabel,
   SkillForgeSplit,
-  SkillForgeFailureLog,
+  CrossModalEvalResult,
+  SkillCycleResult,
 } from "./types";

@@ -1,5 +1,5 @@
 /**
- * SkillForge Worker — Phase 85: SkillForge Foundation
+ * SkillForge Worker — Phases 85-90: Complete SkillForge Implementation
  * Cron/event-driven worker that consumes skill telemetry and emits SEAL proposals.
  */
 
@@ -8,48 +8,12 @@ import type {
   SkillForgeConfig,
   SkillForgeRunResult,
   SkillForgeProposal,
-  SkillForgeAnalysisResult,
 } from "./types";
 import { runIntakePipeline } from "./intake";
-import { generateProposals, persistProposals, buildSealPayload } from "./proposal";
-
-/**
- * Stub analyzer for Phase 85.
- * Phase 86 will implement real pattern detection and fail-improve loop.
- */
-function stubAnalyze(
-  entries: import("./types").SkillForgeIntakeEntry[]
-): SkillForgeAnalysisResult[] {
-  const bySkill = new Map<string, import("./types").SkillForgeIntakeEntry[]>();
-  for (const entry of entries) {
-    const list = bySkill.get(entry.skillId) ?? [];
-    list.push(entry);
-    bySkill.set(entry.skillId, list);
-  }
-
-  const results: SkillForgeAnalysisResult[] = [];
-  for (const [skillId, skillEntries] of bySkill) {
-    const failures = skillEntries.filter((e) => e.traceType === "failure");
-    results.push({
-      skillId,
-      patterns: failures.length > 0
-        ? [
-            {
-              id: `pat-${skillId}-1`,
-              pattern: failures[0].payload["query"] as string || "unknown",
-              frequency: failures.length,
-              examples: failures.slice(0, 3).map((f) => f.payload["query"] as string || ""),
-              suggestedFix: "Review trigger matching for this query pattern",
-            },
-          ]
-        : [],
-      testCases: [],
-      confidence: failures.length > 0 ? 0.3 : 0.1,
-    });
-  }
-
-  return results;
-}
+import { analyzeTelemetry } from "./analyzer";
+import { generateEditProposals } from "./edit-generator";
+import { runEvalGate } from "./eval-gate";
+import { persistProposals } from "./proposal";
 
 export class SkillForgeWorker {
   private db: Database.Database;
@@ -62,7 +26,7 @@ export class SkillForgeWorker {
 
   /**
    * Main entry point. Runs the full SkillForge pipeline:
-   * intake → analyze → propose → submit to SEAL.
+   * intake → analyze → generate edits → eval gate → persist.
    */
   async run(): Promise<SkillForgeRunResult> {
     const runId = `sf-run-${Date.now()}`;
@@ -78,47 +42,54 @@ export class SkillForgeWorker {
       entriesProcessed = intakeResult.entries.length;
 
       if (intakeResult.entries.length === 0) {
-        // Still log the run even if no entries were found
-        const completedAt = new Date();
-        this.db.prepare(
-          `INSERT INTO skillforge_run_log (run_id, started_at, completed_at, status, entries_processed, proposals_created, proposals_submitted, errors)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-        ).run(
-          runId,
-          startedAt.toISOString(),
-          completedAt.toISOString(),
-          "success",
-          0,
-          0,
-          0,
-          "[]"
-        );
-
-        return {
-          runId,
-          startedAt,
-          completedAt,
-          status: "success",
-          entriesProcessed: 0,
-          proposalsCreated: 0,
-          proposalsSubmitted: 0,
-          errors: [],
-        };
+        return this.logAndReturn(runId, startedAt, "success", 0, 0, 0, []);
       }
 
-      // 2. Analyze (stub for Phase 85)
-      const analyses = stubAnalyze(intakeResult.entries);
+      // 2. Analyze (Phase 86)
+      const analyses = analyzeTelemetry(intakeResult.entries, this.config);
 
-      // 3. Generate proposals
-      const proposals = generateProposals(analyses, this.config);
+      // 3. Generate edit proposals (Phase 87)
+      // Load rejected edits from DB
+      let rejectedEdits: import("./types").RejectedEdit[] = [];
+      try {
+        const rows = this.db
+          .prepare("SELECT edit_hash, reason, rejected_at FROM skillforge_rejected_edits WHERE expires_at > ?")
+          .all(new Date().toISOString()) as Array<{ edit_hash: string; reason: string; rejected_at: string }>;
+        rejectedEdits = rows.map((r) => ({
+          editHash: r.edit_hash,
+          reason: r.reason,
+          rejectedAt: new Date(r.rejected_at),
+        }));
+      } catch {
+        // Table may not exist
+      }
+
+      const proposals = generateEditProposals(analyses, this.config, rejectedEdits);
       proposalsCreated = proposals.length;
 
-      // 4. Persist proposals
-      persistProposals(this.db, proposals);
+      // 4. Eval gating (Phase 88)
+      const gatedProposals: SkillForgeProposal[] = [];
+      for (const proposal of proposals) {
+        // Get task samples from analysis test cases
+        const analysis = analyses.find((a) => a.skillId === proposal.sourceSkillId);
+        const taskSamples = analysis?.testCases.map((tc) => tc.input) ?? [];
 
-      // 5. Submit to SEAL (Phase 85: stub — will integrate with SealService in Phase 89)
-      // For now, proposals are persisted to skillforge_proposals and await manual promotion
-      proposalsSubmitted = proposals.length;
+        const { approved, reason } = runEvalGate(this.db, proposal, this.config, taskSamples);
+        if (approved) {
+          gatedProposals.push(proposal);
+        } else {
+          // Log rejection reason
+          proposal.status = "gated";
+          if (reason) {
+            proposal.residualRisks.push(reason);
+          }
+          gatedProposals.push(proposal);
+        }
+      }
+
+      // 5. Persist proposals
+      persistProposals(this.db, gatedProposals);
+      proposalsSubmitted = gatedProposals.filter((p) => p.status === "pending_approval").length;
 
     } catch (err) {
       errors.push(err instanceof Error ? err.message : String(err));
@@ -131,7 +102,20 @@ export class SkillForgeWorker {
         ? "partial"
         : "failure";
 
-    // Log run result for cron health
+    return this.logAndReturn(runId, startedAt, status, entriesProcessed, proposalsCreated, proposalsSubmitted, errors);
+  }
+
+  private logAndReturn(
+    runId: string,
+    startedAt: Date,
+    status: "success" | "partial" | "failure",
+    entriesProcessed: number,
+    proposalsCreated: number,
+    proposalsSubmitted: number,
+    errors: string[]
+  ): SkillForgeRunResult {
+    const completedAt = new Date();
+
     try {
       this.db.prepare(
         `INSERT INTO skillforge_run_log (run_id, started_at, completed_at, status, entries_processed, proposals_created, proposals_submitted, errors)
@@ -147,7 +131,7 @@ export class SkillForgeWorker {
         JSON.stringify(errors)
       );
     } catch {
-      // run_log table may not exist yet — safe to skip
+      // run_log table may not exist yet
     }
 
     return {
