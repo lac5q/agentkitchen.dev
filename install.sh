@@ -1,0 +1,318 @@
+#!/usr/bin/env bash
+# MemroOS Installer — one command, progressive setup
+# Usage: curl -fsSL https://raw.githubusercontent.com/lac5q/memroos/main/install.sh | bash
+# Or:    curl -fsSL https://memroos.dev/install.sh | bash
+#
+# This script:
+# 1. Detects OS and prerequisites
+# 2. Installs missing dependencies (with user approval)
+# 3. Clones MemroOS
+# 4. Offers demo mode or full setup
+# 5. Shows status on completion
+
+set -euo pipefail
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Config
+MEMROOS_REPO="https://github.com/lac5q/memroos.git"
+MEMROOS_DIR="${MEMROOS_INSTALL_DIR:-$HOME/memroos}"
+MEMROOS_BRANCH="${MEMROOS_BRANCH:-main}"
+
+log() { echo -e "${BLUE}➜ $1${NC}"; }
+ok() { echo -e "${GREEN}✓ $1${NC}"; }
+warn() { echo -e "${YELLOW}⚠ $1${NC}"; }
+err() { echo -e "${RED}✗ $1${NC}" >&2; }
+
+banner() {
+  echo ""
+  echo "╔══════════════════════════════════════════╗"
+  echo "║           MemroOS Installer              ║"
+  echo "║     Agent Memory & Governance Plane      ║"
+  echo "╚══════════════════════════════════════════╝"
+  echo ""
+}
+
+detect_os() {
+  case "$(uname -s)" in
+    Darwin)  echo "darwin" ;;
+    Linux)   echo "linux" ;;
+    *)       echo "unknown" ;;
+  esac
+}
+
+OS=$(detect_os)
+
+has() { command -v "$1" &>/dev/null; }
+
+needs_node() {
+  if has node; then
+    local v
+    v=$(node -v | tr -d 'v' | cut -d. -f1)
+    if [[ "$v" -ge 20 ]]; then
+      ok "Node.js $(node -v) — OK"
+      return 0
+    fi
+  fi
+  warn "Node.js 20+ required"
+  return 1
+}
+
+needs_python() {
+  if has python3; then
+    local v
+    v=$(python3 --version 2>&1 | grep -oE '[0-9]+\.[0-9]+' | head -1)
+    local major minor
+    major=$(echo "$v" | cut -d. -f1)
+    minor=$(echo "$v" | cut -d. -f2)
+    if [[ "$major" -ge 3 && "$minor" -ge 10 ]]; then
+      ok "Python $(python3 --version 2>&1) — OK"
+      return 0
+    fi
+  fi
+  warn "Python 3.10+ required"
+  return 1
+}
+
+needs_docker() {
+  if has docker; then
+    ok "Docker $(docker --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1) — OK"
+    return 0
+  fi
+  warn "Docker required"
+  return 1
+}
+
+needs_compose() {
+  if docker compose version &>/dev/null; then
+    ok "Docker Compose — OK"
+    return 0
+  fi
+  warn "Docker Compose required"
+  return 1
+}
+
+needs_ollama() {
+  if has ollama; then
+    ok "Ollama — OK (optional)"
+    return 0
+  fi
+  warn "Ollama — not installed (optional, for local LLM)"
+  return 1
+}
+
+install_node_darwin() {
+  if ! has brew; then
+    echo "  Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  fi
+  brew install node
+}
+
+install_node_linux() {
+  curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+  sudo apt-get install -y nodejs
+}
+
+install_python_darwin() {
+  brew install python@3.11
+}
+
+install_python_linux() {
+  sudo apt-get install -y python3 python3-venv python3-pip
+}
+
+install_docker_darwin() {
+  echo "  Please install Docker Desktop: https://docs.docker.com/desktop/install/mac-install/"
+  echo "  Or: brew install --cask docker"
+  return 1
+}
+
+install_docker_linux() {
+  curl -fsSL https://get.docker.com | sh
+  sudo usermod -aG docker "$USER"
+  echo "  Note: You may need to log out and back in for Docker group changes."
+}
+
+install_ollama_darwin() {
+  brew install ollama
+  ollama serve &
+  sleep 2
+  ollama pull qwen2.5:3b
+  ollama pull nomic-embed-text
+}
+
+install_ollama_linux() {
+  curl -fsSL https://ollama.com/install.sh | sh
+  ollama pull qwen2.5:3b
+  ollama pull nomic-embed-text
+}
+
+check_dependencies() {
+  log "Checking dependencies..."
+  echo ""
+
+  local missing=()
+  needs_node || missing+=("node")
+  needs_python || missing+=("python3")
+  needs_docker || missing+=("docker")
+  needs_compose || missing+=("docker-compose")
+  needs_ollama || true  # optional
+
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo ""
+    echo "Missing required: ${missing[*]}"
+    echo ""
+
+    if [[ "${MEMROOS_AUTO_INSTALL:-0}" == "1" ]]; then
+      log "Auto-installing missing dependencies..."
+      for dep in "${missing[@]}"; do
+        case "$dep" in
+          node)
+            if [[ "$OS" == "darwin" ]]; then install_node_darwin; else install_node_linux; fi
+            ;;
+          python3)
+            if [[ "$OS" == "darwin" ]]; then install_python_darwin; else install_python_linux; fi
+            ;;
+          docker)
+            if [[ "$OS" == "darwin" ]]; then install_docker_darwin || return 1; else install_docker_linux; fi
+            ;;
+          docker-compose)
+            warn "Docker Compose is included with Docker Desktop"
+            ;;
+        esac
+      done
+      ok "Dependencies installed"
+    else
+      read -rp "Install missing dependencies now? [Y/n] " answer
+      if [[ "$answer" != "n" && "$answer" != "N" ]]; then
+        for dep in "${missing[@]}"; do
+          case "$dep" in
+            node)
+              if [[ "$OS" == "darwin" ]]; then install_node_darwin; else install_node_linux; fi
+              ;;
+            python3)
+              if [[ "$OS" == "darwin" ]]; then install_python_darwin; else install_python_linux; fi
+              ;;
+            docker)
+              if [[ "$OS" == "darwin" ]]; then install_docker_darwin || return 1; else install_docker_linux; fi
+              ;;
+            docker-compose)
+              warn "Docker Compose is included with Docker Desktop"
+              ;;
+          esac
+        done
+        ok "Dependencies installed"
+      else
+        err "Please install dependencies manually and re-run the installer."
+        exit 1
+      fi
+    fi
+  fi
+}
+
+clone_repo() {
+  if [[ -d "$MEMROOS_DIR/.git" ]]; then
+    log "MemroOS already installed at $MEMROOS_DIR"
+    cd "$MEMROOS_DIR"
+    if [[ "${MEMROOS_UPDATE:-0}" == "1" ]]; then
+      log "Updating to latest..."
+      git pull origin "$MEMROOS_BRANCH"
+    fi
+  else
+    log "Cloning MemroOS..."
+    git clone --branch "$MEMROOS_BRANCH" "$MEMROOS_REPO" "$MEMROOS_DIR"
+    cd "$MEMROOS_DIR"
+    ok "Cloned to $MEMROOS_DIR"
+  fi
+}
+
+select_mode() {
+  echo ""
+  echo "╔══════════════════════════════════════════════════════╗"
+  echo "║  How do you want to run MemroOS?                     ║"
+  echo "╚══════════════════════════════════════════════════════╝"
+  echo ""
+  echo "  1. 🎯 Demo Mode (recommended for first-time users)"
+  echo "     Local memory only. No cloud accounts needed."
+  echo ""
+  echo "  2. 🔧 Full Setup (production)"
+  echo "     Requires Qdrant Cloud account and API keys."
+  echo ""
+
+  if [[ -n "${MEMROOS_MODE:-}" ]]; then
+    choice="$MEMROOS_MODE"
+  else
+    read -rp "Choose [1-2]: " choice
+  fi
+
+  case "$choice" in
+    1)
+      echo ""
+      ok "Demo mode selected — no configuration needed"
+      "$MEMROOS_DIR/setup.sh" --demo
+      ;;
+    2)
+      echo ""
+      log "Starting interactive setup..."
+      "$MEMROOS_DIR/setup.sh" --wizard
+      "$MEMROOS_DIR/setup.sh"
+      ;;
+    *)
+      err "Invalid choice"
+      exit 1
+      ;;
+  esac
+}
+
+show_status() {
+  echo ""
+  if [[ -f "$MEMROOS_DIR/scripts/show-status.mjs" ]]; then
+    node "$MEMROOS_DIR/scripts/show-status.mjs"
+  fi
+}
+
+show_next_steps() {
+  echo ""
+  echo "╔══════════════════════════════════════════════════════╗"
+  echo "║  Next Steps                                          ║"
+  echo "╚══════════════════════════════════════════════════════╝"
+  echo ""
+  echo "  📖 Documentation:  https://memroos.dev/docs"
+  echo "  💬 Community:      https://discord.gg/memroos"
+  echo "  ⭐ Star the repo:   https://github.com/lac5q/memroos"
+  echo ""
+  echo "  Useful commands:"
+  echo "    cd $MEMROOS_DIR"
+  echo "    ./setup.sh --status     # Check service health"
+  echo "    ./setup.sh --demo       # Restart in demo mode"
+  echo "    ./setup.sh --wizard     # Re-configure API keys"
+  echo "    docker compose logs -f  # View logs"
+  echo ""
+  echo "  Open http://localhost:3000 in your browser to get started."
+  echo ""
+}
+
+main() {
+  banner
+
+  log "MemroOS Installer v1.0.0-beta.3"
+  echo "  OS: $OS"
+  echo "  Install dir: $MEMROOS_DIR"
+  echo ""
+
+  check_dependencies
+  clone_repo
+  select_mode
+  show_status
+  show_next_steps
+
+  ok "MemroOS is running! 🚀"
+}
+
+main "$@"
