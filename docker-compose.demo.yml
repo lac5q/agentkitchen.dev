@@ -1,0 +1,110 @@
+name: memroos-demo
+
+services:
+  memroos:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.memroos
+    ports:
+      - "${MEMROOS_PORT:-3000}:3000"
+    environment:
+      MEMROOS_A2A_PROFILE: ${MEMROOS_A2A_PROFILE:-local-dev}
+      MEMROOS_PUBLIC_BASE_URL: ${MEMROOS_PUBLIC_BASE_URL:-http://localhost:3000}
+      MEMROOS_A2A_ENDPOINT_BASE_URL: ${MEMROOS_A2A_ENDPOINT_BASE_URL:-http://localhost:3000}
+      MEMROOS_OPERATOR_API_KEY: ${MEMROOS_OPERATOR_API_KEY:-demo-key}
+      MEM0_URL: http://mem0:3201
+      ORCHESTRATION_SERVICE_URL: http://orchestration:3210
+      NEO4J_HTTP_URL: http://neo4j:7474
+      NEO4J_DATABASE: ${NEO4J_DATABASE:-neo4j}
+      NEO4J_USERNAME: ${NEO4J_USERNAME:-neo4j}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-demo}
+      SQLITE_DB_PATH: /data/conversations.db
+      CLAUDE_MEMORY_PATH: /data/claude-memory
+      KNOWLEDGE_BASE_PATH: /knowledge
+      MEMROOS_DATA_RESIDENCY: ${MEMROOS_DATA_RESIDENCY:-0}
+      LOCAL_JUDGE_PROVIDER: ${LOCAL_JUDGE_PROVIDER:-ollama}
+      LOCAL_JUDGE_ENDPOINT: ${LOCAL_JUDGE_ENDPOINT:-http://host.docker.internal:11434/v1}
+      LOCAL_JUDGE_MODEL: ${LOCAL_JUDGE_MODEL:-hermes3}
+      AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-365}
+    volumes:
+      - memroos-data:/data
+      - ${KNOWLEDGE_BASE_PATH:-./docs}:/knowledge:ro
+    depends_on:
+      mem0:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+      orchestration:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  mem0:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.memory
+    ports:
+      - "${MEM0_PORT:-3201}:3201"
+    environment:
+      # Demo mode: no Qdrant required
+      QDRANT_URL: ${QDRANT_URL:-}
+      QDRANT_API_KEY: ${QDRANT_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      NEO4J_HTTP_URL: http://neo4j:7474
+      NEO4J_DATABASE: ${NEO4J_DATABASE:-neo4j}
+      NEO4J_USERNAME: ${NEO4J_USERNAME:-neo4j}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-demo}
+    volumes:
+      - mem0-logs:/app/services/memory/logs
+      - ./services/memory/mem0-config.demo.yaml:/app/services/memory/mem0-config.yaml:ro
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python - <<'PY'\nimport urllib.request\nurllib.request.urlopen('http://127.0.0.1:3201/health', timeout=3)\nPY"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  neo4j:
+    image: neo4j:5-community
+    ports:
+      - "${NEO4J_HTTP_PORT:-7474}:7474"
+      - "${NEO4J_BOLT_PORT:-7687}:7687"
+    environment:
+      NEO4J_AUTH: ${NEO4J_USERNAME:-neo4j}/${NEO4J_PASSWORD:-demo}
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:7474 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 10
+
+  orchestration:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.orchestration
+    ports:
+      - "${ORCHESTRATION_PORT:-3210}:3210"
+    environment:
+      ORCHESTRATION_DB_PATH: /data/orchestration.db
+      ORCHESTRATION_RETRY_LIMIT: ${ORCHESTRATION_RETRY_LIMIT:-2}
+    volumes:
+      - orchestration-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "python - <<'PY'\nimport urllib.request\nurllib.request.urlopen('http://127.0.0.1:3210/health', timeout=3)\nPY"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  memroos-data:
+  mem0-logs:
+  neo4j-data:
+  neo4j-logs:
+  orchestration-data:

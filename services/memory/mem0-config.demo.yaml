@@ -1,0 +1,30 @@
+# MemroOS Demo Mode Configuration
+# SQLite-only: no Qdrant required. Graph memory via Neo4j.
+# For demo/evaluation only — not for production.
+
+vector_store:
+  provider: chroma  # embedded, no external service
+  config:
+    collection_name: agent_memory_demo
+    embedding_model_dims: 768
+
+llm:
+  provider: ollama
+  config:
+    model: qwen2.5:3b
+    ollama_base_url_env: OLLAMA_BASE_URL
+
+embedder:
+  provider: ollama
+  config:
+    model: nomic-embed-text
+    embedding_dims: 768
+    ollama_base_url_env: OLLAMA_BASE_URL
+
+custom_fact_extraction_prompt: |
+  Extract durable, searchable facts from the Input.
+  Return valid JSON only in exactly this shape:
+  {"facts":["one flat string fact","another flat string fact"]}
+  Every item in facts must be a single string. Do not return nested arrays,
+  objects, categories, tags, markdown, or commentary.
+  If there are no durable facts, return {"facts":[]}.
