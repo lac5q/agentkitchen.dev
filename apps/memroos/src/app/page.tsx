@@ -26,6 +26,21 @@ import {
 } from "lucide-react";
 import { KangarooMark } from "@/components/layout/brand-mark";
 import { OperationsNoc } from "@/components/operations";
+import { softwareApplicationSchema, speakableSchema, JsonLd } from "@/lib/schema";
+import { makeTitle, makeCanonical } from "@/lib/metadata";
+
+export const metadata = {
+  title: makeTitle("Agentic Memory & Orchestration Platform"),
+  description:
+    "MemroOS gives AI agents shared memory, governed orchestration, and a NOC-style operator console. Retain decisions, retrieve context, orchestrate long-running work with audit lineage.",
+  alternates: { canonical: makeCanonical("/") },
+  openGraph: {
+    title: "MemroOS — Agentic Memory & Orchestration Platform",
+    description:
+      "Shared memory and governed orchestration for agent workflows.",
+    url: "https://memroos.com",
+  },
+};
 
 const PUBLIC_LANDING_HOSTS = new Set(["memroos.com", "www.memroos.com", "memroos.vercel.app"]);
 const RESEARCH_PAPER_HREF = "/research/memroos-governed-knowledge-architecture-paper.pdf";
@@ -403,6 +418,9 @@ const testimonials = [
 
 function LandingPage() {
   return (
+    <>
+      <JsonLd data={softwareApplicationSchema()} />
+      <JsonLd data={speakableSchema(["h1", "h2", ".hero-tagline"])} />
     <main className="min-h-screen overflow-hidden bg-[#fafaf7] text-[#1f1f1c]">
       <section className="relative isolate border-b border-[#c9c9c2] bg-[linear-gradient(180deg,#fafaf7_0%,#f2f2ee_100%)]">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between px-5 py-5 sm:px-8">
@@ -1050,6 +1068,7 @@ function LandingPage() {
         </div>
       </section>
     </main>
+    </>
   );
 }
 
