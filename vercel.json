@@ -1,5 +1,6 @@
 {
   "framework": "nextjs",
+  "installCommand": "npm install --prefix apps/memroos",
   "buildCommand": "npm run build",
   "outputDirectory": "apps/memroos/.next"
 }
