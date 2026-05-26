@@ -35,14 +35,23 @@
 
 ## Launch Quickstart
 
-Try the memory loop in 5 minutes:
+**One command to get started:**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/lac5q/memroos/main/install.sh | bash
+```
+
+This detects your OS, checks prerequisites, clones MemroOS, and offers demo mode (no config needed) or full setup with guided wizard.
+
+**Manual install:**
 
 ```bash
 git clone https://github.com/lac5q/memroos.git
 cd memroos
 npm install
-./setup.sh --wizard
-./setup.sh
+./setup.sh --demo        # local memory only, no cloud accounts
+./setup.sh --wizard      # guided config for Qdrant Cloud + full setup
+./setup.sh --status      # check running services
 ```
 
 Then open `http://localhost:3000`, search retained memory, inspect Knowledge source health, register or dispatch an agent, and review the runtime context pack that gets assembled before work starts.
