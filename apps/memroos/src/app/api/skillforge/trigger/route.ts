@@ -6,8 +6,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 import { SkillForgeWorker, DEFAULT_SKILLFORGE_CONFIG } from "@/lib/skillforge";
+import { authorizeRegistryWrite } from "@/lib/operator-auth";
 
 export async function POST(_req: NextRequest): Promise<NextResponse> {
+  if (!authorizeRegistryWrite(_req)) {
+    return NextResponse.json({ error: "authentication required" }, { status: 401 });
+  }
   try {
     const db = getDb();
     const worker = new SkillForgeWorker(db, DEFAULT_SKILLFORGE_CONFIG);
