@@ -4,8 +4,10 @@ milestone: v6.0
 milestone_name: SkillForge — Governed Skill Optimization
 status: in_progress
 stopped_at: ""
-last_updated: "2026-05-26T04:15:00.000Z"
-last_activity: 2026-05-26 -- Phases 86-90 complete: SkillForge Analyzer Engine, Edit Generation, Eval Gating, Operator Approval, Integration. All v6.0 phases shipped. 88/88 tests passing.
+last_updated: "2026-05-26T04:47:00.000Z"
+last_activity: 2026-05-26 -- Phases 91-95 complete: Dream Cycle, Skill Marketplace, Multi-Agent Orchestration, Behavioral W-Lift v2, Self-Hosted Eval Cluster. All v6.1 phases shipped. 65/65 tests passing.
+milestone: v6.1
+milestone_name: SkillForge Autonomy — Dream Cycle + Marketplace + Multi-Agent + Behavioral Eval + Local Judge
 progress:
   total_phases: 59
   completed_phases: 53
@@ -25,10 +27,18 @@ See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 ## Current Position
 
-Phase: 90 — SkillForge Integration
-Plan: 90-01
-Status: Complete — All SkillForge v6.0 phases implemented (85-90). 88/88 tests passing, build passes.
-Last activity: 2026-05-26 -- Phases 86-90 shipped: analyzer engine, edit generation, eval gating, operator approval, integration. SkillForge v6.0 complete.
+Phase: 95 — Self-Hosted Eval Cluster
+Plan: 95-01
+Status: Complete — All SkillForge v6.1 phases implemented (91-95). 65/65 tests passing, build passes.
+Last activity: 2026-05-26 -- Phases 91-95 complete: Dream Cycle, Skill Marketplace, Multi-Agent Orchestration, Behavioral W-Lift v2, Self-Hosted Eval Cluster.
+Next action: Phase 96 (if defined) or begin v6.2 milestone
+
+## Session Continuity
+
+Last session: 2026-05-26T04:47:00.000Z
+Stopped at: Phase 95 complete, v6.1 SkillForge Autonomy fully shipped
+Resume file: None
+Next action: Phase 96 or v6.2 milestone
 
 ## Roadmap Summary (v5.0 + v6.0)
 
@@ -50,7 +60,12 @@ Last activity: 2026-05-26 -- Phases 86-90 shipped: analyzer engine, edit generat
 | 87 | SkillForge Edit Generation — bounded diffs, textual LR, rejected-edit buffer | COMPLETE — SKILLFORGE-03 (1) |
 | 88 | SkillForge Eval Gating — train/val/held-out splits, W delta, non-regression gates | COMPLETE — SKILLFORGE-04 (1) |
 | 89 | SkillForge Operator Approval — proposal queue, diff viewer, approve/reject/rollback | COMPLETE — SKILLFORGE-05 (1) |
-| 90 | SkillForge Integration — cross-modal eval, SkillCycle, runtime export | COMPLETE — SKILLFORGE-06 (1) |
+|| 90 | SkillForge Integration — cross-modal eval, SkillCycle, runtime export | COMPLETE — SKILLFORGE-06 (1) |
+|| 91 | Dream Cycle — automated nightly skill optimization with risk-based auto-approval | COMPLETE — DREAM-01 (1) |
+|| 92 | Skill Marketplace — publish, rate, discover skills | COMPLETE — MARKET-01 (1) |
+|| 93 | Multi-Agent Orchestration — cross-agent skill sharing via A2A | COMPLETE — MULTIAGENT-01 (1) |
+|| 94 | Behavioral W-Lift v2 — true instruction/skill behavioral eval | COMPLETE — BEHAVIORAL-01 (1) |
+|| 95 | Self-Hosted Eval Cluster — local judge, Ollama/vLLM support | COMPLETE — LOCALJUDGE-01 (1) |
 
 **Coverage:** 48/48 v5.0-v6.0 requirements mapped, no orphans.
 **Critical path:** 74 → 75 → 76 → 77 → 78. Phases 79, 80, 81, 82 run parallel (81 soft-depends on 74).
@@ -189,20 +204,20 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 - ✅ **Honesty guardrail preserved:** memory/config proposal classes can move W
   via the modeled fixed-harness delta. `agent_instruction_patch`,
-  `skill_addition`, and `noop_test` keep W unchanged with `wLiftModeled:false`.
-  True behavioral W-lift from instruction/skill changes remains v3.
+  ## Current Position
 
-- Phase 59 scope classification closed as v2.5 retro-documented; behavioral
-  instruction/skill W-lift remains v3 scope
+  Phase: 95 — Self-Hosted Eval Cluster
+  Plan: 95-01
+  Status: Complete — All SkillForge v6.1 phases implemented (91-95). 65/65 tests passing, build passes.
+  Last activity: 2026-05-26 -- Phases 91-95 complete: Dream Cycle, Skill Marketplace, Multi-Agent Orchestration, Behavioral W-Lift v2, Self-Hosted Eval Cluster.
+  Next action: Phase 96 (if defined) or begin v6.2 milestone
 
-- Auth/63/64 code kept on main (build depends on it); tracked as v3 in ROADMAP
+  ## Session Continuity
 
-## Session Continuity
-
-Last session: 2026-05-26T04:15:00.000Z
-Stopped at: Phase 90 complete, v6.0 SkillForge fully shipped
-Resume file: None
-Next action: Phase 91 (if defined) or begin v6.1 milestone
+  Last session: 2026-05-26T04:47:00.000Z
+  Stopped at: Phase 95 complete, v6.1 SkillForge Autonomy fully shipped
+  Resume file: None
+  Next action: Phase 96 or v6.2 milestone
 
 ## UAT Findings (2026-05-17)
 
