@@ -102,6 +102,8 @@ In a governed system, the write is logged. When the issue is discovered, the aud
 
 **Scenario 2: A compliance audit.** A regulator asks for evidence that the AI system did not use protected-class attributes to influence a lending decision. In an ungoverned system, this is difficult or impossible to demonstrate. In a governed system, the retrieval trace for the relevant agent run shows exactly what was in the context pack — and the audit log shows that no protected-class attributes were written to any tier accessible to the lending agent.
 
-## How MemroOS Implements Governance
+## Putting Governance Into Practice
 
-MemroOS implements a per-agent write permission matrix, immutable audit lineage on every memory mutation, human-in-the-loop checkpoints for high-stakes tier writes, and a NOC operator console that surfaces the audit log, write anomalies, and retrieval traces in a queryable dashboard. It deploys entirely on your own infrastructure with no external data egress — built for enterprise teams that cannot compromise on data residency. See the full implementation at [github.com/lac5q/memroos](https://github.com/lac5q/memroos).
+Governed memory requires a platform that treats these controls as first-class features rather than afterthoughts. The questions to ask any memory platform you evaluate: Can I grant per-agent write permissions at the tier level? Is every mutation logged immutably with agent identity and prior state? Can I require human approval before high-trust writes commit? And does all of this run on my own infrastructure?
+
+MemroOS implements this full governance model — per-agent permissions, immutable audit lineage, HIL approval gates, and a NOC console for live visibility — deployed entirely on your own infrastructure. See the implementation at [github.com/lac5q/memroos](https://github.com/lac5q/memroos).
