@@ -90,7 +90,7 @@ export default async function BlogPostPage({ params }: Props) {
           )}
         </header>
 
-        <article className="prose prose-slate max-w-none prose-headings:font-bold prose-a:text-amber-600 prose-a:no-underline hover:prose-a:underline">
+        <article className="blog-prose text-slate-700 leading-relaxed">
           <ReactMarkdown>{content}</ReactMarkdown>
         </article>
 
