@@ -1335,6 +1335,69 @@ export function initSchema(db: Database.Database): void {
     );
     CREATE INDEX IF NOT EXISTS skillforge_run_log_completed
       ON skillforge_run_log(completed_at DESC);
+
+    -- Phase 92: Skill Marketplace tables
+    CREATE TABLE IF NOT EXISTS skill_marketplace (
+      id                TEXT    PRIMARY KEY,
+      skill_id          TEXT    NOT NULL,
+      name              TEXT    NOT NULL,
+      description       TEXT    NOT NULL,
+      author            TEXT    NOT NULL,
+      tags              TEXT    NOT NULL DEFAULT '[]',
+      version           TEXT    NOT NULL,
+      changelog         TEXT    NOT NULL DEFAULT '',
+      rating            REAL    NOT NULL DEFAULT 0
+                        CHECK(rating >= 0 AND rating <= 5),
+      review_count      INTEGER NOT NULL DEFAULT 0,
+      download_count    INTEGER NOT NULL DEFAULT 0,
+      category          TEXT    NOT NULL,
+      published_at      TEXT    NOT NULL,
+      updated_at        TEXT    NOT NULL,
+      deprecated        INTEGER NOT NULL DEFAULT 0,
+      deprecation_reason TEXT
+    );
+    CREATE INDEX IF NOT EXISTS skill_marketplace_category
+      ON skill_marketplace(category, rating DESC);
+    CREATE INDEX IF NOT EXISTS skill_marketplace_search
+      ON skill_marketplace(name, description);
+
+    CREATE TABLE IF NOT EXISTS skill_reviews (
+      id          TEXT    PRIMARY KEY,
+      listing_id  TEXT    NOT NULL REFERENCES skill_marketplace(id) ON DELETE CASCADE,
+      reviewer    TEXT    NOT NULL,
+      rating      INTEGER NOT NULL
+                  CHECK(rating >= 1 AND rating <= 5),
+      text        TEXT    NOT NULL,
+      verified    INTEGER NOT NULL DEFAULT 0,
+      created_at  TEXT    NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS skill_reviews_listing
+      ON skill_reviews(listing_id, created_at DESC);
+
+    -- Phase 93: Multi-agent skill sync log
+    CREATE TABLE IF NOT EXISTS skill_sync_log (
+      id            INTEGER PRIMARY KEY,
+      skill_id      TEXT    NOT NULL,
+      target_agent  TEXT    NOT NULL,
+      package_id    TEXT    NOT NULL,
+      status        TEXT    NOT NULL DEFAULT 'pending'
+                      CHECK(status IN ('pending','sent','confirmed','failed')),
+      timestamp     TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS skill_sync_log_skill
+      ON skill_sync_log(skill_id, timestamp DESC);
+
+    -- Phase 95: Eval receipts for local/cloud judge comparison
+    CREATE TABLE IF NOT EXISTS eval_receipts (
+      id          INTEGER PRIMARY KEY,
+      skill_id    TEXT    NOT NULL,
+      provider    TEXT    NOT NULL,
+      model       TEXT    NOT NULL,
+      dimensions  TEXT    NOT NULL,
+      timestamp   TEXT    NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS eval_receipts_skill
+      ON eval_receipts(skill_id, timestamp DESC);
   `);
 
   // FTS projection repair is intentionally explicit. Rebuilding it here blocks

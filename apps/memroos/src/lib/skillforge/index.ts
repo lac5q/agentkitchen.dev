@@ -10,9 +10,14 @@ export { runIntakePipeline } from "./intake";
 export { generateProposals, persistProposals, buildSealPayload } from "./proposal";
 export { analyzeTelemetry, logFailure } from "./analyzer";
 export { generateEditProposal, generateEditProposals } from "./edit-generator";
-export { createSplits, runValidation, runHeldOutEval, computeWDelta, runEvalGate } from "./eval-gate";
+export { createSplits, runValidation, runHeldOutEval, runEvalGate } from "./eval-gate";
 export { listProposals, getProposal, applyApprovalAction, markApplied } from "./operator-approval";
 export { runCrossModalEval, exportToRuntime, updateSkillRegistry, runSkillCycle } from "./integration";
+export { runDreamCycle } from "./dream-cycle";
+export { publishSkill, searchListings, submitReview, recordDownload, deprecateSkill } from "./marketplace";
+export { exportSkillPackage, importSkillPackage, syncSkillsWithAgent } from "./multi-agent";
+export { runBehavioralABTest, generateGoldenSet, mannWhitneyU } from "./behavioral-eval";
+export { scoreWithJudge, detectJudgeDrift } from "./local-judge";
 export { DEFAULT_SKILLFORGE_CONFIG } from "./types";
 export type {
   SkillForgeConfig,

@@ -21,18 +21,18 @@
 - ✅ **v5.0 Memory Trust + Operational Intelligence** — Phases 74-82 (MVP phase closeout completed 2026-05-24)
 - ✅ **v5.1 Memory Inventory Clarity** — Phase 83 (shipped 2026-05-24)
 - ✅ **v5.2 Competitive Memory Target Architecture** — Phase 84 (shipped 2026-05-24)
-- 🔄 **v6.0 SkillForge — Governed Skill Optimization** — Phases 85-90 (in progress)
+- ✅ **v6.0 SkillForge — Governed Skill Optimization** — Phases 85-90 (shipped 2026-05-26)
 
 ## Phases
 
 ### Current v6.0 SkillForge — Governed Skill Optimization Summary — IN PROGRESS
 
-- [ ] **Phase 85: SkillForge Foundation** — SKILLFORGE-01; worker, intake pipeline, SEAL skill_revision proposal type
-- [ ] **Phase 86: SkillForge Analysis** — SKILLFORGE-02; pattern detection, SkillFailImproveLoop
-- [ ] **Phase 87: SkillForge Proposal Generation** — SKILLFORGE-03; bounded edits, textual LR, rejected-edit buffer
-- [ ] **Phase 88: SkillForge Evaluation** — SKILLFORGE-04; train/val/held-out splits, W delta, behavioral eval
-- [ ] **Phase 89: SkillForge Governance** — SKILLFORGE-05; operator UI, approval gate, rollback handles
-- [ ] **Phase 90: SkillForge Integration** — SKILLFORGE-06; cross-modal eval, SkillCycle, runtime export
+- [x] **Phase 85: SkillForge Foundation** — SKILLFORGE-01; worker, intake pipeline, SEAL skill_revision proposal type
+- [x] **Phase 86: SkillForge Analysis** — SKILLFORGE-02; pattern detection, SkillFailImproveLoop
+- [x] **Phase 87: SkillForge Proposal Generation** — SKILLFORGE-03; bounded edits, textual LR, rejected-edit buffer
+- [x] **Phase 88: SkillForge Evaluation** — SKILLFORGE-04; train/val/held-out splits, W delta, behavioral eval
+- [x] **Phase 89: SkillForge Governance** — SKILLFORGE-05; operator UI, approval gate, rollback handles
+- [x] **Phase 90: SkillForge Integration** — SKILLFORGE-06; cross-modal eval, SkillCycle, runtime export
 
 Full v6.0 detail in the `## v6.0 SkillForge — Governed Skill Optimization` section below.
 
@@ -1044,9 +1044,110 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|----------|---------------|--------|-----------|
-| 85 | v6.0 | 0/1 | In Progress | — |
-| 86 | v6.0 | 0/1 | Pending | — |
-| 87 | v6.0 | 0/1 | Pending | — |
-| 88 | v6.0 | 0/1 | Pending | — |
-| 89 | v6.0 | 0/1 | Pending | — |
-| 90 | v6.0 | 0/1 | Pending | — |
+| 85 | v6.0 | 1/1 | Complete | 2026-05-26 |
+| 86 | v6.0 | 1/1 | Complete | 2026-05-26 |
+| 87 | v6.0 | 1/1 | Complete | 2026-05-26 |
+| 88 | v6.0 | 1/1 | Complete | 2026-05-26 |
+| 89 | v6.0 | 1/1 | Complete | 2026-05-26 |
+| 90 | v6.0 | 1/1 | Complete | 2026-05-26 |
+
+---
+
+## v6.1 SkillForge Autonomy — Dream Cycle + Marketplace (Phases 91-95)
+
+### Phase 91: Dream Cycle — Automated Nightly Skill Optimization
+**Goal**: Fully automated SkillForge loop that runs nightly without operator intervention, auto-approving low-risk proposals and escalating high-risk ones.
+**Depends on**: Phase 90
+**Requirements**: DREAM-01..03
+**Prerequisite tasks**:
+  - Cron-scheduled SkillForge worker (`0 2 * * *`)
+  - Risk-based auto-approval: proposals with W delta > 0.15 and no residual risks → auto-approve
+  - Escalation queue: proposals with W delta < 0.05 or high residual risks → operator queue
+  - Nightly report: email/Slack summary of proposals created, approved, rejected
+  - Safety guard: max 1 auto-approved proposal per skill per week
+**Success Criteria**:
+  1. Dream cycle runs automatically every night.
+  2. Low-risk proposals are auto-approved within safety bounds.
+  3. High-risk proposals are queued for operator review.
+  4. Nightly report is generated and delivered.
+**Plans**: 0/1 complete
+**UI hint**: no
+
+### Phase 92: Skill Marketplace — Publish, Rate, Discover
+**Goal**: Public skill marketplace where operators can publish, rate, and discover skills across the Memroos ecosystem.
+**Depends on**: Phase 91
+**Requirements**: MARKET-01..04
+**Prerequisite tasks**:
+  - Skill publishing API: publish skill to marketplace with metadata, tags, ratings
+  - Skill discovery: search, filter, sort by rating, downloads, category
+  - Skill rating system: 1-5 stars, review text, verified purchase (downloaded + used)
+  - Skill versioning: semantic versioning, changelog, deprecation warnings
+  - Revenue share model (future): skill authors earn from usage
+**Success Criteria**:
+  1. Skills can be published to marketplace with full metadata.
+  2. Skills can be discovered via search and filters.
+  3. Rating system is functional and prevents abuse.
+  4. Versioning works with deprecation warnings.
+**Plans**: 0/1 complete
+**UI hint**: yes
+
+### Phase 93: Multi-Agent Skill Orchestration
+**Goal**: Cross-agent skill sharing where skills optimized in one agent context can be shared with other agents in the ecosystem.
+**Depends on**: Phase 92
+**Requirements**: ORCH-SKILL-01..03
+**Prerequisite tasks**:
+  - Skill export format: standardized skill package (SKILL.md + metadata + eval receipts)
+  - Skill import validation: validate imported skills against local eval harness
+  - Agent-to-agent skill sync: push/pull skills between agents via A2A protocol
+  - Skill compatibility matrix: track which skills work with which agent frameworks
+**Success Criteria**:
+  1. Skills can be exported as standardized packages.
+  2. Imported skills are validated before activation.
+  3. Agent-to-agent sync works via A2A.
+  4. Compatibility matrix is accurate and up-to-date.
+**Plans**: 0/1 complete
+**UI hint**: no
+
+### Phase 94: Behavioral W-Lift v2 — True Instruction/Skill Behavioral Eval
+**Goal**: True behavioral W-lift measurement for instruction and skill changes, not just modeled delta.
+**Depends on**: Phase 93, Phase 57 (eval engine)
+**Requirements**: WBEHAV-01..03
+**Prerequisite tasks**:
+  - Behavioral harness: run actual agent tasks with modified instructions/skills
+  - A/B testing framework: compare control vs treatment agent performance
+  - Statistical significance: paired t-test or Mann-Whitney U for W delta
+  - Golden set expansion: behavioral eval golden sets for each skill category
+**Success Criteria**:
+  1. Behavioral harness runs actual tasks and measures real W.
+  2. A/B test framework compares control vs treatment.
+  3. Statistical significance is computed and reported.
+  4. Golden sets cover all major skill categories.
+**Plans**: 0/1 complete
+**UI hint**: no
+
+### Phase 95: Self-Hosted Eval Cluster
+**Goal**: Support local judge models (Ollama, vLLM) for eval execution, reducing dependency on cloud LLM APIs.
+**Depends on**: Phase 94
+**Requirements**: LOCALJUDGE-01..03
+**Prerequisite tasks**:
+  - Ollama integration: local model serving for eval judge
+  - vLLM integration: high-throughput local inference for batch evals
+  - Model fallback: cloud API fallback when local model is unavailable
+  - Eval accuracy tracking: compare local vs cloud judge scores, flag drift
+**Success Criteria**:
+  1. Ollama judge produces scores within 5% of cloud judge.
+  2. vLLM handles batch evals at >10x throughput of single-request.
+  3. Fallback to cloud is seamless and logged.
+  4. Drift between local and cloud judges is monitored.
+**Plans**: 0/1 complete
+**UI hint**: no
+
+### v6.1 Progress
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|----------|---------------|--------|-----------|
+| 91 | v6.1 | 0/1 | Pending | — |
+| 92 | v6.1 | 0/1 | Pending | — |
+| 93 | v6.1 | 0/1 | Pending | — |
+| 94 | v6.1 | 0/1 | Pending | — |
+| 95 | v6.1 | 0/1 | Pending | — |
