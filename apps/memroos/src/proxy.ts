@@ -19,6 +19,14 @@ function isLandingAsset(pathname: string): boolean {
   return (
     pathname === "/" ||
     pathname === "/favicon.ico" ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
+    pathname === "/llms.txt" ||
+    pathname === "/llms-full.txt" ||
+    pathname.startsWith("/blog") ||
+    pathname.startsWith("/platform") ||
+    pathname.startsWith("/use-cases") ||
+    pathname.startsWith("/vs") ||
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/assets/") ||
     pathname.startsWith("/diagrams/") ||
