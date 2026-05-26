@@ -86,13 +86,13 @@ export function MemoryNotDigested({ filters }: MemoryNotDigestedProps) {
           style={{
             padding: "11px 16px",
             borderTop: `1px solid ${NOC.rule}`,
-            display: "grid",
-            gridTemplateColumns: "1fr 56px 80px",
+            display: "flex",
+            flexWrap: "wrap",
             alignItems: "center",
             gap: 10,
           }}
         >
-          <div>
+          <div style={{ flex: "1 1 180px", minWidth: 0 }}>
             <div style={{ fontSize: 13, color: NOC.ink, marginBottom: 2 }}>
               {m.name}
             </div>
@@ -101,17 +101,20 @@ export function MemoryNotDigested({ filters }: MemoryNotDigestedProps) {
                 fontSize: 11,
                 color: NOC.soft,
                 fontFamily: NOC_FONT_MONO,
+                overflowWrap: "anywhere",
               }}
             >
               {m.meta}
             </div>
           </div>
-          <Mono color={m.tone} size={13}>
-            {m.value}
-          </Mono>
-          <Link href={m.href} style={{ border: `1px solid ${NOC.ruleStrong}`, padding: "6px 8px", textTransform: "uppercase", fontSize: 11, color: NOC.ink, textDecoration: "none", textAlign: "center", fontWeight: 700 }}>
-            Investigate
-          </Link>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: "0 0 auto" }}>
+            <Mono color={m.tone} size={13}>
+              {m.value}
+            </Mono>
+            <Link href={m.href} style={{ border: `1px solid ${NOC.ruleStrong}`, padding: "6px 8px", textTransform: "uppercase", fontSize: 11, color: NOC.ink, textDecoration: "none", textAlign: "center", fontWeight: 700, whiteSpace: "nowrap" }}>
+              Investigate
+            </Link>
+          </div>
         </div>
       ))}
     </div>

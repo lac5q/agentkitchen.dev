@@ -420,8 +420,13 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 
 13. **P3 — Plan recent-deferred hardening sweep.**
    - Source notes: Phase 57-64 context/summary deferred sections plus `.planning/PROJECT.md` v5 candidates.
-   - Requirements: remaining `AUTH-FOLLOWUP-01..03`, `AUDIT-FOLLOWUP-01..03`, `UX-FOLLOWUP-01..06`, and any deferred items not already pulled into P0-P2.
+   - Requirements: remaining `AUTH-FOLLOWUP-01..03`, `AUDIT-FOLLOWUP-01..03`, `UX-FOLLOWUP-01..07`, and any deferred items not already pulled into P0-P2.
    - Goal: prevent recent deferred notes from living only in phase-local context by turning them into plan-ready backlog requirements.
+
+14. **P1 — Plan service navigation and optional install profiles.**
+   - Source request: 2026-05-26 operator feedback asked for a Services page/dropdown and for Docker to remain available as an installation mechanism for public users, while keeping Luis's own setup cloud-first and slim.
+   - Requirements: `UX-FOLLOWUP-07` and `INSTALL-FOLLOWUP-01` in `.planning/REQUIREMENTS.md`.
+   - Goal: make service health and ownership visible from the UI, then preserve Docker as an explicit optional test/demo path instead of letting local containers, images, or demo volumes become the default operator footprint.
 
 ### Later Ideas
 
@@ -433,6 +438,8 @@ Full archive: `.planning/milestones/v1.7-ROADMAP.md`
 - Recall.ai bridge for Zoom/Teams/Meet meeting bot support beyond the Daily-only v4.0 path
 - Multi-participant meeting bot: move beyond listener-only recording into participant-aware meeting capture and consent behavior
 - Flow trigger button (`qmd update` from UI)
+- Services page or app-shell dropdown for dependency health, install mode, cloud/local ownership, and service owner actions
+- Optional Docker installer/profile that public users can choose for local testing without forcing Docker onto cloud-first operators
 - Library freshness indicator (QMD index recency vs file mtime)
 - LLM-powered recall scoring upgrade (embedding over BM25)
 - Voyage AI `voyage-4-large` embedding upgrade behind the existing embedding-provider flag, preserving Ollama local as the default path

@@ -29,18 +29,18 @@ export function GovernanceStrip() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
+          gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
           gap: 10,
         }}
       >
         {stats.map(({ label, value, sub, color }) => (
           <div
             key={label}
-            style={{ borderLeft: `2px solid ${color}`, paddingLeft: 10 }}
+            style={{ borderLeft: `2px solid ${color}`, paddingLeft: 10, minWidth: 0 }}
           >
             <Eyebrow>{label}</Eyebrow>
             <Mono size={20}>{value}</Mono>
-            <div style={{ fontSize: 11, color: NOC.soft }}>{sub}</div>
+            <div style={{ fontSize: 11, color: NOC.soft, overflowWrap: "anywhere" }}>{sub}</div>
           </div>
         ))}
       </div>
@@ -71,13 +71,16 @@ export function GovernanceStrip() {
               key={i}
               style={{
                 display: "grid",
-                gridTemplateColumns: "60px 110px 1fr",
-                gap: 10,
+                gridTemplateColumns: "58px minmax(0, 1fr)",
+                columnGap: 10,
+                rowGap: 2,
+                alignItems: "start",
               }}
             >
               <Mono color={NOC.soft} size={11}>{e.time}</Mono>
-              <span style={{ color: NOC.muted }}>{e.type}</span>
-              <span style={{ color: NOC.ink }}>{e.detail}</span>
+              <span style={{ color: NOC.muted, minWidth: 0, overflowWrap: "anywhere" }}>{e.type}</span>
+              <span />
+              <span style={{ color: NOC.ink, minWidth: 0, overflowWrap: "anywhere" }}>{e.detail}</span>
             </div>
           ))}
         </div>

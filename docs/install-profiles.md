@@ -67,7 +67,9 @@ Put Memroos behind a reverse proxy or tunnel that terminates HTTPS. Do not expos
 - Optional voice service
 - Optional knowledge MCP service
 
-`docker-compose.yml` starts the local service stack. Qdrant remains cloud-only and is configured through environment variables.
+For cloud-first operators, run MemroOS natively and point it at managed services. Docker is not required for that path.
+
+For public repo users who want a local test harness, `docker-compose.yml` provides the slim MemroOS app container only. Demo infrastructure lives in `docker-compose.demo.yml` and should be selected explicitly when someone wants the fuller local demo stack. Qdrant remains cloud-only in both profiles and is configured through environment variables.
 
 ## Environment Validation
 
@@ -76,7 +78,7 @@ npm run profiles:check
 npm run first-run:check
 ```
 
-`setup.sh` validates required tools, copies `.env.example` when needed, validates the selected profile, checks Qdrant unless `SKIP_QDRANT_CHECK=1`, installs the memory-service Python requirements into `.venv`, and starts Docker Compose unless `START_SERVICES=0`. Set `INSTALL_MEMORY_SERVICE_DEPS=0` only when you intentionally manage that virtualenv yourself.
+`setup.sh` validates required tools, copies `.env.example` when needed, validates the selected profile, checks Qdrant unless `SKIP_QDRANT_CHECK=1`, and installs the memory-service Python requirements into `.venv`. Set `START_SERVICES=0` for cloud-first/no-Docker setup, or start the Docker profile explicitly when testing the public repo locally. Set `INSTALL_MEMORY_SERVICE_DEPS=0` only when you intentionally manage that virtualenv yourself.
 
 On macOS, setup installs two launchd-backed Memory Resilience jobs unless `INSTALL_MEMORY_RESILIENCE=0` is set:
 
