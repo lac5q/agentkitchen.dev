@@ -9,6 +9,10 @@ PORT="${PORT:-3002}"
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG_DIR="$REPO_DIR/logs"
 mkdir -p "$LOG_DIR"
+export USER="${USER:-$(id -un)}"
+export HOME="${HOME:-/Users/$USER}"
+export LOGNAME="${LOGNAME:-$USER}"
+export TMPDIR="${TMPDIR:-/tmp}"
 RUNTIME_ENV_FILE="${MEMROOS_RUNTIME_ENV_FILE:-$HOME/.memroos/memroos-runtime.env}"
 if [ -f "$RUNTIME_ENV_FILE" ]; then
   set -a
@@ -22,6 +26,23 @@ if [ -z "$NODE_BIN" ]; then
   else
     NODE_BIN=/opt/homebrew/bin/node
   fi
+fi
+
+# Next.js patches incomplete optional SWC lockfile entries during local starts.
+# This repo is npm-workspace/package-lock based, but if no package-lock exists in
+# apps/memroos, Next can fall through to a globally installed pnpm and fail with
+# ENOWORKSPACES. Pin npm in the process env before Next inspects package manager.
+export npm_config_user_agent="${npm_config_user_agent:-npm/11.12.1 node/v22 darwin arm64 workspaces/false}"
+export npm_config_workspaces=false
+export npm_config_registry="${npm_config_registry:-https://registry.npmjs.org/}"
+export NEXT_TELEMETRY_DISABLED="${NEXT_TELEMETRY_DISABLED:-1}"
+# Under launchd on macOS 26, Node 22 can spend minutes serializing V8 compile
+# cache before Next binds the port. Disable it for the always-on local service.
+export NODE_DISABLE_COMPILE_CACHE="${NODE_DISABLE_COMPILE_CACHE:-1}"
+# The launchd service is the local web origin for Cloudflare. It must bind the
+# login/UI port first; local agent workers can be started separately when needed.
+if [ "${MEMROOS_LAUNCHD_ALLOW_OPENCODE:-0}" != "1" ]; then
+  export MEMROOS_ENABLE_OPENCODE=false
 fi
 
 # Preflight 1: stale scheduler lock.

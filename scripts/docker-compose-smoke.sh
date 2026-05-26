@@ -27,7 +27,7 @@ case "$MODE" in
     ;;
   --build)
     compose config --quiet
-    compose build memroos orchestration voice knowledge-mcp
+    compose build memroos
     ;;
   --up)
     trap 'compose down --remove-orphans -v >/dev/null 2>&1 || true' EXIT
