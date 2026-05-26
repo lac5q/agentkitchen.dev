@@ -101,6 +101,9 @@ export function speakableSchema(cssSelectors: string[]) {
 // This avoids the need for innerHTML assignment while still being server-rendered.
 export function JsonLd({ data }: { data: object }) {
   return (
-    <script type="application/ld+json">{serializeJsonLd(data)}</script>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(data) }}
+    />
   );
 }

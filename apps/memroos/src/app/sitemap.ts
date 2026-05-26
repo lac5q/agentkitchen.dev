@@ -22,9 +22,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let blogRoutes: MetadataRoute.Sitemap = [];
   try {
     // Dynamically import to avoid build errors before blog content exists
+    // @ts-expect-error — blog module may not exist during early builds
     const { getAllPostSlugs } = await import("@/lib/blog");
-    const slugs = getAllPostSlugs();
-    blogRoutes = slugs.map((slug) => ({
+    const slugs: string[] = getAllPostSlugs();
+    blogRoutes = slugs.map((slug: string) => ({
       url: `${BASE_URL}/blog/${slug}`,
       lastModified: new Date(),
       changeFrequency: "monthly" as const,
