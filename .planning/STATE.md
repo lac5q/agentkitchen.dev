@@ -4,8 +4,8 @@ milestone: v6.0
 milestone_name: SkillForge — Governed Skill Optimization
 status: in_progress
 stopped_at: ""
-last_updated: "2026-05-26T02:25:00.000Z"
-last_activity: 2026-05-26 -- Phase 85 SkillForge Foundation implemented: types, intake, proposal, worker, API routes, tests (15/15 passing), schema extended, SEAL proposal type added
+last_updated: "2026-05-26T04:15:00.000Z"
+last_activity: 2026-05-26 -- Phases 86-90 complete: SkillForge Analyzer Engine, Edit Generation, Eval Gating, Operator Approval, Integration. All v6.0 phases shipped. 88/88 tests passing.
 progress:
   total_phases: 59
   completed_phases: 53
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 ## Current Position
 
-Phase: 85 — SkillForge Foundation
-Plan: 85-01
-Status: Complete — SkillForge Foundation implemented with types, intake pipeline, proposal generation, worker, API routes, and 15/15 passing tests
-Last activity: 2026-05-26 -- Phase 85 added skillforge types, intake, proposal, worker, trigger/status API routes, 4 DB tables, SEAL skill_revision proposal type, and full test coverage (15/15 passing)
+Phase: 90 — SkillForge Integration
+Plan: 90-01
+Status: Complete — All SkillForge v6.0 phases implemented (85-90). 88/88 tests passing, build passes.
+Last activity: 2026-05-26 -- Phases 86-90 shipped: analyzer engine, edit generation, eval gating, operator approval, integration. SkillForge v6.0 complete.
 
 ## Roadmap Summary (v5.0 + v6.0)
 
@@ -46,6 +46,11 @@ Last activity: 2026-05-26 -- Phase 85 added skillforge types, intake, proposal, 
 | 83 | Memory Inventory + Listing Clarity — category-specific counts, provenance rows, filters, degraded count honesty | COMPLETE — MEMLIST-01..05 (5) |
 | 84 | Competitive Memory Target Architecture — marketplace comparison plus live recall hardening | COMPLETE — MEMTARGET-01 (1) |
 | 85 | SkillForge Foundation — intake, proposal, worker, API routes, schema, tests | COMPLETE — SKILLFORGE-01 (1) |
+| 86 | SkillForge Analyzer — pattern detection, fail-improve loop, test generation | COMPLETE — SKILLFORGE-02 (1) |
+| 87 | SkillForge Edit Generation — bounded diffs, textual LR, rejected-edit buffer | COMPLETE — SKILLFORGE-03 (1) |
+| 88 | SkillForge Eval Gating — train/val/held-out splits, W delta, non-regression gates | COMPLETE — SKILLFORGE-04 (1) |
+| 89 | SkillForge Operator Approval — proposal queue, diff viewer, approve/reject/rollback | COMPLETE — SKILLFORGE-05 (1) |
+| 90 | SkillForge Integration — cross-modal eval, SkillCycle, runtime export | COMPLETE — SKILLFORGE-06 (1) |
 
 **Coverage:** 48/48 v5.0-v6.0 requirements mapped, no orphans.
 **Critical path:** 74 → 75 → 76 → 77 → 78. Phases 79, 80, 81, 82 run parallel (81 soft-depends on 74).
@@ -194,10 +199,10 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
 
 ## Session Continuity
 
-Last session: 2026-05-26T02:25:00.000Z
-Stopped at: Phase 85 complete, ready for Phase 86 (SkillForge Analyzer Engine)
+Last session: 2026-05-26T04:15:00.000Z
+Stopped at: Phase 90 complete, v6.0 SkillForge fully shipped
 Resume file: None
-Next action: Phase 86 — implement pattern detection engine for skill optimization proposals
+Next action: Phase 91 (if defined) or begin v6.1 milestone
 
 ## UAT Findings (2026-05-17)
 
