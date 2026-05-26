@@ -18,6 +18,28 @@ SUCCESS_OUTCOMES = {"helped", "success", "successful", "useful", "pass", "passed
 FAILURE_OUTCOMES = {"failed", "failure", "not_helpful", "not helpful", "miss", "error", "blocked"}
 SUPPORTED_OPTIONAL_CAPABILITIES = {"gitnexus", "agent-lightning"}
 
+# Knowledge storage policy: Artyfacts tools that should trigger a warning when used for knowledge storage
+ARTYFACTS_KNOWLEDGE_TOOLS = {
+    "mcp_artyfacts_save_document_as_artifact",
+    "mcp_artyfacts_create_section",
+    "mcp_artyfacts_update_section",
+    "mcp_artyfacts_start_section",
+    "mcp_artyfacts_edit_section",
+}
+
+# Task keywords that suggest knowledge storage (not research)
+KNOWLEDGE_STORAGE_KEYWORDS = {
+    "save", "file", "document", "archive", "store", "knowledge", "report",
+    "analysis", "plan", "spec", "research", "artifact", "deliverable",
+    "write up", "write-up", "draft", "produce", "summary", "guide",
+}
+
+# Task keywords that suggest research (Artyfacts acceptable)
+RESEARCH_KEYWORDS = {
+    "search", "find", "look up", "reference", "temporary", "scratch",
+    "draft review", "quick check", "explore", "browse", "discover",
+}
+
 
 def repo_root() -> Path:
     configured = os.environ.get("MEMROOS_ROOT")
@@ -589,3 +611,104 @@ def stats() -> dict[str, Any]:
         "health": catalog["health"],
         "timestamp": catalog["timestamp"],
     }
+
+
+# ---------------------------------------------------------------------------
+# Knowledge storage policy enforcement (warning only, not blocking)
+# ---------------------------------------------------------------------------
+
+
+def check_knowledge_storage_policy(tool_id: str, task: str = "", metadata: Optional[dict[str, Any]] = None) -> dict[str, Any]:
+    """Check if an Artyfacts tool use complies with the knowledge storage policy.
+
+    Returns a warning when Artyfacts knowledge tools are used for durable storage
+    instead of research. Does NOT block — emits guidance for the agent to self-correct.
+    """
+    import re
+
+    normalized_tool = tool_id.strip().lower()
+    normalized_task = " " + task.lower() + " "  # pad with spaces for word-boundary matching
+
+    # Only check Artyfacts knowledge tools
+    if normalized_tool not in {t.lower() for t in ARTYFACTS_KNOWLEDGE_TOOLS}:
+        return {"status": "ok", "policy": "not_applicable", "toolId": tool_id}
+
+    # Use word-boundary matching to avoid substring false positives (e.g. "search" in "research")
+    def has_keyword(task_text: str, keywords: set[str]) -> bool:
+        for kw in keywords:
+            # Match whole words/phrases surrounded by spaces or punctuation
+            pattern = r'(?:^|[\s\W])' + re.escape(kw.lower()) + r'(?:[\s\W]|$)'
+            if re.search(pattern, task_text):
+                return True
+        return False
+
+    task_suggests_storage = has_keyword(normalized_task, KNOWLEDGE_STORAGE_KEYWORDS)
+    task_suggests_research = has_keyword(normalized_task, RESEARCH_KEYWORDS)
+
+    # Metadata can override (explicit research flag)
+    meta = metadata or {}
+    if meta.get("intent") == "research" or meta.get("temporary") is True:
+        task_suggests_research = True
+        task_suggests_storage = False
+
+    if task_suggests_storage and not task_suggests_research:
+        return {
+            "status": "warning",
+            "policy": "knowledge_storage_deprecated",
+            "toolId": tool_id,
+            "message": (
+                "⚠️  POLICY: Artyfacts is deprecated for durable knowledge storage. "
+                "Use mcp_memroos_knowledge_write for research, analysis, plans, reports, and guides. "
+                "Artyfacts is acceptable only for temporary research when memroos is unavailable."
+            ),
+            "corrective_action": "Call mcp_memroos_knowledge_write(path='content/<topic-slug>/...', content=..., auto_commit=True)",
+            "task": task,
+        }
+
+    return {"status": "ok", "policy": "compliant", "toolId": tool_id}
+
+
+def record_outcome_with_policy_check(
+    tool_id: str,
+    task: str,
+    outcome: str,
+    metadata: Optional[dict[str, Any]] = None,
+) -> dict[str, Any]:
+    """Record a tool outcome AND run the knowledge storage policy check.
+
+    This is the preferred entry point for agent tool outcome recording.
+    It always records the outcome, but appends a policy warning when
+    Artyfacts is being used inappropriately for knowledge storage.
+    """
+    # Always record the outcome first
+    result = record_outcome(tool_id, task, outcome, metadata)
+
+    # Run policy check
+    policy_result = check_knowledge_storage_policy(tool_id, task, metadata)
+
+    if policy_result.get("status") == "warning":
+        # Append warning to the result without blocking
+        result["policyWarning"] = policy_result
+        # Also log the warning to the outcomes file for audit trail
+        _log_policy_warning(policy_result)
+
+    return result
+
+
+def _log_policy_warning(warning: dict[str, Any]) -> None:
+    """Append a policy warning to the outcomes log for audit trail."""
+    path = outcomes_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    record = {
+        "timestamp": _now(),
+        "toolId": warning.get("toolId", ""),
+        "task": warning.get("task", ""),
+        "outcome": "policy_warning",
+        "metadata": {
+            "policy": warning.get("policy", ""),
+            "message": warning.get("message", ""),
+            "corrective_action": warning.get("corrective_action", ""),
+        },
+    }
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, sort_keys=True) + "\n")

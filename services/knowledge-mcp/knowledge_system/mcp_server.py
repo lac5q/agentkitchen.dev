@@ -617,11 +617,36 @@ def tool_record_outcome(
     outcome: str,
     metadata: Optional[dict] = None,
 ) -> dict:
-    """Record whether a selected tool helped so future discovery can improve."""
-    return tool_attention.record_outcome(
+    """Record whether a selected tool helped so future discovery can improve.
+
+    Also runs the knowledge storage policy check — warns (but does not block)
+    when Artyfacts is used for durable knowledge storage instead of research.
+    """
+    return tool_attention.record_outcome_with_policy_check(
         tool_id=tool_id,
         task=task,
         outcome=outcome,
+        metadata=metadata,
+    )
+
+
+@_mcp_tool
+def knowledge_policy_check(
+    tool_id: str,
+    task: str = "",
+    metadata: Optional[dict] = None,
+) -> dict:
+    """Check if a tool use complies with the knowledge storage policy.
+
+    Use BEFORE calling Artyfacts knowledge tools to verify the use case is
+    research-grade (acceptable) vs durable storage (deprecated).
+
+    Returns a warning with corrective_action when Artyfacts is being used
+    inappropriately. Does NOT block — purely advisory for agent self-correction.
+    """
+    return tool_attention.check_knowledge_storage_policy(
+        tool_id=tool_id,
+        task=task,
         metadata=metadata,
     )
 
