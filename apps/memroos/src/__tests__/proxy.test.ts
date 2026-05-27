@@ -51,6 +51,18 @@ describe("proxy", () => {
     expect(await response.text()).toBe("");
   });
 
+  it("lets agent-memory continuity routes handle their own local/operator authorization", async () => {
+    const response = await proxy(
+      new NextRequest("http://localhost:3002/api/agent-memory/capture", {
+        method: "POST",
+        headers: { host: "localhost:3002", "x-memroos-operator-key": "operator-key" },
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("");
+  });
+
   it("lets ChatGPT Action routes handle their own API key authorization", async () => {
     const response = await proxy(
       new NextRequest("https://app.memroos.test/api/chatgpt/actions/search", {

@@ -68,6 +68,8 @@ const ADMIN_ROUTES: Array<{ method?: string; pattern: RegExp }> = [
 
 const ROUTE_LOCAL_AUTH_API_ROUTES: Array<{ method?: string; pattern: RegExp }> = [
   { pattern: /^\/api\/chatgpt\/actions\// },
+  { method: "POST", pattern: /^\/api\/agent-memory\/capture$/ },
+  { method: "POST", pattern: /^\/api\/agent-memory\/handoff$/ },
   { method: "POST", pattern: /^\/api\/agents\/register$/ },
   { method: "POST", pattern: /^\/api\/dispatch$/ },
   { method: "POST", pattern: /^\/api\/heartbeat$/ },

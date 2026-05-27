@@ -15,6 +15,7 @@
 - Added operator-gated APIs:
   - `POST /api/agent-memory/capture`
   - `POST /api/agent-memory/handoff`
+- Added proxy allowlist coverage so the new machine-facing routes can reach their own local/operator authorization logic.
 - Added tests for library behavior and API flow.
 
 ## Product Meaning
@@ -23,8 +24,9 @@ AgentMemory's useful behavior is now a MemRoOS requirement and implementation pa
 
 ## Verification
 
-- `npm --prefix apps/memroos run test -- agent-memory`
+- `npm --prefix apps/memroos run test -- agent-memory proxy`
 - `npm --prefix apps/memroos run typecheck`
+- `npm --prefix apps/memroos run build`
 
 ## Follow-Ups
 

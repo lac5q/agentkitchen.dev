@@ -80,6 +80,30 @@ const mockAgents = [
     updatedAt: "2026-05-11T00:00:00Z",
     deregisteredAt: null,
   },
+  {
+    id: "ceo",
+    name: "CEO",
+    role: "CEO Agent",
+    platform: "codex",
+    protocol: "local",
+    status: "dormant",
+    lastHeartbeat: null,
+    currentTask: null,
+    lessonsCount: 0,
+    todayMemoryCount: 0,
+    location: "local",
+    isRemote: false,
+    latencyMs: null,
+    capabilities: [],
+    metadata: { source: "pmo-agents" },
+    host: null,
+    port: null,
+    healthEndpoint: null,
+    tunnelUrl: null,
+    createdAt: "2026-05-11T00:00:00Z",
+    updatedAt: "2026-05-11T00:00:00Z",
+    deregisteredAt: null,
+  },
 ];
 
 vi.mock("@/lib/api-client", () => ({
@@ -127,9 +151,34 @@ describe("AgentEngagementConsole", () => {
     expect(screen.getAllByText("Claude Sonnet Engineer").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Codex CLI").length).toBeGreaterThan(0);
     expect(screen.getByText("1 active / 2 registered")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Show system \(2\)/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Paperclip support agents/i })).not.toBeInTheDocument();
     expect(screen.queryByText("Paperclip")).not.toBeInTheDocument();
     expect(screen.queryByText("Paperclip orchestrator")).not.toBeInTheDocument();
+    expect(screen.queryByText("CEO")).not.toBeInTheDocument();
+    expect(screen.queryByText("CEO Agent")).not.toBeInTheDocument();
+  });
+
+  it("can explicitly show hidden Paperclip and PMO system agents", () => {
+    render(<AgentEngagementConsole />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Show system \(2\)/i }));
+
+    expect(screen.getByText("System / Paperclip")).toBeInTheDocument();
+    expect(screen.getByText("Paperclip")).toBeInTheDocument();
+    expect(screen.getByText("CEO")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Hide system/i })).toBeInTheDocument();
+  });
+
+  it("filters the agent roster by search text and status", () => {
+    render(<AgentEngagementConsole />);
+
+    fireEvent.change(screen.getByLabelText("Filter agents"), { target: { value: "codex" } });
+    expect(screen.queryByText("Claude Sonnet Engineer")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Codex CLI").length).toBeGreaterThan(0);
+
+    fireEvent.change(screen.getByLabelText("Filter by agent status"), { target: { value: "active" } });
+    expect(screen.getByText("No agents match the current filters.")).toBeInTheDocument();
   });
 
   it("runs diagnostics for primary agents without testing hidden Paperclip agents", async () => {

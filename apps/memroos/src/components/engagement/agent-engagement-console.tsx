@@ -8,6 +8,7 @@ import {
   MessageSquare,
   PhoneCall,
   RefreshCw,
+  Search,
   Send,
   TestTube2,
   Video,
@@ -118,9 +119,22 @@ function metadataSource(agent: RegisteredAgent): string {
   return typeof source === "string" ? source : "";
 }
 
+function metadataText(agent: RegisteredAgent): string {
+  try {
+    return JSON.stringify(agent.metadata ?? {}).toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
 function isPaperclipAgent(agent: RegisteredAgent): boolean {
-  const haystack = `${agent.id} ${agent.name} ${agent.role} ${metadataSource(agent)}`.toLowerCase();
-  return haystack.includes("paperclip");
+  const haystack = `${agent.id} ${agent.name} ${agent.role} ${metadataSource(agent)} ${metadataText(agent)}`.toLowerCase();
+  return (
+    haystack.includes("paperclip") ||
+    haystack.includes("pmo-agent") ||
+    haystack.includes("pmo_agents") ||
+    haystack.includes("pmo agents")
+  );
 }
 
 function isPrimaryAgent(agent: RegisteredAgent): boolean {
@@ -231,20 +245,13 @@ export function AgentEngagementConsole() {
   const { data: agentsData, isLoading: agentsLoading } = useAgents();
   const { data: delegationsData } = useDelegations(8);
   const agents = useMemo(() => (agentsData?.agents ?? []) as RegisteredAgent[], [agentsData?.agents]);
-  const rosterAgents = useMemo(() => agents.filter((agent) => !isPaperclipAgent(agent)), [agents]);
-  const primaryAgents = useMemo(() => rosterAgents.filter((agent) => agentGroup(agent) === "primary").sort(sortAgents), [rosterAgents]);
-  const directoryAgents = useMemo(() => rosterAgents.filter((agent) => agentGroup(agent) === "directory").sort(sortAgents), [rosterAgents]);
-  const activeAgents = useMemo(() => primaryAgents.filter((agent) => agent.status === "active"), [primaryAgents]);
-  const roster = useMemo(
-    () => [...primaryAgents, ...directoryAgents],
-    [directoryAgents, primaryAgents]
-  );
-  const defaultRoomIds = activeAgents.length > 0 ? activeAgents.map((agent) => agent.id) : roster.map((agent) => agent.id);
-  const defaultAgentId = activeAgents[0]?.id ?? roster[0]?.id ?? "";
 
   const [mode, setMode] = useState<Mode>("chat");
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [participants, setParticipants] = useState<string[] | null>(null);
+  const [showSupportAgents, setShowSupportAgents] = useState(false);
+  const [rosterQuery, setRosterQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<RegisteredAgent["status"] | "all">("all");
   const [message, setMessage] = useState("");
   const [standupFocus, setStandupFocus] = useState("");
   const [standupBlockers, setStandupBlockers] = useState("");
@@ -259,6 +266,28 @@ export function AgentEngagementConsole() {
   const [testError, setTestError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+
+  const supportAgents = useMemo(() => agents.filter(isPaperclipAgent), [agents]);
+  const rosterAgents = useMemo(() => {
+    const query = rosterQuery.trim().toLowerCase();
+    return agents
+      .filter((agent) => showSupportAgents || !isPaperclipAgent(agent))
+      .filter((agent) => statusFilter === "all" || agent.status === statusFilter)
+      .filter((agent) => {
+        if (!query) return true;
+        return `${agent.id} ${agent.name} ${agent.role} ${agent.platform} ${metadataSource(agent)}`.toLowerCase().includes(query);
+      });
+  }, [agents, rosterQuery, showSupportAgents, statusFilter]);
+  const primaryAgents = useMemo(() => rosterAgents.filter((agent) => agentGroup(agent) === "primary" && !isPaperclipAgent(agent)).sort(sortAgents), [rosterAgents]);
+  const directoryAgents = useMemo(() => rosterAgents.filter((agent) => agentGroup(agent) === "directory" && !isPaperclipAgent(agent)).sort(sortAgents), [rosterAgents]);
+  const supportRosterAgents = useMemo(() => rosterAgents.filter(isPaperclipAgent).sort(sortAgents), [rosterAgents]);
+  const activeAgents = useMemo(() => primaryAgents.filter((agent) => agent.status === "active"), [primaryAgents]);
+  const roster = useMemo(
+    () => [...primaryAgents, ...directoryAgents, ...supportRosterAgents],
+    [directoryAgents, primaryAgents, supportRosterAgents]
+  );
+  const defaultRoomIds = activeAgents.length > 0 ? activeAgents.map((agent) => agent.id) : roster.map((agent) => agent.id);
+  const defaultAgentId = activeAgents[0]?.id ?? roster[0]?.id ?? "";
 
   const selectedAgent = useMemo(
     () => roster.find((agent) => agent.id === (selectedAgentId || defaultAgentId)) ?? roster[0],
@@ -617,21 +646,72 @@ export function AgentEngagementConsole() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center text-sm font-semibold text-slate-950">
               Agent roster
-              <InfoTip text="Primary working agents are shown first. Paperclip support agents are excluded from this engagement roster and belong in the workflow map." />
+              <InfoTip text="Primary working agents are shown first. Paperclip and PMO support agents are hidden by default and belong in the workflow map unless you explicitly show system agents." />
             </h2>
             <Pill value={`${activeAgents.length} active / ${roster.length} registered`} />
           </div>
+          <div className="mb-3 space-y-2">
+            <label className="flex items-center gap-2 rounded-md border border-slate-200 bg-white px-2 py-1.5 text-xs text-stone-600">
+              <Search className="h-3.5 w-3.5 flex-shrink-0 text-stone-400" />
+              <input
+                type="search"
+                value={rosterQuery}
+                onChange={(event) => setRosterQuery(event.target.value)}
+                placeholder="Filter agents..."
+                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-stone-400"
+                aria-label="Filter agents"
+              />
+            </label>
+            <div className="grid grid-cols-[1fr_auto] gap-2">
+              <select
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value as RegisteredAgent["status"] | "all")}
+                className="h-8 rounded-md border border-slate-200 bg-white px-2 text-xs font-semibold text-stone-600 outline-none"
+                aria-label="Filter by agent status"
+              >
+                <option value="all">All statuses</option>
+                <option value="active">Active</option>
+                <option value="idle">Idle</option>
+                <option value="dormant">Dormant</option>
+                <option value="error">Error</option>
+              </select>
+              <button
+                type="button"
+                onClick={() => setShowSupportAgents((value) => !value)}
+                className={`h-8 rounded-md border px-2 text-xs font-semibold transition ${
+                  showSupportAgents
+                    ? "border-amber-300 bg-amber-50 text-amber-800"
+                    : "border-slate-200 bg-white text-stone-600 hover:bg-slate-50"
+                }`}
+              >
+                {showSupportAgents ? "Hide system" : `Show system (${supportAgents.length})`}
+              </button>
+            </div>
+          </div>
           {agentsLoading && <p className="text-sm text-stone-500">Loading agents...</p>}
           <div className="max-h-[34rem] space-y-2 overflow-y-auto pr-1">
-            <div className="space-y-2">
-              <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-500">Primary agents</p>
-              {primaryAgents.map(renderAgentCard)}
-            </div>
+            {primaryAgents.length > 0 && (
+              <div className="space-y-2">
+                <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-500">Primary agents</p>
+                {primaryAgents.map(renderAgentCard)}
+              </div>
+            )}
             {directoryAgents.length > 0 && (
               <div className="space-y-2 pt-2">
                 <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-500">Registered directory</p>
                 {directoryAgents.map(renderAgentCard)}
               </div>
+            )}
+            {showSupportAgents && supportRosterAgents.length > 0 && (
+              <div className="space-y-2 pt-2">
+                <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700">System / Paperclip</p>
+                {supportRosterAgents.map(renderAgentCard)}
+              </div>
+            )}
+            {!agentsLoading && roster.length === 0 && (
+              <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-stone-500">
+                No agents match the current filters.
+              </p>
             )}
           </div>
         </aside>

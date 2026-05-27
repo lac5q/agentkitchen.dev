@@ -3,14 +3,16 @@
 ## Commands
 
 ```bash
-npm --prefix apps/memroos run test -- agent-memory
+npm --prefix apps/memroos run test -- agent-memory proxy
 npm --prefix apps/memroos run typecheck
+npm --prefix apps/memroos run build
 ```
 
 ## Results
 
-- Agent-memory test slice: passed, 2 files, 4 tests.
+- Agent-memory and proxy test slice: passed, 3 files, 13 tests.
 - TypeScript typecheck: passed.
+- Next.js production build: passed.
 
 ## Coverage
 
@@ -19,3 +21,4 @@ npm --prefix apps/memroos run typecheck
 - Secret-like tokens are redacted from handoff-visible fields.
 - Duplicate captures are suppressed by stable capture hash.
 - API routes are operator-gated and verified through loopback route tests.
+- Proxy allows the machine-facing capture and handoff routes to reach their own local/operator authorization logic.
