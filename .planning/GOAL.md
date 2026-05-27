@@ -49,6 +49,7 @@ The product name stays `memroos.dev` for now. The positioning shifts from memroo
 - Retains: architecture decisions, incidents, test history, deploy fixes, repo patterns, runbooks.
 - Consumed by: debugging, code review, migrations, onboarding, incident response.
 - Proof: a new agent starts with the team's lived technical context.
+- Proof: an operator can stop work in one coding agent, switch to another, and continue from a MemRoOS handoff pack that preserves task state, decision intent, sources, diffs, errors, and verification history.
 
 ## Development Process Goal
 
