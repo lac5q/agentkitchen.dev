@@ -21,7 +21,7 @@ import type { RegisteredAgent } from "@/types";
 
 type Mode = "chat" | "room";
 type ChatMessage = { role: "user" | "assistant" | "system"; content: string; agentId?: string };
-type AgentGroup = "primary" | "directory" | "paperclip";
+type AgentGroup = "primary" | "directory";
 type SpeechRecognitionResultLike = ArrayLike<{ transcript?: string }>;
 type SpeechRecognitionEventLike = {
   results: ArrayLike<SpeechRecognitionResultLike>;
@@ -128,7 +128,6 @@ function isPrimaryAgent(agent: RegisteredAgent): boolean {
 }
 
 function agentGroup(agent: RegisteredAgent): AgentGroup {
-  if (isPaperclipAgent(agent)) return "paperclip";
   if (isPrimaryAgent(agent)) return "primary";
   return "directory";
 }
@@ -232,13 +231,13 @@ export function AgentEngagementConsole() {
   const { data: agentsData, isLoading: agentsLoading } = useAgents();
   const { data: delegationsData } = useDelegations(8);
   const agents = useMemo(() => (agentsData?.agents ?? []) as RegisteredAgent[], [agentsData?.agents]);
-  const primaryAgents = useMemo(() => agents.filter((agent) => agentGroup(agent) === "primary").sort(sortAgents), [agents]);
-  const directoryAgents = useMemo(() => agents.filter((agent) => agentGroup(agent) === "directory").sort(sortAgents), [agents]);
-  const paperclipAgents = useMemo(() => agents.filter((agent) => agentGroup(agent) === "paperclip").sort(sortAgents), [agents]);
+  const rosterAgents = useMemo(() => agents.filter((agent) => !isPaperclipAgent(agent)), [agents]);
+  const primaryAgents = useMemo(() => rosterAgents.filter((agent) => agentGroup(agent) === "primary").sort(sortAgents), [rosterAgents]);
+  const directoryAgents = useMemo(() => rosterAgents.filter((agent) => agentGroup(agent) === "directory").sort(sortAgents), [rosterAgents]);
   const activeAgents = useMemo(() => primaryAgents.filter((agent) => agent.status === "active"), [primaryAgents]);
   const roster = useMemo(
-    () => [...primaryAgents, ...directoryAgents, ...paperclipAgents],
-    [directoryAgents, paperclipAgents, primaryAgents]
+    () => [...primaryAgents, ...directoryAgents],
+    [directoryAgents, primaryAgents]
   );
   const defaultRoomIds = activeAgents.length > 0 ? activeAgents.map((agent) => agent.id) : roster.map((agent) => agent.id);
   const defaultAgentId = activeAgents[0]?.id ?? roster[0]?.id ?? "";
@@ -258,13 +257,12 @@ export function AgentEngagementConsole() {
   const [checks, setChecks] = useState<Record<string, AgentCheck>>({});
   const [testing, setTesting] = useState(false);
   const [testError, setTestError] = useState<string | null>(null);
-  const [paperclipOpen, setPaperclipOpen] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
 
   const selectedAgent = useMemo(
-    () => agents.find((agent) => agent.id === (selectedAgentId || defaultAgentId)) ?? roster[0],
-    [agents, defaultAgentId, roster, selectedAgentId]
+    () => roster.find((agent) => agent.id === (selectedAgentId || defaultAgentId)) ?? roster[0],
+    [defaultAgentId, roster, selectedAgentId]
   );
   const selectedId = selectedAgent?.id ?? "";
   const selectedLabel = selectedAgent ? formatAgent(selectedAgent) : "No agent selected";
@@ -619,7 +617,7 @@ export function AgentEngagementConsole() {
           <div className="mb-3 flex items-center justify-between">
             <h2 className="flex items-center text-sm font-semibold text-slate-950">
               Agent roster
-              <InfoTip text="Primary working agents are shown first. Paperclip support agents are kept in their own section so they are not tested or added to the room unless selected." />
+              <InfoTip text="Primary working agents are shown first. Paperclip support agents are excluded from this engagement roster and belong in the workflow map." />
             </h2>
             <Pill value={`${activeAgents.length} active / ${roster.length} registered`} />
           </div>
@@ -633,19 +631,6 @@ export function AgentEngagementConsole() {
               <div className="space-y-2 pt-2">
                 <p className="px-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-stone-500">Registered directory</p>
                 {directoryAgents.map(renderAgentCard)}
-              </div>
-            )}
-            {paperclipAgents.length > 0 && (
-              <div className="space-y-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setPaperclipOpen((open) => !open)}
-                  className="flex w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-left text-xs font-semibold text-stone-700"
-                >
-                  <span>Paperclip support agents</span>
-                  <span>{paperclipAgents.length} {paperclipOpen ? "shown" : "hidden"}</span>
-                </button>
-                {paperclipOpen && paperclipAgents.map(renderAgentCard)}
               </div>
             )}
           </div>

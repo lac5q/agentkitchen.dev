@@ -121,13 +121,14 @@ describe("AgentEngagementConsole", () => {
     expect(screen.getAllByText("Claude Sonnet Engineer").length).toBeGreaterThan(0);
   });
 
-  it("keeps dormant registered agents visible when active agents exist", () => {
+  it("keeps dormant registered agents visible and excludes Paperclip agents from the roster", () => {
     render(<AgentEngagementConsole />);
 
     expect(screen.getAllByText("Claude Sonnet Engineer").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Codex CLI").length).toBeGreaterThan(0);
-    expect(screen.getByText("1 active / 3 registered")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Paperclip support agents/i })).toBeInTheDocument();
+    expect(screen.getByText("1 active / 2 registered")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Paperclip support agents/i })).not.toBeInTheDocument();
+    expect(screen.queryByText("Paperclip")).not.toBeInTheDocument();
     expect(screen.queryByText("Paperclip orchestrator")).not.toBeInTheDocument();
   });
 
