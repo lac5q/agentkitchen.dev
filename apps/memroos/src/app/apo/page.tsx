@@ -88,6 +88,7 @@ function ApoPageContent() {
           APO is generating proposals, but none are awaiting review right now. Latest run:{" "}
           <span className="font-semibold">{stats.lastRun ? new Date(stats.lastRun).toLocaleString() : "unknown"}</span>;{" "}
           {stats.archivedProposals} archived proposal{stats.archivedProposals === 1 ? "" : "s"} are available under Archived.
+          Approval buttons only appear on Pending proposals; archived proposals are already implemented audit history.
         </div>
       )}
 

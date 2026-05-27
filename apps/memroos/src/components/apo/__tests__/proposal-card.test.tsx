@@ -74,6 +74,7 @@ describe("ProposalCard", () => {
     render(<ProposalCard proposal={{ ...pendingProposal, status: "archived" }} onClick={vi.fn()} />);
 
     expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+    expect(screen.getAllByText("Implemented").length).toBeGreaterThan(0);
   });
 
   it("shows implemented tracking details for archived proposals", () => {
@@ -97,7 +98,7 @@ describe("ProposalCard", () => {
       />
     );
 
-    expect(screen.getByText("Implemented")).toBeInTheDocument();
+    expect(screen.getAllByText("Implemented").length).toBeGreaterThan(0);
     expect(screen.getByText("applied")).toBeInTheDocument();
   });
 });

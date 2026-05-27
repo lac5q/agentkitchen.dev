@@ -142,7 +142,7 @@ export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
             </p>
           )}
         </div>
-        {isPending && (
+        {isPending ? (
           <button
             type="button"
             onClick={handleApprove}
@@ -151,6 +151,17 @@ export function ProposalCard({ proposal, onClick }: ProposalCardProps) {
           >
             {approveProposal.isPending ? "Approving…" : "Approve"}
           </button>
+        ) : (
+          <span
+            className={[
+              "shrink-0 rounded-md border px-3 py-1.5 text-xs font-semibold",
+              isApproved
+                ? "border-cyan-200 bg-cyan-50 text-cyan-700"
+                : "border-emerald-200 bg-emerald-50 text-emerald-700",
+            ].join(" ")}
+          >
+            {isApproved ? "Queued" : "Implemented"}
+          </span>
         )}
       </div>
     </Card>

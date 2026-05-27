@@ -298,6 +298,9 @@ export function AgentEngagementConsole() {
   const roomParticipantIds = participants ?? defaultRoomIds;
   const roomParticipantLabel = `${roomParticipantIds.length} agent${roomParticipantIds.length === 1 ? "" : "s"}`;
   const recentDelegations = delegationsData?.delegations ?? [];
+  const visibleHistory = mode === "chat"
+    ? history.filter((entry) => entry.agentId === selectedId && entry.role !== "system")
+    : history;
 
   function toggleParticipant(agentId: string) {
     setParticipants((current) =>
@@ -366,7 +369,7 @@ export function AgentEngagementConsole() {
         body: JSON.stringify({
           message: text,
           agentId: selectedId,
-          history: history
+          history: visibleHistory
             .filter((entry) => entry.role !== "system")
             .slice(-10)
             .map((entry) => ({ role: entry.role, content: entry.content })),
@@ -873,14 +876,14 @@ export function AgentEngagementConsole() {
               )}
 
               <div className="min-h-56 max-h-80 space-y-2 overflow-y-auto rounded-md border border-slate-200 bg-white p-3">
-                {history.length === 0 ? (
+                {visibleHistory.length === 0 ? (
                   <p className="py-14 text-center text-sm text-stone-500">
                     {mode === "room"
                       ? "Run the 15-minute standup or start a conference round to let each selected agent take a turn."
                       : "Send a direct prompt or speak to the selected agent."}
                   </p>
                 ) : (
-                  history.slice(-10).map((entry, index) => (
+                  visibleHistory.slice(-10).map((entry, index) => (
                     <div
                       key={`${entry.role}-${index}`}
                       className={`rounded-md border px-3 py-2 text-sm ${

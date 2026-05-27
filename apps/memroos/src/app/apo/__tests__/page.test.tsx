@@ -94,4 +94,10 @@ describe("ApoPage", () => {
 
     expect(screen.getByText("ceo")).toBeInTheDocument();
   });
+
+  it("explains why archived proposals do not show approval buttons", async () => {
+    render(<ApoPage />);
+
+    expect(await screen.findByText(/approval buttons only appear on pending proposals/i)).toBeInTheDocument();
+  });
 });

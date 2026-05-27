@@ -245,4 +245,33 @@ describe("AgentEngagementConsole", () => {
     expect(screen.getByRole("button", { name: /Start conference round/i })).toBeInTheDocument();
     expect(screen.getByText(/Room session/i)).toBeInTheDocument();
   });
+
+  it("scopes direct chat history and payload to the selected agent", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(chatStream("Claude response"))
+      .mockResolvedValueOnce(chatStream("Codex response"));
+
+    render(<AgentEngagementConsole />);
+
+    fireEvent.change(screen.getByLabelText("Direct message"), { target: { value: "first" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Claude response")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getAllByText("Codex CLI")[0].closest("button") as HTMLButtonElement);
+
+    expect(screen.queryByText("Claude response")).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Direct message"), { target: { value: "second" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send message" }));
+
+    await waitFor(() => {
+      const [, init] = vi.mocked(fetch).mock.calls[1];
+      const body = JSON.parse(String(init?.body));
+      expect(body.agentId).toBe("codex-cli-agent");
+      expect(body.history).toEqual([]);
+      expect(screen.getByText("Codex response")).toBeInTheDocument();
+    });
+  });
 });
