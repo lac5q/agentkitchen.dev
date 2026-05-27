@@ -33,6 +33,7 @@
 - [x] **Phase 88: SkillForge Evaluation** — SKILLFORGE-04; train/val/held-out splits, W delta, behavioral eval
 - [x] **Phase 89: SkillForge Governance** — SKILLFORGE-05; operator UI, approval gate, rollback handles
 - [x] **Phase 90: SkillForge Integration** — SKILLFORGE-06; cross-modal eval, SkillCycle, runtime export
+- [x] **Phase 96: Agent Memory Continuity** — AGENTMEM-FOLLOWUP-01; MemRoOS-native coding-agent capture, handoff packs, vaulting, redaction, duplicate suppression, and API tests
 
 Full v6.0 detail in the `## v6.0 SkillForge — Governed Skill Optimization` section below.
 
@@ -1149,6 +1150,21 @@ Plans:
   4. Drift between local and cloud judges is monitored.
 **Plans**: 0/1 complete
 **UI hint**: no
+
+### Phase 96: Agent Memory Continuity
+**Goal**: Replace AgentMemory-style local capture with MemRoOS-native coding-agent session capture and cross-agent handoff packs.
+**Depends on**: Phase 74, Phase 76, Phase 81
+**Requirements**: AGENTMEM-FOLLOWUP-01
+**Status**: Complete
+**Completed**: 2026-05-27
+**Success Criteria**:
+  1. Coding-agent session captures write structured state plus sealed raw trace artifacts.
+  2. Durable memory candidates extract task state, decision intent, source pointers, lessons, runbook hints, and verification results.
+  3. Handoff packs let one agent resume another agent's task by task id, session id, or source agent.
+  4. Secret-like content is redacted from handoff packs while sealed raw vault evidence remains replayable by authorized paths.
+  5. Duplicate captures are suppressed by stable capture hash.
+**Plans**: 1/1 complete
+**UI hint**: API-first; future UI can render capture health and handoff previews from the new tables.
 
 ### v6.1 Progress
 

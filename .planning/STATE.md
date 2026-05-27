@@ -4,8 +4,8 @@ milestone: v6.0
 milestone_name: SkillForge — Governed Skill Optimization
 status: in_progress
 stopped_at: ""
-last_updated: "2026-05-26T04:47:00.000Z"
-last_activity: 2026-05-26 -- Phases 91-95 complete: Dream Cycle, Skill Marketplace, Multi-Agent Orchestration, Behavioral W-Lift v2, Self-Hosted Eval Cluster. All v6.1 phases shipped. 65/65 tests passing.
+last_updated: "2026-05-27T07:20:00.000Z"
+last_activity: 2026-05-27 -- Phase 96 complete: Agent Memory Continuity shipped MemRoOS-native coding-agent capture and handoff packs; targeted tests and typecheck passing.
 milestone: v6.1
 milestone_name: SkillForge Autonomy — Dream Cycle + Marketplace + Multi-Agent + Behavioral Eval + Local Judge
 progress:
@@ -27,18 +27,18 @@ See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 ## Current Position
 
-Phase: 95 — Self-Hosted Eval Cluster
-Plan: 95-01
-Status: Complete — All SkillForge v6.1 phases implemented (91-95). 65/65 tests passing, build passes.
-Last activity: 2026-05-26 -- Phases 91-95 complete: Dream Cycle, Skill Marketplace, Multi-Agent Orchestration, Behavioral W-Lift v2, Self-Hosted Eval Cluster.
-Next action: Phase 96 (if defined) or begin v6.2 milestone
+Phase: 96 — Agent Memory Continuity
+Plan: 96-01
+Status: Complete — MemRoOS-native coding-agent capture and handoff packs implemented for AGENTMEM-FOLLOWUP-01.
+Last activity: 2026-05-27 -- Phase 96 complete with schema, capture/handoff APIs, vaulting, redaction, duplicate suppression, and tests.
+Next action: deploy/restart MemRoOS and wire future UI capture-health panels if desired.
 
 ## Session Continuity
 
-Last session: 2026-05-26T04:47:00.000Z
-Stopped at: Phase 95 complete, v6.1 SkillForge Autonomy fully shipped
+Last session: 2026-05-27T07:20:00.000Z
+Stopped at: Phase 96 complete, Agent Memory Continuity shipped
 Resume file: None
-Next action: Phase 96 or v6.2 milestone
+Next action: deploy/restart MemRoOS and optional UI polish for capture health
 
 ## Roadmap Summary (v5.0 + v6.0)
 
@@ -66,6 +66,7 @@ Next action: Phase 96 or v6.2 milestone
 || 93 | Multi-Agent Orchestration — cross-agent skill sharing via A2A | COMPLETE — MULTIAGENT-01 (1) |
 || 94 | Behavioral W-Lift v2 — true instruction/skill behavioral eval | COMPLETE — BEHAVIORAL-01 (1) |
 || 95 | Self-Hosted Eval Cluster — local judge, Ollama/vLLM support | COMPLETE — LOCALJUDGE-01 (1) |
+| 96 | Agent Memory Continuity — MemRoOS-native coding-agent capture and handoff packs | COMPLETE — AGENTMEM-FOLLOWUP-01 (1) |
 
 **Coverage:** 48/48 v5.0-v6.0 requirements mapped, no orphans.
 **Critical path:** 74 → 75 → 76 → 77 → 78. Phases 79, 80, 81, 82 run parallel (81 soft-depends on 74).
@@ -206,18 +207,18 @@ have plan dirs + code (lib/auth/, /api/auth/, login/register) — v3 direction.
   via the modeled fixed-harness delta. `agent_instruction_patch`,
   ## Current Position
 
-  Phase: 95 — Self-Hosted Eval Cluster
-  Plan: 95-01
-  Status: Complete — All SkillForge v6.1 phases implemented (91-95). 65/65 tests passing, build passes.
-  Last activity: 2026-05-26 -- Phases 91-95 complete: Dream Cycle, Skill Marketplace, Multi-Agent Orchestration, Behavioral W-Lift v2, Self-Hosted Eval Cluster.
-  Next action: Phase 96 (if defined) or begin v6.2 milestone
+  Phase: 96 — Agent Memory Continuity
+  Plan: 96-01
+  Status: Complete — MemRoOS-native coding-agent capture and handoff packs implemented.
+  Last activity: 2026-05-27 -- AGENTMEM-FOLLOWUP-01 shipped with schema, APIs, tests, and typecheck.
+  Next action: deploy/restart MemRoOS and optional UI polish for capture health
 
   ## Session Continuity
 
-  Last session: 2026-05-26T04:47:00.000Z
-  Stopped at: Phase 95 complete, v6.1 SkillForge Autonomy fully shipped
+  Last session: 2026-05-27T07:20:00.000Z
+  Stopped at: Phase 96 complete, Agent Memory Continuity shipped
   Resume file: None
-  Next action: Phase 96 or v6.2 milestone
+  Next action: deploy/restart MemRoOS and optional UI polish for capture health
 
 ## UAT Findings (2026-05-17)
 

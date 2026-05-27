@@ -933,6 +933,96 @@ export function initSchema(db: Database.Database): void {
       ON task_evidence_bundles(tenant_id, status, updated_at DESC);
   `);
 
+  // AGENTMEM-FOLLOWUP-01: MemRoOS-native coding-agent continuity capture.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agent_session_captures (
+      id                       TEXT PRIMARY KEY,
+      tenant_id                TEXT NOT NULL DEFAULT 'default-tenant'
+                               REFERENCES tenants(id),
+      source_agent_id          TEXT NOT NULL,
+      runtime                  TEXT NOT NULL,
+      project                  TEXT,
+      repo_path                TEXT,
+      session_id               TEXT NOT NULL,
+      task_id                  TEXT,
+      status                   TEXT NOT NULL DEFAULT 'captured'
+                               CHECK(status IN ('captured','handoff_ready','failed','ignored')),
+      capture_health           TEXT NOT NULL DEFAULT 'ok'
+                               CHECK(capture_health IN ('ok','redacted','warning','failed')),
+      model_route_json         TEXT NOT NULL DEFAULT '{}',
+      summary                  TEXT NOT NULL DEFAULT '',
+      decision_intent_json     TEXT NOT NULL DEFAULT '{}',
+      sources_json             TEXT NOT NULL DEFAULT '[]',
+      files_json               TEXT NOT NULL DEFAULT '[]',
+      commands_json            TEXT NOT NULL DEFAULT '[]',
+      errors_json              TEXT NOT NULL DEFAULT '[]',
+      verification_json        TEXT NOT NULL DEFAULT '[]',
+      metadata_json            TEXT NOT NULL DEFAULT '{}',
+      raw_artifact_id          TEXT REFERENCES raw_artifacts(id),
+      capture_hash             TEXT NOT NULL,
+      captured_at              TEXT NOT NULL,
+      updated_at               TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS agent_session_captures_task
+      ON agent_session_captures(tenant_id, task_id, captured_at DESC);
+    CREATE INDEX IF NOT EXISTS agent_session_captures_session
+      ON agent_session_captures(tenant_id, session_id, captured_at DESC);
+    CREATE INDEX IF NOT EXISTS agent_session_captures_agent
+      ON agent_session_captures(tenant_id, source_agent_id, captured_at DESC);
+    CREATE UNIQUE INDEX IF NOT EXISTS agent_session_captures_hash
+      ON agent_session_captures(tenant_id, capture_hash)
+      WHERE capture_hash <> '';
+
+    CREATE TABLE IF NOT EXISTS agent_memory_candidates (
+      id                TEXT PRIMARY KEY,
+      tenant_id         TEXT NOT NULL DEFAULT 'default-tenant'
+                        REFERENCES tenants(id),
+      capture_id        TEXT NOT NULL REFERENCES agent_session_captures(id) ON DELETE CASCADE,
+      agent_id          TEXT NOT NULL,
+      memory_type       TEXT NOT NULL
+                        CHECK(memory_type IN ('decision_intent','task_state','lesson','runbook','source_pointer','verification')),
+      content           TEXT NOT NULL,
+      content_hash      TEXT NOT NULL,
+      status            TEXT NOT NULL DEFAULT 'candidate'
+                        CHECK(status IN ('candidate','promoted','rejected')),
+      metadata_json     TEXT NOT NULL DEFAULT '{}',
+      created_at        TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now')),
+      UNIQUE(capture_id, content_hash)
+    );
+    CREATE INDEX IF NOT EXISTS agent_memory_candidates_capture
+      ON agent_memory_candidates(capture_id, status);
+    CREATE INDEX IF NOT EXISTS agent_memory_candidates_agent
+      ON agent_memory_candidates(agent_id, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS agent_handoff_packs (
+      id                      TEXT PRIMARY KEY,
+      tenant_id               TEXT NOT NULL DEFAULT 'default-tenant'
+                              REFERENCES tenants(id),
+      from_agent_id           TEXT,
+      to_agent_id             TEXT,
+      task_id                 TEXT,
+      session_id              TEXT,
+      title                   TEXT NOT NULL,
+      status                  TEXT NOT NULL DEFAULT 'ready'
+                              CHECK(status IN ('ready','consumed','expired','superseded')),
+      context_pack_json       TEXT NOT NULL,
+      source_capture_ids_json TEXT NOT NULL DEFAULT '[]',
+      token_budget            INTEGER NOT NULL DEFAULT 4000,
+      redaction_state         TEXT NOT NULL DEFAULT 'none'
+                              CHECK(redaction_state IN ('none','redacted','review_required')),
+      created_at              TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ','now'))
+    );
+    CREATE INDEX IF NOT EXISTS agent_handoff_packs_task
+      ON agent_handoff_packs(tenant_id, task_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS agent_handoff_packs_session
+      ON agent_handoff_packs(tenant_id, session_id, created_at DESC);
+  `);
+  try {
+    db.exec("ALTER TABLE agent_session_captures ADD COLUMN capture_hash TEXT NOT NULL DEFAULT ''");
+  } catch {
+    // Column already exists.
+  }
+
   // Skill promotion audit: MemRoOS-native suggestions from recent activity.
   db.exec(`
     CREATE TABLE IF NOT EXISTS skill_suggestions (
