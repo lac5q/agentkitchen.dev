@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { faqSchema, JsonLd } from "@/lib/schema";
 import { makeTitle, makeCanonical, BASE_URL } from "@/lib/metadata";
 
@@ -54,9 +55,9 @@ export default function SalesUseCasePage() {
       <JsonLd data={faqSchema(faqs)} />
       <main className="mx-auto max-w-4xl px-4 py-16">
         <nav className="mb-8 text-sm text-slate-500">
-          <a href="/" className="hover:text-slate-900">MemroOS</a>
+          <Link href="/" className="hover:text-slate-900">MemroOS</Link>
           {" / "}
-          <a href="/use-cases" className="hover:text-slate-900">Use Cases</a>
+          <Link href="/use-cases" className="hover:text-slate-900">Use Cases</Link>
           {" / "}
           <span>Sales</span>
         </nav>
@@ -108,12 +109,12 @@ export default function SalesUseCasePage() {
           >
             Get Started →
           </a>
-          <a
+          <Link
             href="/blog/sales-ai-agent-memory"
             className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-6 py-3 font-semibold hover:border-slate-400 transition-colors"
           >
             Read: Sales AI Memory Guide
-          </a>
+          </Link>
         </div>
       </main>
     </>

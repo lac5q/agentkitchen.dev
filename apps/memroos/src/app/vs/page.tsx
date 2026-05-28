@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { makeTitle, makeCanonical, BASE_URL } from "@/lib/metadata";
 import { COMPETITOR_SLUGS, getCompetitorData } from "./[competitor]/competitor-data";
 import { faqSchema, JsonLd } from "@/lib/schema";
@@ -31,7 +32,7 @@ export default function VsIndexPage() {
       <JsonLd data={faqSchema(faqs)} />
       <main className="mx-auto max-w-4xl px-4 py-16">
         <nav className="mb-8 text-sm text-slate-500">
-          <a href="/" className="hover:text-slate-900">MemroOS</a>
+          <Link href="/" className="hover:text-slate-900">MemroOS</Link>
           {" / "}
           <span>Comparisons</span>
         </nav>

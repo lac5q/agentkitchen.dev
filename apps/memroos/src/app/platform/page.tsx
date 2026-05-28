@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { softwareApplicationSchema, faqSchema, speakableSchema, JsonLd } from "@/lib/schema";
 import { makeTitle, makeCanonical, BASE_URL } from "@/lib/metadata";
 import { Brain, GitBranch, ShieldCheck, Database, Gauge, RefreshCw } from "lucide-react";
@@ -108,12 +109,12 @@ export default function PlatformPage() {
             >
               Get Started →
             </a>
-            <a
+            <Link
               href="/blog"
               className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-6 py-3 font-semibold hover:border-slate-400 transition-colors"
             >
               Read the Blog
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -144,12 +145,12 @@ export default function PlatformPage() {
             MemroOS scores 84/100 on the Marketplace Agentic Memory Benchmark — #1 among evaluated
             platforms.
           </p>
-          <a
+          <Link
             href="/blog/agentic-memory-benchmark"
             className="inline-flex items-center gap-2 rounded-lg bg-amber-600 text-white px-6 py-3 font-semibold hover:bg-amber-700 transition-colors"
           >
             View Benchmark →
-          </a>
+          </Link>
         </div>
       </main>
     </>

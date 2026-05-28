@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
   getCompetitorData,
   COMPETITOR_SLUGS,
@@ -76,7 +77,7 @@ export default async function CompetitorPage({ params }: Props) {
       <JsonLd data={breadcrumbSchema(breadcrumbs)} />
       <main className="mx-auto max-w-4xl px-4 py-16">
         <nav className="mb-8 text-sm text-slate-500">
-          <a href="/" className="hover:text-slate-900">MemroOS</a>
+          <Link href="/" className="hover:text-slate-900">MemroOS</Link>
           {" / "}
           <span>MemroOS vs {data.name}</span>
         </nav>

@@ -5,7 +5,7 @@ milestone_name: SkillForge — Governed Skill Optimization
 status: in_progress
 stopped_at: ""
 last_updated: "2026-05-27T07:20:00.000Z"
-last_activity: 2026-05-27 -- Phase 96 complete: Agent Memory Continuity shipped MemRoOS-native coding-agent capture and handoff packs; targeted tests and typecheck passing.
+last_activity: 2026-05-28 -- Phase 97 complete: meeting route contracts detect misfiled project meetings and verify Cordant qmd collection freshness.
 milestone: v6.1
 milestone_name: SkillForge Autonomy — Dream Cycle + Marketplace + Multi-Agent + Behavioral Eval + Local Judge
 progress:
@@ -27,18 +27,18 @@ See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 ## Current Position
 
-Phase: 96 — Agent Memory Continuity
-Plan: 96-01
-Status: Complete — MemRoOS-native coding-agent capture and handoff packs implemented for AGENTMEM-FOLLOWUP-01.
-Last activity: 2026-05-27 -- Phase 96 complete with schema, capture/handoff APIs, vaulting, redaction, duplicate suppression, and tests.
-Next action: deploy/restart MemRoOS and wire future UI capture-health panels if desired.
+Phase: 97 — Source Routing Contracts for Meeting Capture
+Plan: 97-01
+Status: Complete — MemRoOS knowledge indexing now fails on Cordant-looking meetings filed under the wrong project and verifies Cordant qmd freshness.
+Last activity: 2026-05-28 -- Phase 97 shipped with deterministic route contracts, regression tests, qmd refresh, and corrected May 27 Cordant corpus state.
+Next action: extend `DEFAULT_MEETING_ROUTE_CONTRACTS` as additional high-value project routing anchors emerge.
 
 ## Session Continuity
 
-Last session: 2026-05-27T07:20:00.000Z
-Stopped at: Phase 96 complete, Agent Memory Continuity shipped
+Last session: 2026-05-28T00:10:00.000-07:00
+Stopped at: Phase 97 complete after Cordant meeting routing incident
 Resume file: None
-Next action: deploy/restart MemRoOS and optional UI polish for capture health
+Next action: extend route contracts for more project anchors as needed
 
 ## Roadmap Summary (v5.0 + v6.0)
 
@@ -67,10 +67,11 @@ Next action: deploy/restart MemRoOS and optional UI polish for capture health
 || 94 | Behavioral W-Lift v2 — true instruction/skill behavioral eval | COMPLETE — BEHAVIORAL-01 (1) |
 || 95 | Self-Hosted Eval Cluster — local judge, Ollama/vLLM support | COMPLETE — LOCALJUDGE-01 (1) |
 | 96 | Agent Memory Continuity — MemRoOS-native coding-agent capture and handoff packs | COMPLETE — AGENTMEM-FOLLOWUP-01 (1) |
+| 97 | Source Routing Contracts for Meeting Capture — project routing, confidence/review state, qmd freshness proof | COMPLETE — CTX-FOLLOWUP-04 (1) |
 
-**Coverage:** 48/48 v5.0-v6.0 requirements mapped, no orphans.
+**Coverage:** 49/49 v5.0-v6.0+ requirements mapped, no orphans.
 **Critical path:** 74 → 75 → 76 → 77 → 78. Phases 79, 80, 81, 82 run parallel (81 soft-depends on 74).
-**Completed so far:** Phase 34 through Phase 85 (v2.0–v6.0 shipped through SkillForge Foundation).
+**Completed so far:** Phase 34 through Phase 97 shipped.
 
 ## Performance Metrics
 
@@ -82,6 +83,11 @@ Next action: deploy/restart MemRoOS and optional UI polish for capture health
 - Latest Phase 40 gate: docs link/content review, markdown grep checks, Memroos lint, and build passed
 
 ## Accumulated Context
+
+### Roadmap Evolution (2026-05-27)
+
+- Phase 97 added after the May 27 Cordant/Juan Spark meeting was captured in raw/global knowledge but misfiled under `projects/general`; permanent work tracks source-routing contracts, route confidence/review state, project qmd freshness proof, and operator visibility across raw capture, project promotion, qmd indexing, and app-level memory promotion.
+- Phase 97 completed with deterministic Cordant route signals in `scripts/check-knowledge-indexing.mjs`, regression tests, and qmd proof that the May 27 meeting now lives under `projects/cordant` and the `cordant` collection.
 
 ### Positioning Guardrails (2026-05-21)
 

@@ -34,6 +34,7 @@
 - [x] **Phase 89: SkillForge Governance** — SKILLFORGE-05; operator UI, approval gate, rollback handles
 - [x] **Phase 90: SkillForge Integration** — SKILLFORGE-06; cross-modal eval, SkillCycle, runtime export
 - [x] **Phase 96: Agent Memory Continuity** — AGENTMEM-FOLLOWUP-01; MemRoOS-native coding-agent capture, handoff packs, vaulting, redaction, duplicate suppression, and API tests
+- [x] **Phase 97: Source Routing Contracts for Meeting Capture** — CTX-FOLLOWUP-04; project-scoped meeting routing, confidence/review state, and source-to-qmd freshness proof; completed 2026-05-28
 
 Full v6.0 detail in the `## v6.0 SkillForge — Governed Skill Optimization` section below.
 
@@ -1059,6 +1060,29 @@ Plans:
 | 88 | v6.0 | 1/1 | Complete | 2026-05-26 |
 | 89 | v6.0 | 1/1 | Complete | 2026-05-26 |
 | 90 | v6.0 | 1/1 | Complete | 2026-05-26 |
+
+### Phase 97: Source Routing Contracts for Meeting Capture
+
+**Goal:** Make captured meetings impossible to silently misfile by treating source routing as an explicit MemRoOS contract: raw capture, inferred project, evidence signals, confidence, review state, and qmd collection freshness must all be visible.
+**Requirements**: CTX-FOLLOWUP-04
+**Depends on:** Phase 80, Phase 96
+**Prerequisite tasks**:
+  - Define source-routing contract fields for meeting artifacts: raw source handle, normalized title/date, attendee domains, inferred project, confidence, evidence signals, fallback body signals, and conflict state.
+  - Add regression fixtures for sparse-metadata captures, including the Cordant case where Spark only exposed Luis's personal Gmail and a generic strategic-alignment title.
+  - Surface captured-but-misfiled, globally searchable-only, project-collection-missing, and vector/episodic-not-promoted states in operator health.
+  - Wire repair paths so low-confidence or conflicting project routes enter review instead of defaulting silently to `general`.
+  - Verify qmd collection freshness for project-scoped meeting paths after ingestion and promotion.
+**Success Criteria**:
+  1. Every meeting capture exposes raw source evidence, project route, confidence, and routing evidence.
+  2. Low-confidence or conflicting routes are reviewable before they become durable project truth.
+  3. Project qmd collections show date-window freshness proof for newly captured meetings.
+  4. Known client regression fixtures include Cordant sparse Spark metadata and pass in CI.
+  5. Memory/operator surfaces distinguish raw capture, project promotion, qmd indexing, and app-level memory promotion.
+**Plans:** 1/1 complete
+**UI hint**: yes
+
+Plans:
+- [x] 97-01 Meeting Source Routing Contract — deterministic route contract, qmd freshness proof, and Cordant sparse-Spark regression coverage.
 
 ---
 

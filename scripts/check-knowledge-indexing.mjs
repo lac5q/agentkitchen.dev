@@ -64,6 +64,32 @@ const DEFAULT_MAPPINGS = [
   },
 ];
 
+export const DEFAULT_MEETING_ROUTE_CONTRACTS = [
+  {
+    id: "cordant-meetings",
+    expectedProject: "cordant",
+    collection: "cordant",
+    sourceSubdir: "projects/cordant",
+    minSignals: 2,
+    signals: [
+      "cordant",
+      "juan",
+      "lior",
+      "leor",
+      "sagi",
+      "sagin",
+      "kanaan",
+      "hermes",
+      "circle back",
+      "circleback",
+      "linear",
+      "perplexity",
+      "vps",
+      "eric",
+    ],
+  },
+];
+
 function toPosix(value) {
   return value.split(path.sep).join("/");
 }
@@ -161,6 +187,69 @@ export function buildExpectedUriVariants(files, uriRoot, collection) {
     const canonical = `qmd://${collection}/${qmdCanonicalRelativePath(relativePath)}`;
     return [...new Set([original, canonical])];
   });
+}
+
+function readText(filePath) {
+  try {
+    return fs.readFileSync(filePath, "utf8");
+  } catch {
+    return "";
+  }
+}
+
+function projectFromMeetingPath(filePath, knowledgeDir) {
+  const relative = toPosix(path.relative(normalizeFsPath(knowledgeDir), normalizeFsPath(filePath)));
+  const parts = relative.split("/");
+  if (parts.length < 4 || parts[0] !== "projects" || parts[2] !== "meetings") return null;
+  return parts[1];
+}
+
+export function inferMeetingRoute(filePath, content, contracts = DEFAULT_MEETING_ROUTE_CONTRACTS) {
+  const haystack = `${path.basename(filePath)}\n${content}`.toLowerCase();
+  let best = null;
+
+  for (const contract of contracts) {
+    const matchedSignals = contract.signals.filter((signal) => haystack.includes(signal.toLowerCase()));
+    if (matchedSignals.length < contract.minSignals) continue;
+
+    const confidence = Math.min(1, matchedSignals.length / Math.max(contract.minSignals + 2, 1));
+    const candidate = {
+      contractId: contract.id,
+      expectedProject: contract.expectedProject,
+      collection: contract.collection,
+      sourceSubdir: contract.sourceSubdir,
+      matchedSignals,
+      confidence,
+    };
+    if (!best || candidate.confidence > best.confidence) best = candidate;
+  }
+
+  return best;
+}
+
+export function findMeetingRouteIssues(files, knowledgeDir, contracts = DEFAULT_MEETING_ROUTE_CONTRACTS) {
+  const issues = [];
+  for (const filePath of files) {
+    const actualProject = projectFromMeetingPath(filePath, knowledgeDir);
+    if (!actualProject) continue;
+
+    const route = inferMeetingRoute(filePath, readText(filePath), contracts);
+    if (!route) continue;
+
+    if (actualProject !== route.expectedProject) {
+      issues.push({
+        type: "misfiled",
+        file: filePath,
+        actualProject,
+        expectedProject: route.expectedProject,
+        contractId: route.contractId,
+        confidence: route.confidence,
+        matchedSignals: route.matchedSignals,
+        message: `${toPosix(path.relative(normalizeFsPath(knowledgeDir), normalizeFsPath(filePath)))} looks like ${route.expectedProject} but is filed under ${actualProject}`,
+      });
+    }
+  }
+  return issues;
 }
 
 export function parseCollectionPath(output) {
@@ -366,6 +455,78 @@ function checkMapping(mapping, options, collectionLists, collectionShows) {
   return result;
 }
 
+function checkMeetingRouteContracts(options, collectionLists) {
+  const projectsRoot = path.join(options.knowledgeDir, "projects");
+  const result = {
+    checkedFiles: 0,
+    issues: [],
+    messages: [],
+  };
+
+  if (!fs.existsSync(projectsRoot)) {
+    result.messages.push(`meeting-routes: skipped; source folder does not exist (${projectsRoot})`);
+    return result;
+  }
+
+  const meetingFiles = selectRecentMarkdownFiles(
+    walkMarkdownFiles(projectsRoot).filter((file) => toPosix(file.path).includes("/meetings/")),
+    options.dates,
+    options.sinceMs
+  );
+  meetingFiles.splice(options.maxFilesPerMapping);
+  result.checkedFiles = meetingFiles.length;
+
+  if (meetingFiles.length === 0) {
+    result.messages.push(`meeting-routes: no recent project meeting files for ${options.dates.join(", ")}`);
+    return result;
+  }
+
+  result.issues.push(...findMeetingRouteIssues(meetingFiles, options.knowledgeDir));
+
+  for (const contract of DEFAULT_MEETING_ROUTE_CONTRACTS) {
+    const projectRoot = path.join(options.knowledgeDir, contract.sourceSubdir);
+    const projectFiles = meetingFiles.filter((file) => {
+      const actualProject = projectFromMeetingPath(file, options.knowledgeDir);
+      return actualProject === contract.expectedProject;
+    });
+    if (projectFiles.length === 0) continue;
+
+    if (!collectionLists.has(contract.collection)) {
+      collectionLists.set(contract.collection, qmd(["ls", contract.collection], options));
+    }
+    const listing = collectionLists.get(contract.collection);
+    if (!listing.ok) {
+      result.issues.push({
+        type: "project_collection_unreadable",
+        contractId: contract.id,
+        expectedProject: contract.expectedProject,
+        collection: contract.collection,
+        message: `${contract.id}: qmd ls '${contract.collection}' failed (${listing.stderr.trim() || listing.stdout.trim() || `exit ${listing.status}`})`,
+      });
+      continue;
+    }
+
+    const expectedUriGroups = buildExpectedUriVariants(projectFiles, projectRoot, contract.collection);
+    expectedUriGroups.forEach((variants, index) => {
+      if (variants.some((uri) => listing.stdout.includes(uri))) return;
+      result.issues.push({
+        type: "missing_project_collection",
+        file: projectFiles[index],
+        contractId: contract.id,
+        expectedProject: contract.expectedProject,
+        collection: contract.collection,
+        message: `${toPosix(path.relative(normalizeFsPath(options.knowledgeDir), normalizeFsPath(projectFiles[index])))} is filed under ${contract.expectedProject} but missing from qmd collection '${contract.collection}'`,
+      });
+    });
+  }
+
+  if (result.issues.length === 0) {
+    result.messages.push(`meeting-routes: ${meetingFiles.length} recent project meeting files passed routing contracts`);
+  }
+
+  return result;
+}
+
 function checkIndex(options) {
   const report = {
     ok: true,
@@ -373,6 +534,7 @@ function checkIndex(options) {
     dates: options.dates,
     pendingEmbeddings: null,
     mappings: [],
+    meetingRouteContracts: null,
     failures: [],
     warnings: [],
   };
@@ -406,6 +568,13 @@ function checkIndex(options) {
     }
   }
 
+  const routeContracts = checkMeetingRouteContracts(options, collectionLists);
+  report.meetingRouteContracts = routeContracts;
+  if (routeContracts.issues.length > 0) {
+    report.ok = false;
+    report.failures.push(...routeContracts.issues.map((issue) => `meeting-routes: ${issue.message}`));
+  }
+
   return report;
 }
 
@@ -432,6 +601,21 @@ function printReport(report) {
     }
     if (mapping.missing.length > 10) {
       console.log(`  - ...and ${mapping.missing.length - 10} more missing items`);
+    }
+  }
+
+  if (report.meetingRouteContracts) {
+    const contracts = report.meetingRouteContracts;
+    const state = contracts.issues.length > 0 ? "FAIL" : "OK";
+    console.log(`${state} meeting-routes: checked ${contracts.checkedFiles} recent project meeting files`);
+    for (const message of contracts.messages.slice(-2)) {
+      console.log(`  - ${message}`);
+    }
+    for (const issue of contracts.issues.slice(0, 10)) {
+      console.log(`  - ${issue.type}: ${issue.message}`);
+    }
+    if (contracts.issues.length > 10) {
+      console.log(`  - ...and ${contracts.issues.length - 10} more routing issues`);
     }
   }
 
