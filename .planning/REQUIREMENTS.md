@@ -305,16 +305,16 @@ Based on deep research of GBrain's skillify meta-skill, fail-improve loop, dream
 
 ### Skill Distribution (SKDIST)
 
-- [ ] **SKDIST-01**: `knowledge_workspace_call("skill-packs", "catalog")` must return a list of all skills from `knowledge/skills/` and `~/.memroos/skills/` (private, merged), each with: name, description, category, tags, auto-load flag. Optional `filter: "auto-load"` to return only auto-load skills.
-- [ ] **SKDIST-02**: `knowledge_workspace_call("skill-packs", "read", {"name": "<skill>"})` must return the full SKILL.md content for the named skill, searching both public and private skill directories.
-- [ ] **SKDIST-03**: Skills must support an `auto-load: true` frontmatter field. Only skills tagged `auto-load: true` are returned when `filter: "auto-load"` is passed to skill_catalog. Default is `false`.
-- [ ] **SKDIST-04**: Agent bootstrap convention documented in `AGENTS.md` standard: at session start, call `skill_catalog(filter: "auto-load")` and inline any returned skills. All other skills are loaded on-demand via `skill_read` when the agent determines they are needed.
+- [x] **SKDIST-01**: `knowledge_workspace_call("skill-packs", "catalog")` must return a list of all skills from `knowledge/skills/` and `~/.memroos/skills/` (private, merged), each with: name, description, category, tags, auto-load flag. Optional `filter: "auto-load"` to return only auto-load skills.
+- [x] **SKDIST-02**: `knowledge_workspace_call("skill-packs", "read", {"name": "<skill>"})` must return the full SKILL.md content for the named skill, searching both public and private skill directories.
+- [x] **SKDIST-03**: Skills must support an `auto-load: true` frontmatter field. Only skills tagged `auto-load: true` are returned when `filter: "auto-load"` is passed to skill_catalog. Default is `false`.
+- [x] **SKDIST-04**: Agent bootstrap convention documented in `AGENTS.md` standard: at session start, call `skill_catalog(filter: "auto-load")` and inline any returned skills. All other skills are loaded on-demand via `skill_read` when the agent determines they are needed.
 
 ### Private Config Layer (PRIVCONF)
 
 - [ ] **PRIVCONF-01**: `mcp_server.py` must load `~/.memroos/context-sources.local.json` if it exists and deep-merge it over the repo's `context-sources.config.json`. Private file is gitignored; repo file ships generic stubs.
 - [ ] **PRIVCONF-02**: `context-sources.config.json` must include a disabled `meet-recordings` source entry with `ingestCommand: "${MEETINGS_INGEST_COMMAND}"` — provider-agnostic, wired by the operator's private env.
-- [ ] **PRIVCONF-03**: `skill_catalog` must merge `~/.memroos/skills/` (private) with `knowledge/skills/` (public). Private skills are returned in catalog but not committed to the repo.
+- [x] **PRIVCONF-03**: `skill_catalog` must merge `~/.memroos/skills/` (private) with `knowledge/skills/` (public). Private skills are returned in catalog but not committed to the repo.
 
 ### Circleback Ingestion (CIRCLEBACK)
 

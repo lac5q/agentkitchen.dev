@@ -1212,7 +1212,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|----------|---------------|--------|-----------|
-| 98 | v6.2 | 0/1 | Pending | — |
+| 98 | v6.2 | 1/1 | Complete   | 2026-05-28 |
 | 99 | v6.2 | 0/1 | Pending | — |
 | 100 | v6.2 | 0/1 | Pending | — |
 | 101 | v6.2 | 0/1 | Pending | — |
