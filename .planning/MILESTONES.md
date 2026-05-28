@@ -1,5 +1,19 @@
 # Milestones
 
+## v6.2 Skill Distribution + Knowledge Gateway (Next)
+
+**Phases:** 98–102 | **Plans:** TBD
+
+**Scope:**
+
+1. **Skill Distribution Core (Phase 98)** — Implement `skill_catalog` + `skill_read` in `skill-packs` workspace; private `~/.memroos/skills/` merging; `auto-load` frontmatter convention.
+2. **Private Config Layer (Phase 99)** — `context-sources.local.json` overlay merge; generic `meet-recordings` slot with `${MEETINGS_INGEST_COMMAND}` hook.
+3. **Circleback Ingestion (Phase 100)** — Private ingest script + env wiring + nightly LaunchAgent for meeting transcript sync.
+4. **Memroos Troubleshooter Skill (Phase 101)** — `memroos-troubleshooter` skill with `auto-load: true`; `deep-research-subagents` frontmatter updated.
+5. **Public Documentation (Phase 102)** — `docs/skills.md`, `docs/integrations/meet-recordings.md`, `example-skill` template.
+
+---
+
 ## v2.5 Eval Engine + Self-Improvement Platform (Shipped: 2026-05-17)
 
 **Phases completed:** 6 phases, 7 plans, 0 tasks

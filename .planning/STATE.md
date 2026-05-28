@@ -1,19 +1,22 @@
 ---
 gsd_state_version: 1.0
+milestone: v6.2
+milestone_name: Skill Distribution + Knowledge Gateway
+status: in_progress
+stopped_at: ""
+last_updated: "2026-05-27T00:00:00.000Z"
+last_activity: 2026-05-27 -- v6.2 milestone created; phases 98-102 planned for skill distribution, private config layer, circleback ingestion, troubleshooter skill, and public docs.
 milestone: v6.0
 milestone_name: SkillForge — Governed Skill Optimization
 status: in_progress
-stopped_at: ""
-last_updated: "2026-05-27T07:20:00.000Z"
-last_activity: 2026-05-28 -- Phase 97 complete: meeting route contracts detect misfiled project meetings and verify Cordant qmd collection freshness.
 milestone: v6.1
 milestone_name: SkillForge Autonomy — Dream Cycle + Marketplace + Multi-Agent + Behavioral Eval + Local Judge
 progress:
-  total_phases: 59
+  total_phases: 64
   completed_phases: 53
   total_plans: 88
   completed_plans: 95
-  percent: 90
+  percent: 83
 ---
 
 # State: Memroos
@@ -23,22 +26,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-04 for v2.0)
 
 **Core value:** Any agent framework plugs into Memroos — and every agent, knowledge system, and skill becomes visible, connected, and self-improving.
-**Current focus:** v5.2 competitive memory target architecture is complete; next focus is deploy/communication and 30-day skill auto-promotion audit
+**Current focus:** v6.2 — Skill Distribution + Knowledge Gateway (phases 98-102)
 
 ## Current Position
 
-Phase: 97 — Source Routing Contracts for Meeting Capture
-Plan: 97-01
-Status: Complete — MemRoOS knowledge indexing now fails on Cordant-looking meetings filed under the wrong project and verifies Cordant qmd freshness.
-Last activity: 2026-05-28 -- Phase 97 shipped with deterministic route contracts, regression tests, qmd refresh, and corrected May 27 Cordant corpus state.
-Next action: extend `DEFAULT_MEETING_ROUTE_CONTRACTS` as additional high-value project routing anchors emerge.
+Phase: 98 — Skill Distribution Core
+Plan: —
+Status: Ready to plan — implement skill_catalog + skill_read in skill-packs workspace
+Next action: Run `/gsd-plan-phase 98` to start execution
 
 ## Session Continuity
 
-Last session: 2026-05-28T00:10:00.000-07:00
-Stopped at: Phase 97 complete after Cordant meeting routing incident
+Last session: 2026-05-27
+Stopped at: v6.2 milestone created; ready to plan Phase 98
 Resume file: None
-Next action: extend route contracts for more project anchors as needed
+Next action: /gsd-plan-phase 98
 
 ## Roadmap Summary (v5.0 + v6.0)
 

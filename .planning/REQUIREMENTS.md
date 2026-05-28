@@ -301,6 +301,40 @@ Based on deep research of GBrain's skillify meta-skill, fail-improve loop, dream
 | Phase 72 | RECALL-03..04, SEAL-04..06, UI-05..06, SKILL-01..04 |
 | Phase 73 | UI-PARITY-01..05 |
 
+## v6.2 — Skill Distribution + Knowledge Gateway Requirements
+
+### Skill Distribution (SKDIST)
+
+- [ ] **SKDIST-01**: `knowledge_workspace_call("skill-packs", "catalog")` must return a list of all skills from `knowledge/skills/` and `~/.memroos/skills/` (private, merged), each with: name, description, category, tags, auto-load flag. Optional `filter: "auto-load"` to return only auto-load skills.
+- [ ] **SKDIST-02**: `knowledge_workspace_call("skill-packs", "read", {"name": "<skill>"})` must return the full SKILL.md content for the named skill, searching both public and private skill directories.
+- [ ] **SKDIST-03**: Skills must support an `auto-load: true` frontmatter field. Only skills tagged `auto-load: true` are returned when `filter: "auto-load"` is passed to skill_catalog. Default is `false`.
+- [ ] **SKDIST-04**: Agent bootstrap convention documented in `AGENTS.md` standard: at session start, call `skill_catalog(filter: "auto-load")` and inline any returned skills. All other skills are loaded on-demand via `skill_read` when the agent determines they are needed.
+
+### Private Config Layer (PRIVCONF)
+
+- [ ] **PRIVCONF-01**: `mcp_server.py` must load `~/.memroos/context-sources.local.json` if it exists and deep-merge it over the repo's `context-sources.config.json`. Private file is gitignored; repo file ships generic stubs.
+- [ ] **PRIVCONF-02**: `context-sources.config.json` must include a disabled `meet-recordings` source entry with `ingestCommand: "${MEETINGS_INGEST_COMMAND}"` — provider-agnostic, wired by the operator's private env.
+- [ ] **PRIVCONF-03**: `skill_catalog` must merge `~/.memroos/skills/` (private) with `knowledge/skills/` (public). Private skills are returned in catalog but not committed to the repo.
+
+### Circleback Ingestion (CIRCLEBACK)
+
+- [ ] **CIRCLEBACK-01**: A private ingest script at `~/.memroos/integrations/circleback-ingest.sh` exports transcripts via `circleback meetings list --json`, transforms to Markdown, and writes to `data/context/meet-recordings/` with consistent filename convention (date-slug.md).
+- [ ] **CIRCLEBACK-02**: `MEETINGS_INGEST_COMMAND` is set in `~/.memroos/memroos-runtime.env` pointing to the circleback ingest script.
+- [ ] **CIRCLEBACK-03**: A LaunchAgent (`com.memroos.circleback-sync.plist`) runs the ingest script nightly and triggers a qmd re-index of the meet-recordings collection.
+
+### Public Documentation (PUBDOC)
+
+- [ ] **PUBDOC-01**: `docs/integrations/meet-recordings.md` — provider-agnostic meeting integration guide; Circleback used as the reference implementation; shows how any provider with a CLI/API follows the same pattern.
+- [ ] **PUBDOC-02**: `docs/skills.md` — skill authoring guide covering: SKILL.md frontmatter schema, where skills live (public vs private), how agents discover and load skills, `auto-load` guidance (≤3 per deployment).
+- [ ] **PUBDOC-03**: `knowledge/skills/example-skill/SKILL.md` — copy-paste template with all frontmatter fields and section stubs.
+
+### Memroos Troubleshooter Skill (MSKILL)
+
+- [ ] **MSKILL-01**: `knowledge/skills/memroos-troubleshooter/SKILL.md` — comprehensive skill covering: memroos architecture overview, workspace list + what each does, common errors with fixes, collection health commands, skill distribution flow, and escalation paths. Tagged `auto-load: true`.
+- [ ] **MSKILL-02**: `knowledge/skills/deep-research-subagents/SKILL.md` frontmatter updated: `auto-load: false`, `tags: [research, on-demand]` — explicitly catalog-visible but not auto-loaded.
+
+---
+
 ## v4.1 / Backlog Requirements
 
 ### Cron Job Health Monitoring (new)

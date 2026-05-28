@@ -36,6 +36,14 @@
 - [x] **Phase 96: Agent Memory Continuity** — AGENTMEM-FOLLOWUP-01; MemRoOS-native coding-agent capture, handoff packs, vaulting, redaction, duplicate suppression, and API tests
 - [x] **Phase 97: Source Routing Contracts for Meeting Capture** — CTX-FOLLOWUP-04; project-scoped meeting routing, confidence/review state, and source-to-qmd freshness proof; completed 2026-05-28
 
+### Current v6.2 Skill Distribution + Knowledge Gateway Summary
+
+- [ ] **Phase 98: Skill Distribution Core** — SKDIST-01..04, PRIVCONF-03; implement skill_catalog + skill_read in skill-packs workspace; private ~/.memroos/skills/ merging
+- [ ] **Phase 99: Private Config Layer** — PRIVCONF-01..02; context-sources.local.json merge logic; generic meet-recordings slot in context-sources.config.json
+- [ ] **Phase 100: Circleback Ingestion** — CIRCLEBACK-01..03; private ingest script + env wiring + nightly LaunchAgent
+- [ ] **Phase 101: Memroos Troubleshooter Skill** — MSKILL-01..02; memroos-troubleshooter in knowledge repo + deep-research-subagents tag update
+- [ ] **Phase 102: Public Documentation** — PUBDOC-01..03; docs/skills.md + docs/integrations/meet-recordings.md + example-skill template
+
 Full v6.0 detail in the `## v6.0 SkillForge — Governed Skill Optimization` section below.
 
 ### Current v5.0 Memory Trust + Operational Intelligence Summary — COMPLETE
@@ -1199,3 +1207,93 @@ Plans:
 | 93 | v6.1 | 0/1 | Pending | — |
 | 94 | v6.1 | 0/1 | Pending | — |
 | 95 | v6.1 | 0/1 | Pending | — |
+
+### v6.2 Progress
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|----------|---------------|--------|-----------|
+| 98 | v6.2 | 0/1 | Pending | — |
+| 99 | v6.2 | 0/1 | Pending | — |
+| 100 | v6.2 | 0/1 | Pending | — |
+| 101 | v6.2 | 0/1 | Pending | — |
+| 102 | v6.2 | 0/1 | Pending | — |
+
+---
+
+## v6.2 Skill Distribution + Knowledge Gateway
+
+### Phase 98: Skill Distribution Core
+**Goal**: Implement the `skill-packs` workspace in the knowledge MCP so agents can discover and load skills from the knowledge repo at runtime. Enable private skill directory merging.
+**Milestone**: v6.2
+**Depends on**: Phase 27 (progressive MCP tool attention)
+**Requirements**: SKDIST-01, SKDIST-02, SKDIST-03, SKDIST-04, PRIVCONF-03
+**Status**: Pending
+**Success Criteria**:
+  1. `knowledge_workspace_call("skill-packs", "catalog")` returns all skills from `knowledge/skills/` with name, description, category, tags, and auto-load flag.
+  2. `knowledge_workspace_call("skill-packs", "catalog", {"filter": "auto-load"})` returns only auto-load-tagged skills.
+  3. `knowledge_workspace_call("skill-packs", "read", {"name": "deep-research-subagents"})` returns full SKILL.md content.
+  4. Private skills in `~/.memroos/skills/` are merged into catalog results (if dir exists).
+  5. Skill without `auto-load` in frontmatter defaults to `false` (backward-compatible).
+  6. `skill-packs` workspace no longer returns `not_implemented` — all three actions (catalog, read, install) are handled.
+**Plans**: 0/1 complete
+**UI hint**: None — MCP-only change.
+
+### Phase 99: Private Config Layer
+**Goal**: Add support for `context-sources.local.json` private config overlay and ship the generic `meet-recordings` source slot in the public config.
+**Milestone**: v6.2
+**Depends on**: Phase 98
+**Requirements**: PRIVCONF-01, PRIVCONF-02
+**Status**: Pending
+**Success Criteria**:
+  1. `mcp_server.py` loads `~/.memroos/context-sources.local.json` on startup if it exists and deep-merges over repo's `context-sources.config.json`.
+  2. `context-sources.config.json` contains a disabled `meet-recordings` entry with `ingestCommand: "${MEETINGS_INGEST_COMMAND}"` and a comment explaining the provider-agnostic pattern.
+  3. `context-sources.local.json` is added to `.gitignore`.
+  4. A `context-sources.local.json.example` documents the override pattern with circleback as example.
+  5. `knowledge_health()` reflects the merged source list, not just the repo config.
+**Plans**: 0/1 complete
+**UI hint**: None.
+
+### Phase 100: Circleback Ingestion
+**Goal**: Wire circleback.ai as Luis's private meeting ingestion provider using the generic meet-recordings slot established in Phase 99.
+**Milestone**: v6.2
+**Depends on**: Phase 99
+**Requirements**: CIRCLEBACK-01, CIRCLEBACK-02, CIRCLEBACK-03
+**Status**: Pending
+**Success Criteria**:
+  1. `~/.memroos/integrations/circleback-ingest.sh` exports meetings via circleback CLI, transforms to dated Markdown files in `data/context/meet-recordings/`.
+  2. `MEETINGS_INGEST_COMMAND` is set in `~/.memroos/memroos-runtime.env`.
+  3. `com.memroos.circleback-sync.plist` LaunchAgent runs the ingest script nightly and triggers `qmd index meet-recordings`.
+  4. `knowledge_search("meeting about X")` returns circleback transcript results after first ingest run.
+  5. `knowledge_health()` shows `meet-recordings` source as connected.
+**Plans**: 0/1 complete
+**UI hint**: None; LaunchAgent handles scheduling outside memroos UI.
+
+### Phase 101: Memroos Troubleshooter Skill
+**Goal**: Ship a `memroos-troubleshooter` skill in the knowledge repo that any agent can load to self-diagnose memroos issues. Update deep-research-subagents frontmatter for catalog-first loading.
+**Milestone**: v6.2
+**Depends on**: Phase 98
+**Requirements**: MSKILL-01, MSKILL-02
+**Status**: Pending
+**Success Criteria**:
+  1. `knowledge/skills/memroos-troubleshooter/SKILL.md` exists with: architecture overview, full workspace list with use-cases, common error messages with fixes, collection health commands, skill distribution flow, escalation paths.
+  2. `memroos-troubleshooter` frontmatter: `auto-load: true`, `category: system`.
+  3. `knowledge/skills/deep-research-subagents/SKILL.md` frontmatter updated: `auto-load: false`, `tags: [research, on-demand]`.
+  4. `knowledge_workspace_call("skill-packs", "catalog", {"filter": "auto-load"})` returns `memroos-troubleshooter` and not `deep-research-subagents`.
+  5. An agent loading only the catalog (not full content) sees both skills with descriptions sufficient to know when to call `skill_read`.
+**Plans**: 0/1 complete
+**UI hint**: None.
+
+### Phase 102: Public Documentation
+**Goal**: Ship the public-facing docs that teach any memroos operator how to wire a meeting provider and create/distribute skills. These docs make the private-config-layer pattern discoverable.
+**Milestone**: v6.2
+**Depends on**: Phase 99, Phase 101
+**Requirements**: PUBDOC-01, PUBDOC-02, PUBDOC-03
+**Status**: Pending
+**Success Criteria**:
+  1. `docs/integrations/meet-recordings.md` covers: how the provider-agnostic slot works, circleback as reference impl (install CLI, create ingest script, set env var), and a "Other Providers" section showing the pattern generalizes.
+  2. `docs/skills.md` covers: SKILL.md frontmatter schema, public vs private skill directories, how agents discover skills (catalog-first), `auto-load` guidance (≤3 per deployment), and a worked example.
+  3. `knowledge/skills/example-skill/SKILL.md` is a complete copy-paste template with all frontmatter fields and section stubs.
+  4. `context-sources.local.json.example` in the repo root documents the private override pattern.
+  5. All new docs are cross-referenced from the main `README.md` or `docs/` index.
+**Plans**: 0/1 complete
+**UI hint**: None.
