@@ -1033,7 +1033,8 @@ def knowledge_system_orientation() -> str:
         "If a task needs deeper capability, call knowledge_capabilities or knowledge_open_workspace. "
         "Use knowledge_workspace_call for deep actions like wiki compile. "
         "Available workspaces: wiki, vector, agent-memory, admin, graph, dashboard, ingestion, workflows, skill-packs, integrations, primitives, tool-attention. "
-        "Treat source files as authoritative and generated wiki pages as compiled views with citations."
+        "Treat source files as authoritative and generated wiki pages as compiled views with citations. "
+        "Operators can add private context sources (e.g., meet-recordings via Circleback) by creating ~/.memroos/context-sources.local.json — see context-sources.local.json.example at repo root."
     )
 
 

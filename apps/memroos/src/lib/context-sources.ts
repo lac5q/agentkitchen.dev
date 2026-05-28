@@ -1,4 +1,5 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 import { execFileSync } from "child_process";
 
@@ -75,6 +76,33 @@ function resolveConfigPath(filename?: string): string {
   return path.isAbsolute(configured) ? configured : resolveFromRepoRoot(configured);
 }
 
+function resolveLocalConfigPath(): string {
+  const configured = process.env.CONTEXT_SOURCES_LOCAL_CONFIG;
+  if (configured) {
+    return path.isAbsolute(configured) ? configured : resolveFromRepoRoot(configured);
+  }
+  return path.join(os.homedir(), ".memroos", "context-sources.local.json");
+}
+
+export function deepMergeConfigs(base: ContextSourcesConfig, local: ContextSourcesConfig): ContextSourcesConfig {
+  const mergedSources = base.sources.map((baseEntry) => {
+    const localEntry = local.sources.find((s) => s.id === baseEntry.id);
+    if (localEntry) {
+      return { ...baseEntry, ...localEntry };
+    }
+    return baseEntry;
+  });
+
+  for (const localEntry of local.sources) {
+    const existsInBase = base.sources.some((s) => s.id === localEntry.id);
+    if (!existsInBase) {
+      mergedSources.push(localEntry);
+    }
+  }
+
+  return { sources: mergedSources };
+}
+
 function expandPath(input: string): string {
   return input.replace(/\$\{([A-Z0-9_]+)(?::-(.*?))?\}/g, (_match, key: string, fallback: string) => {
     return process.env[key] ?? fallback ?? "";
@@ -110,7 +138,16 @@ function defaultCountDocs(target: string): number {
 
 export function loadContextSourceContracts(filename?: string): ContextSourcesConfig {
   const raw = fs.readFileSync(resolveConfigPath(filename), "utf8");
-  return JSON.parse(raw) as ContextSourcesConfig;
+  const base = JSON.parse(raw) as ContextSourcesConfig;
+
+  const localPath = resolveLocalConfigPath();
+  if (fs.existsSync(localPath)) {
+    const localRaw = fs.readFileSync(localPath, "utf8");
+    const local = JSON.parse(localRaw) as ContextSourcesConfig;
+    return deepMergeConfigs(base, local);
+  }
+
+  return base;
 }
 
 export function evaluateContextSources(

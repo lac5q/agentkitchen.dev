@@ -70,6 +70,19 @@
       "freshnessThresholdMinutes": 1440,
       "qmdCollection": "local-folder",
       "safeAnswerPolicy": "source_required"
+    },
+    {
+      "id": "meet-recordings",
+      "type": "qmd",
+      "enabled": false,
+      "requiredTools": [],
+      "envVars": ["MEETINGS_INGEST_COMMAND"],
+      "sourcePath": "./data/context/meet-recordings",
+      "ingestCommand": "${MEETINGS_INGEST_COMMAND}",
+      "indexCommand": "qmd index meet-recordings",
+      "freshnessThresholdMinutes": 360,
+      "qmdCollection": "meet-recordings",
+      "safeAnswerPolicy": "source_required"
     }
   ]
 }
