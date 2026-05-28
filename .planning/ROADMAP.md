@@ -959,7 +959,10 @@ Plans:
   2. `skill_revision` proposals are created as SEAL proposals with correct metadata and audit trail.
   3. Intake pipeline redacts sensitive traces before analysis (negative fixture: restricted memory never reaches optimizer).
   4. Worker appears in cron health registry with last-run, success/failure, and items-processed.
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: no (backend-only)
 
 ### Phase 86: SkillForge Analysis
@@ -979,7 +982,10 @@ Plans:
   2. Deterministic trigger matching improves by ≥10% after applying generated rules.
   3. Failure logs are structured, queryable, and include replay handles.
   4. No LLM fallback is invoked when deterministic rules match (fail-closed for performance).
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: no (backend-only)
 
 ### Phase 87: SkillForge Proposal Generation
@@ -998,7 +1004,10 @@ Plans:
   2. No edit mutates security/governance/owner-protection content (negative fixture).
   3. Rejected edits are tracked and not re-proposed within 30 days.
   4. Textual LR controls edit magnitude: conservative edits change ≤3 lines, aggressive ≤20 lines.
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: no (backend-only)
 
 ### Phase 88: SkillForge Evaluation
@@ -1017,7 +1026,10 @@ Plans:
   2. Validation scorer runs deterministically (no LLM calls, sub-100ms per skill).
   3. Held-out behavioral eval completes in <5 minutes for 20 tasks.
   4. W delta is computed for every proposal; negative W proposals are auto-rejected.
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: no (backend-only)
 
 ### Phase 89: SkillForge Governance
@@ -1036,7 +1048,10 @@ Plans:
   2. Rollback restores previous skill version in <30 seconds.
   3. No skill revision is applied without explicit operator approval (negative fixture).
   4. UI shows clear status through SEAL lifecycle stages.
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: yes
 
 ### Phase 90: SkillForge Integration
@@ -1055,7 +1070,10 @@ Plans:
   2. SkillCycle runs end-to-end without errors on a test skill.
   3. Exported skills are functional in target runtime (Codex/Claude/OpenClaw).
   4. Revision history is queryable and includes all eval results and approval events.
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: yes
 
 ### v6.0 Progress
@@ -1111,7 +1129,10 @@ Plans:
   2. Low-risk proposals are auto-approved within safety bounds.
   3. High-risk proposals are queued for operator review.
   4. Nightly report is generated and delivered.
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: no
 
 ### Phase 92: Skill Marketplace — Publish, Rate, Discover
@@ -1129,7 +1150,10 @@ Plans:
   2. Skills can be discovered via search and filters.
   3. Rating system is functional and prevents abuse.
   4. Versioning works with deprecation warnings.
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: yes
 
 ### Phase 93: Multi-Agent Skill Orchestration
@@ -1146,7 +1170,10 @@ Plans:
   2. Imported skills are validated before activation.
   3. Agent-to-agent sync works via A2A.
   4. Compatibility matrix is accurate and up-to-date.
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: no
 
 ### Phase 94: Behavioral W-Lift v2 — True Instruction/Skill Behavioral Eval
@@ -1163,7 +1190,10 @@ Plans:
   2. A/B test framework compares control vs treatment.
   3. Statistical significance is computed and reported.
   4. Golden sets cover all major skill categories.
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: no
 
 ### Phase 95: Self-Hosted Eval Cluster
@@ -1180,7 +1210,10 @@ Plans:
   2. vLLM handles batch evals at >10x throughput of single-request.
   3. Fallback to cloud is seamless and logged.
   4. Drift between local and cloud judges is monitored.
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: no
 
 ### Phase 96: Agent Memory Continuity
@@ -1250,7 +1283,10 @@ Plans:
   3. `context-sources.local.json` is added to `.gitignore`.
   4. A `context-sources.local.json.example` documents the override pattern with circleback as example.
   5. `knowledge_health()` reflects the merged source list, not just the repo config.
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: None.
 
 ### Phase 100: Circleback Ingestion
@@ -1265,7 +1301,10 @@ Plans:
   3. `com.memroos.circleback-sync.plist` LaunchAgent runs the ingest script nightly and triggers `qmd index meet-recordings`.
   4. `knowledge_search("meeting about X")` returns circleback transcript results after first ingest run.
   5. `knowledge_health()` shows `meet-recordings` source as connected.
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: None; LaunchAgent handles scheduling outside memroos UI.
 
 ### Phase 101: Memroos Troubleshooter Skill
@@ -1280,7 +1319,10 @@ Plans:
   3. `knowledge/skills/deep-research-subagents/SKILL.md` frontmatter updated: `auto-load: false`, `tags: [research, on-demand]`.
   4. `knowledge_workspace_call("skill-packs", "catalog", {"filter": "auto-load"})` returns `memroos-troubleshooter` and not `deep-research-subagents`.
   5. An agent loading only the catalog (not full content) sees both skills with descriptions sufficient to know when to call `skill_read`.
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: None.
 
 ### Phase 102: Public Documentation
@@ -1295,5 +1337,8 @@ Plans:
   3. `knowledge/skills/example-skill/SKILL.md` is a complete copy-paste template with all frontmatter fields and section stubs.
   4. `context-sources.local.json.example` in the repo root documents the private override pattern.
   5. All new docs are cross-referenced from the main `README.md` or `docs/` index.
-**Plans**: 0/1 complete
+**Plans**: 1 plan
+
+Plans:
+- [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: None.
