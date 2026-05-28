@@ -150,6 +150,69 @@ def _recipes_catalog_path() -> Path:
     return _root() / "docs" / "OPEN_BRAIN_RECIPES_CATALOG.md"
 
 
+def _skills_root_public() -> Path:
+    """Public skills directory inside the knowledge repo."""
+    return _root() / "skills"
+
+
+def _skills_root_private() -> Path:
+    """Private skills directory on the local machine (never committed)."""
+    private_dir = os.environ.get("MEMROOS_PRIVATE_SKILLS_DIR", "")
+    if private_dir:
+        return Path(private_dir).expanduser().resolve()
+    return Path.home() / ".memroos" / "skills"
+
+
+def _parse_skill_frontmatter(content: str, fallback_name: str = "") -> dict:
+    """Parse YAML frontmatter from a SKILL.md file.
+
+    Returns a dict with keys: name, description, category, tags, auto_load.
+    Defaults: auto_load=False, tags=[], category="", description="".
+    Falls back to fallback_name (directory name) if 'name' not in frontmatter.
+    Uses PyYAML for correct list handling.
+    """
+    defaults: dict = {
+        "name": fallback_name,
+        "description": "",
+        "category": "",
+        "tags": [],
+        "auto_load": False,
+    }
+    try:
+        import yaml  # noqa: PLC0415 — deferred to avoid top-level dep when unused
+
+        if not content.startswith("---"):
+            return defaults
+
+        parts = content.split("---", 2)
+        if len(parts) < 3:
+            return defaults
+
+        frontmatter_text = parts[1].strip()
+        if not frontmatter_text:
+            return defaults
+
+        data = yaml.safe_load(frontmatter_text)
+        if not isinstance(data, dict):
+            return defaults
+
+        tags_raw = data.get("tags", [])
+        if isinstance(tags_raw, str):
+            tags_raw = [tags_raw]
+        elif not isinstance(tags_raw, list):
+            tags_raw = []
+
+        return {
+            "name": str(data.get("name", fallback_name) or fallback_name),
+            "description": str(data.get("description", "") or ""),
+            "category": str(data.get("category", "") or ""),
+            "tags": tags_raw,
+            "auto_load": bool(data.get("auto-load", False)),
+        }
+    except Exception:  # noqa: BLE001 — parse errors return safe defaults
+        return defaults
+
+
 def _recipes_catalog_text() -> str:
     path = _recipes_catalog_path()
     if path.exists():
@@ -781,7 +844,92 @@ def knowledge_workspace_call(workspace: str, action: str, arguments: Optional[di
             "action": action,
             "capabilities": get_capabilities(workspace),
         }
-    if workspace in {"ingestion", "workflows", "skill-packs", "integrations", "primitives"}:
+    if workspace == "skill-packs":
+        if action == "catalog":
+            skills_by_name: dict[str, dict] = {}
+
+            # Walk public skills dir
+            public_root = _skills_root_public()
+            if public_root.exists():
+                for skill_dir in sorted(public_root.iterdir()):
+                    if not skill_dir.is_dir():
+                        continue
+                    skill_md = skill_dir / "SKILL.md"
+                    if not skill_md.exists():
+                        continue
+                    try:
+                        content = skill_md.read_text(errors="replace")
+                    except Exception:  # noqa: BLE001
+                        continue
+                    entry = _parse_skill_frontmatter(content, fallback_name=skill_dir.name)
+                    skills_by_name[entry["name"]] = entry
+
+            # Walk private skills dir (private overrides public on same name)
+            private_root = _skills_root_private()
+            if private_root.exists():
+                for skill_dir in sorted(private_root.iterdir()):
+                    if not skill_dir.is_dir():
+                        continue
+                    skill_md = skill_dir / "SKILL.md"
+                    if not skill_md.exists():
+                        continue
+                    try:
+                        content = skill_md.read_text(errors="replace")
+                    except Exception:  # noqa: BLE001
+                        continue
+                    entry = _parse_skill_frontmatter(content, fallback_name=skill_dir.name)
+                    skills_by_name[entry["name"]] = entry
+
+            skills = list(skills_by_name.values())
+
+            # Apply filter
+            if args.get("filter") == "auto-load":
+                skills = [s for s in skills if s.get("auto_load") is True]
+
+            return {"status": "ok", "skills": skills, "count": len(skills)}
+
+        elif action == "read":
+            name = args.get("name", "")
+            if not name:
+                return {"status": "error", "message": "name is required"}
+
+            # Check private first, then public
+            private_path = _skills_root_private() / name / "SKILL.md"
+            if private_path.exists():
+                try:
+                    content = private_path.read_text(errors="replace")
+                    return {"status": "ok", "name": name, "content": content}
+                except Exception:  # noqa: BLE001
+                    pass
+
+            public_path = _skills_root_public() / name / "SKILL.md"
+            if public_path.exists():
+                try:
+                    content = public_path.read_text(errors="replace")
+                    return {"status": "ok", "name": name, "content": content}
+                except Exception:  # noqa: BLE001
+                    pass
+
+            return {
+                "status": "not_found",
+                "name": name,
+                "message": "Skill not found in public or private directories",
+            }
+
+        elif action == "install":
+            return {
+                "status": "ok",
+                "message": (
+                    "Skills are served as content, not installed as files. "
+                    "Use action='read' to retrieve a skill's content, then store it "
+                    "in your agent's runtime directory or inline it directly."
+                ),
+            }
+
+        else:
+            return {"status": "unsupported_action", "workspace": "skill-packs", "action": action}
+
+    if workspace in {"ingestion", "workflows", "integrations", "primitives"}:
         if action in {"catalog", "read", "list"}:
             return {
                 "status": "ok",
@@ -887,6 +1035,17 @@ def run_server() -> None:
         mcp.run(transport=_server_transport())
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
+    except (BrokenPipeError, ConnectionResetError):
+        pass  # client disconnected cleanly
+    except BaseException as exc:  # noqa: BLE001
+        # anyio wraps TaskGroup errors in ExceptionGroup (Python 3.11+);
+        # exit quietly if the group contains only pipe/connection errors.
+        excs = getattr(exc, "exceptions", None)
+        if excs is not None and all(
+            isinstance(e, (BrokenPipeError, ConnectionResetError, OSError)) for e in excs
+        ):
+            return
+        raise
 
 
 if __name__ == "__main__":
