@@ -640,3 +640,245 @@ def test_capability_category_field_set_on_all_types(monkeypatch, tmp_path):
     catalog = tool_attention.build_catalog()
     for cap in catalog["capabilities"]:
         assert cap.get("category"), f"Capability {cap.get('id')} has no category"
+
+
+# ---------------------------------------------------------------------------
+# Phase 98: skill-packs workspace — catalog, read, install
+# ---------------------------------------------------------------------------
+
+_SKILL_MD_FULL = """\
+---
+name: my-skill
+description: A test skill
+category: research
+tags:
+  - search
+  - analysis
+auto-load: true
+---
+
+# My Skill
+
+This skill does research.
+"""
+
+_SKILL_MD_NO_AUTOLOAD = """\
+---
+name: no-autoload-skill
+description: Skill without auto-load field
+category: misc
+tags: []
+---
+
+# No Auto-load Skill
+"""
+
+
+def _make_skill(skills_dir: Path, skill_name: str, skill_md_content: str) -> Path:
+    """Helper to create a skill directory with a SKILL.md file."""
+    skill_dir = skills_dir / skill_name
+    skill_dir.mkdir(parents=True, exist_ok=True)
+    (skill_dir / "SKILL.md").write_text(skill_md_content)
+    return skill_dir
+
+
+def test_skill_catalog_returns_public_skills(monkeypatch, tmp_path):
+    """Catalog returns public skills with all frontmatter fields."""
+    pub_skills = tmp_path / "skills"
+    _make_skill(pub_skills, "my-skill", _SKILL_MD_FULL)
+
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_public", lambda: pub_skills)
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_private", lambda: tmp_path / ".memroos" / "skills")
+
+    result = mcp_server.knowledge_workspace_call("skill-packs", "catalog", {})
+
+    assert result["status"] == "ok"
+    assert result["count"] == 1
+    skill = result["skills"][0]
+    assert skill["name"] == "my-skill"
+    assert skill["description"] == "A test skill"
+    assert skill["category"] == "research"
+    assert skill["tags"] == ["search", "analysis"]
+    assert skill["auto_load"] is True
+
+
+def test_skill_catalog_merges_private_skills(monkeypatch, tmp_path):
+    """Catalog merges public and private skills together."""
+    pub_skills = tmp_path / "public" / "skills"
+    _make_skill(pub_skills, "public-skill", "---\nname: public-skill\ndescription: Public\n---\n")
+
+    priv_skills = tmp_path / "private" / "skills"
+    _make_skill(priv_skills, "private-skill", "---\nname: private-skill\ndescription: Private\n---\n")
+
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_public", lambda: pub_skills)
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_private", lambda: priv_skills)
+
+    result = mcp_server.knowledge_workspace_call("skill-packs", "catalog", {})
+
+    assert result["status"] == "ok"
+    names = {s["name"] for s in result["skills"]}
+    assert "public-skill" in names
+    assert "private-skill" in names
+    assert result["count"] == 2
+
+
+def test_skill_catalog_private_overrides_public_same_name(monkeypatch, tmp_path):
+    """Private skill with same name as public skill wins in catalog."""
+    pub_skills = tmp_path / "public" / "skills"
+    _make_skill(pub_skills, "conflict-skill", "---\nname: conflict-skill\ndescription: Public version\n---\n")
+
+    priv_skills = tmp_path / "private" / "skills"
+    _make_skill(priv_skills, "conflict-skill", "---\nname: conflict-skill\ndescription: Private version\n---\n")
+
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_public", lambda: pub_skills)
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_private", lambda: priv_skills)
+
+    result = mcp_server.knowledge_workspace_call("skill-packs", "catalog", {})
+
+    assert result["status"] == "ok"
+    assert result["count"] == 1  # one entry per name
+    assert result["skills"][0]["description"] == "Private version"
+
+
+def test_skill_catalog_filter_auto_load(monkeypatch, tmp_path):
+    """filter=auto-load returns only skills with auto-load: true."""
+    pub_skills = tmp_path / "skills"
+    _make_skill(pub_skills, "my-skill", _SKILL_MD_FULL)  # auto-load: true
+    _make_skill(pub_skills, "no-autoload-skill", _SKILL_MD_NO_AUTOLOAD)  # no auto-load
+
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_public", lambda: pub_skills)
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_private", lambda: tmp_path / ".memroos" / "skills")
+
+    result = mcp_server.knowledge_workspace_call("skill-packs", "catalog", {"filter": "auto-load"})
+
+    assert result["status"] == "ok"
+    assert result["count"] == 1
+    assert result["skills"][0]["name"] == "my-skill"
+
+
+def test_skill_catalog_defaults_auto_load_false(monkeypatch, tmp_path):
+    """Skills without auto-load frontmatter field return auto_load=False."""
+    pub_skills = tmp_path / "skills"
+    _make_skill(pub_skills, "no-autoload-skill", _SKILL_MD_NO_AUTOLOAD)
+
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_public", lambda: pub_skills)
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_private", lambda: tmp_path / ".memroos" / "skills")
+
+    result = mcp_server.knowledge_workspace_call("skill-packs", "catalog", {})
+
+    assert result["status"] == "ok"
+    assert result["count"] == 1
+    assert result["skills"][0]["auto_load"] is False
+
+
+def test_skill_read_returns_content(monkeypatch, tmp_path):
+    """read action returns full SKILL.md content for a known skill."""
+    pub_skills = tmp_path / "skills"
+    _make_skill(pub_skills, "my-skill", _SKILL_MD_FULL)
+
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_public", lambda: pub_skills)
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_private", lambda: tmp_path / ".memroos" / "skills")
+
+    result = mcp_server.knowledge_workspace_call("skill-packs", "read", {"name": "my-skill"})
+
+    assert result["status"] == "ok"
+    assert result["name"] == "my-skill"
+    assert result["content"] == _SKILL_MD_FULL
+
+
+def test_skill_read_not_found(monkeypatch, tmp_path):
+    """read action returns not_found when skill does not exist."""
+    pub_skills = tmp_path / "skills"
+    pub_skills.mkdir(parents=True)
+
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_public", lambda: pub_skills)
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_private", lambda: tmp_path / ".memroos" / "skills")
+
+    result = mcp_server.knowledge_workspace_call("skill-packs", "read", {"name": "nonexistent"})
+
+    assert result["status"] == "not_found"
+    assert result["name"] == "nonexistent"
+
+
+def test_skill_read_prefers_private(monkeypatch, tmp_path):
+    """read action returns private skill content when same name exists in both dirs."""
+    pub_skills = tmp_path / "public" / "skills"
+    _make_skill(pub_skills, "my-skill", "---\nname: my-skill\n---\nPublic content\n")
+
+    priv_skills = tmp_path / "private" / "skills"
+    _make_skill(priv_skills, "my-skill", "---\nname: my-skill\n---\nPrivate content\n")
+
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_public", lambda: pub_skills)
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_private", lambda: priv_skills)
+
+    result = mcp_server.knowledge_workspace_call("skill-packs", "read", {"name": "my-skill"})
+
+    assert result["status"] == "ok"
+    assert "Private content" in result["content"]
+
+
+def test_skill_install_returns_guidance(monkeypatch, tmp_path):
+    """install action returns status ok with a guidance message, no filesystem writes."""
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_public", lambda: tmp_path / "skills")
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_private", lambda: tmp_path / ".memroos" / "skills")
+
+    result = mcp_server.knowledge_workspace_call("skill-packs", "install", {"name": "any-skill"})
+
+    assert result["status"] == "ok"
+    assert "content" in result["message"]
+    # Verify no files were written
+    assert not list(tmp_path.rglob("*.md"))
+
+
+def test_skill_catalog_empty_when_no_skills_dir(monkeypatch, tmp_path):
+    """catalog returns empty list with no error when skills dirs do not exist."""
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_public", lambda: tmp_path / "nonexistent-pub")
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_private", lambda: tmp_path / "nonexistent-priv")
+
+    result = mcp_server.knowledge_workspace_call("skill-packs", "catalog", {})
+
+    assert result["status"] == "ok"
+    assert result["skills"] == []
+    assert result["count"] == 0
+
+
+def test_skill_catalog_skips_dir_without_skill_md(monkeypatch, tmp_path):
+    """catalog skips subdirectories that have no SKILL.md file."""
+    pub_skills = tmp_path / "skills"
+    pub_skills.mkdir()
+    empty_dir = pub_skills / "empty-skill"
+    empty_dir.mkdir()
+    # No SKILL.md in empty_dir
+
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_public", lambda: pub_skills)
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_private", lambda: tmp_path / ".memroos" / "skills")
+
+    result = mcp_server.knowledge_workspace_call("skill-packs", "catalog", {})
+
+    assert result["status"] == "ok"
+    assert result["skills"] == []
+    assert result["count"] == 0
+
+
+def test_skill_parse_malformed_frontmatter_returns_defaults(tmp_path):
+    """_parse_skill_frontmatter returns safe defaults on malformed YAML, no exception raised."""
+    malformed_content = "---\n: bad: yaml: [unclosed\n---\n# Body\n"
+
+    result = mcp_server._parse_skill_frontmatter(malformed_content, fallback_name="my-skill")
+
+    assert result["name"] == "my-skill"
+    assert result["auto_load"] is False
+    assert result["tags"] == []
+    assert result["description"] == ""
+
+
+def test_skill_read_empty_name_returns_error(monkeypatch, tmp_path):
+    """read action returns error status when name is empty or omitted."""
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_public", lambda: tmp_path / "skills")
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_private", lambda: tmp_path / ".memroos" / "skills")
+
+    result_empty = mcp_server.knowledge_workspace_call("skill-packs", "read", {"name": ""})
+    assert result_empty["status"] == "error"
+
+    result_omitted = mcp_server.knowledge_workspace_call("skill-packs", "read", {})
+    assert result_omitted["status"] == "error"
