@@ -163,6 +163,19 @@ def _skills_root_private() -> Path:
     return Path.home() / ".memroos" / "skills"
 
 
+def _safe_skill_path(root: Path, name: str) -> "Path | None":
+    """Return resolved path only if it stays inside root. Returns None on traversal."""
+    import re
+    if not re.fullmatch(r"[A-Za-z0-9_.\-]+", name):
+        return None
+    try:
+        candidate = (root / name / "SKILL.md").resolve()
+        candidate.relative_to(root.resolve())
+        return candidate
+    except (ValueError, OSError):
+        return None
+
+
 def _parse_skill_frontmatter(content: str, fallback_name: str = "") -> dict:
     """Parse YAML frontmatter from a SKILL.md file.
 
@@ -893,22 +906,17 @@ def knowledge_workspace_call(workspace: str, action: str, arguments: Optional[di
             if not name:
                 return {"status": "error", "message": "name is required"}
 
-            # Check private first, then public
-            private_path = _skills_root_private() / name / "SKILL.md"
-            if private_path.exists():
-                try:
-                    content = private_path.read_text(errors="replace")
-                    return {"status": "ok", "name": name, "content": content}
-                except Exception:  # noqa: BLE001
-                    pass
-
-            public_path = _skills_root_public() / name / "SKILL.md"
-            if public_path.exists():
-                try:
-                    content = public_path.read_text(errors="replace")
-                    return {"status": "ok", "name": name, "content": content}
-                except Exception:  # noqa: BLE001
-                    pass
+            # Check private first, then public — path-traversal safe
+            for root_dir in (_skills_root_private(), _skills_root_public()):
+                safe_path = _safe_skill_path(root_dir, name)
+                if safe_path is None:
+                    return {"status": "error", "message": "invalid skill name"}
+                if safe_path.exists():
+                    try:
+                        content = safe_path.read_text(errors="replace")
+                        return {"status": "ok", "name": name, "content": content}
+                    except Exception:  # noqa: BLE001
+                        pass
 
             return {
                 "status": "not_found",

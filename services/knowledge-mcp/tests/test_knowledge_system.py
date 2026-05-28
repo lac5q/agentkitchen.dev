@@ -882,3 +882,13 @@ def test_skill_read_empty_name_returns_error(monkeypatch, tmp_path):
 
     result_omitted = mcp_server.knowledge_workspace_call("skill-packs", "read", {})
     assert result_omitted["status"] == "error"
+
+
+def test_skill_read_path_traversal_rejected(monkeypatch, tmp_path):
+    """read action rejects names with path separators or .. sequences."""
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_public", lambda: tmp_path / "skills")
+    monkeypatch.setattr("knowledge_system.mcp_server._skills_root_private", lambda: tmp_path / ".memroos" / "skills")
+
+    for traversal in ["../etc/passwd", "../../secret", "foo/bar", "foo\x00bar"]:
+        result = mcp_server.knowledge_workspace_call("skill-packs", "read", {"name": traversal})
+        assert result["status"] in {"error", "not_found"}, f"traversal '{traversal}' was not blocked"
