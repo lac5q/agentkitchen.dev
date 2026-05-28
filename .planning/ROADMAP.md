@@ -22,6 +22,8 @@
 - ✅ **v5.1 Memory Inventory Clarity** — Phase 83 (shipped 2026-05-24)
 - ✅ **v5.2 Competitive Memory Target Architecture** — Phase 84 (shipped 2026-05-24)
 - ✅ **v6.0 SkillForge — Governed Skill Optimization** — Phases 85-90 (shipped 2026-05-26)
+- 🔄 **v6.2 Skill Distribution + Knowledge Gateway** — Phases 98-102 (in progress)
+- 🔄 **v6.3 Agent Lifecycle + Memory Observability** — Phases 103-105 (planned: checkpoint/resume, memory-trace debugging, agent CI/CD gates)
 
 ## Phases
 
@@ -43,6 +45,12 @@
 - [ ] **Phase 100: Circleback Ingestion** — CIRCLEBACK-01..03; private ingest script + env wiring + nightly LaunchAgent
 - [ ] **Phase 101: Memroos Troubleshooter Skill** — MSKILL-01..02; memroos-troubleshooter in knowledge repo + deep-research-subagents tag update
 - [ ] **Phase 102: Public Documentation** — PUBDOC-01..03; docs/skills.md + docs/integrations/meet-recordings.md + example-skill template
+
+### Current v6.3 Agent Lifecycle + Memory Observability Summary
+
+- [ ] **Phase 103: Lightweight Checkpoint/Resume/Handoff** — AGENTMEM-FOLLOWUP-02; compact structured checkpoints with event-triggered writes, async heavy operations, performance budgets (p95 write/resume), metrics exposure
+- [ ] **Phase 104: Memory-Trace Observability** — AGENTMEM-FOLLOWUP-03; MemTrace-style execution graphs for memory-backed runs, failure attribution categories, trace graphs in Memory/Improve surfaces, nightly canary
+- [ ] **Phase 105: Agent CI/CD Release Gates** — AGENTCICD-FOLLOWUP-01; agent version as immutable artifact, promotion gates (quality/safety/governance/performance), version identity, traces, one-step rollback
 
 Full v6.0 detail in the `## v6.0 SkillForge — Governed Skill Optimization` section below.
 
@@ -1250,6 +1258,9 @@ Plans:
 | 100 | v6.2 | 0/1 | Pending | — |
 | 101 | v6.2 | 0/1 | Pending | — |
 | 102 | v6.2 | 0/1 | Pending | — |
+| 103 | v6.3 | 0/1 | Pending | AGENTMEM-FOLLOWUP-02 |
+| 104 | v6.3 | 0/1 | Pending | AGENTMEM-FOLLOWUP-03 |
+| 105 | v6.3 | 0/1 | Pending | AGENTCICD-FOLLOWUP-01 |
 
 ---
 
@@ -1342,3 +1353,49 @@ Plans:
 Plans:
 - [ ] 99-01-PLAN.md — Private config overlay (merge logic + meet-recordings stub + gitignore + example)
 **UI hint**: None.
+
+## v6.3 Agent Lifecycle + Memory Observability
+
+### Phase 103: Lightweight Checkpoint/Resume/Handoff
+**Goal**: Implement compact, event-triggered checkpoint/resume with minimal execution overhead so agents can pause, transfer work, and resume without material slowdown.
+**Milestone**: v6.3
+**Depends on**: Phase 96 (Agent Memory Continuity — AGENTMEM-FOLLOWUP-01)
+**Requirements**: AGENTMEM-FOLLOWUP-02
+**Status**: Pending
+**Success Criteria**:
+  1. Hot-path checkpoints store only compact structured state (run id, owner agent, objective, completed/remaining steps, decisions, artifact refs, verification state, next safe action, rollback notes, provenance pointers).
+  2. Heavy operations (vector indexing, graph updates, qmd refreshes, git commits, summarization, evidence bundles) run asynchronously on debounced/background workers.
+  3. Checkpoint writes are event-triggered: after major step completion, before/after external side effects, before human approval, before agent transfer, on failure/retry, before ending incomplete work.
+  4. Metrics exposed: checkpoint write latency, checkpoint size, async queue depth, replay/resume latency, duplicate-work avoided, failure/degradation status.
+  5. CI or local evals enforce explicit p95 write/resume performance budgets and prove checkpointing does not materially slow standard GSD agent runs.
+**Plans**: 0/1 complete
+**UI hint**: Checkpoint status and resume latency in NOC agent workload panel; handoff pack preview.
+
+### Phase 104: Memory-Trace Observability
+**Goal**: Add MemTrace-style execution graphs for memory-backed runs so we can explain whether memory helped, hurt, or was unused in any task.
+**Milestone**: v6.3
+**Depends on**: Phase 103 (checkpoint/resume for replay handles), Phase 84 (memory evals)
+**Requirements**: AGENTMEM-FOLLOWUP-03
+**Status**: Pending
+**Success Criteria**:
+  1. Every memory-backed run can reconstruct the causal path: source/context pack assembly → retrieval query → retrieved candidates → filters/policy decisions → consolidation/update steps → checkpoint references → prompt inclusion/exclusion → answer citation → downstream verification result.
+  2. Failure analysis distinguishes: retrieval miss, bad ranking, stale memory, corrupted/incorrect memory, policy redaction, consolidation error, benchmark/annotation error, model misuse of correct memory.
+  3. Memory and Improve surfaces expose trace graphs or step timelines for failed evals, with root-cause attribution, replay handle, and proposed repair action.
+  4. Verification requires seeded positive/negative memory tasks, synthetic corrupted-memory cases, omission-vs-commission cases.
+  5. Nightly canary proves MemRoOS can explain whether memory helped, hurt, or was unused.
+**Plans**: 0/1 complete
+**UI hint**: Trace graph view in Memory page failed-eval detail; Improve surface root-cause timeline.
+
+### Phase 105: Agent CI/CD Release Gates
+**Goal**: Treat agent versions as immutable deployable artifacts with promotion gates, version identity, and rollback — the release governance layer for agents.
+**Milestone**: v6.3
+**Depends on**: Phase 81 (evidence bundles), Phase 103 (checkpoint/resume), Phase 57 (eval engine)
+**Requirements**: AGENTCICD-FOLLOWUP-01
+**Status**: Pending
+**Success Criteria**:
+  1. Agent version is an immutable artifact bundling: model/provider route, system instructions, skill/tool contracts, runtime config, eval dataset versions, policy metadata.
+  2. Promotion across local/dev/test/prod profiles requires quality, safety/grounding, governance, and performance gates: task success/accuracy, hallucination/grounding, policy/tool-use compliance, token cost, p95 latency, trace completeness, rollback handle, human approval where configured.
+  3. Each promoted agent version has a distinct identity/version record, environment-specific permissions, OpenTelemetry/evidence traces, and one-step rollback to prior approved version.
+  4. Complements checkpoint/resume: checkpoints protect in-flight work; CI/CD gates protect what agent versions are allowed to run.
+**Plans**: 0/1 complete
+**UI hint**: Agent version registry page; promotion gate status; rollback button in Agents surface.
