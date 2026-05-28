@@ -109,3 +109,137 @@ describe("context source contracts", () => {
     }
   });
 });
+
+describe("local config overlay", () => {
+  const baseSource = {
+    id: "spark",
+    type: "spark" as const,
+    enabled: false,
+    requiredTools: ["python3"],
+    envVars: [],
+    sourcePath: "./spark",
+    ingestCommand: "spark ingest",
+    indexCommand: "qmd index spark",
+    freshnessThresholdMinutes: 60,
+    qmdCollection: "spark",
+    safeAnswerPolicy: "source_required" as const,
+  };
+
+  function writeBaseConfig(dir: string): string {
+    const target = path.join(dir, "base-config.json");
+    fs.writeFileSync(target, JSON.stringify({ sources: [baseSource] }));
+    return target;
+  }
+
+  it("passes through base config unchanged when no local file exists", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "memroos-overlay-"));
+    const baseFile = writeBaseConfig(dir);
+    const missingLocalPath = path.join(dir, "definitely-not-there.json");
+
+    const prevConfig = process.env.CONTEXT_SOURCES_CONFIG;
+    const prevLocal = process.env.CONTEXT_SOURCES_LOCAL_CONFIG;
+    process.env.CONTEXT_SOURCES_CONFIG = baseFile;
+    process.env.CONTEXT_SOURCES_LOCAL_CONFIG = missingLocalPath;
+
+    try {
+      const result = loadContextSourceContracts();
+      expect(result.sources).toHaveLength(1);
+      expect(result.sources[0]).toMatchObject({ id: "spark", enabled: false });
+    } finally {
+      if (prevConfig == null) delete process.env.CONTEXT_SOURCES_CONFIG;
+      else process.env.CONTEXT_SOURCES_CONFIG = prevConfig;
+      if (prevLocal == null) delete process.env.CONTEXT_SOURCES_LOCAL_CONFIG;
+      else process.env.CONTEXT_SOURCES_LOCAL_CONFIG = prevLocal;
+      fs.rmSync(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("merges local override: overrides specified field, preserves unmentioned fields", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "memroos-overlay-"));
+    const baseFile = writeBaseConfig(dir);
+    const localFile = path.join(dir, "local.json");
+    fs.writeFileSync(localFile, JSON.stringify({ sources: [{ id: "spark", enabled: true }] }));
+
+    const prevConfig = process.env.CONTEXT_SOURCES_CONFIG;
+    const prevLocal = process.env.CONTEXT_SOURCES_LOCAL_CONFIG;
+    process.env.CONTEXT_SOURCES_CONFIG = baseFile;
+    process.env.CONTEXT_SOURCES_LOCAL_CONFIG = localFile;
+
+    try {
+      const result = loadContextSourceContracts();
+      expect(result.sources).toHaveLength(1);
+      expect(result.sources[0].enabled).toBe(true);
+      // unmentioned fields from base must be preserved
+      expect(result.sources[0].ingestCommand).toBe("spark ingest");
+      expect(result.sources[0].freshnessThresholdMinutes).toBe(60);
+    } finally {
+      if (prevConfig == null) delete process.env.CONTEXT_SOURCES_CONFIG;
+      else process.env.CONTEXT_SOURCES_CONFIG = prevConfig;
+      if (prevLocal == null) delete process.env.CONTEXT_SOURCES_LOCAL_CONFIG;
+      else process.env.CONTEXT_SOURCES_LOCAL_CONFIG = prevLocal;
+      fs.rmSync(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("appends new source id from local override to merged result", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "memroos-overlay-"));
+    const baseFile = writeBaseConfig(dir);
+    const newSource = {
+      id: "meet-recordings",
+      type: "qmd" as const,
+      enabled: true,
+      requiredTools: [],
+      envVars: ["MEETINGS_INGEST_COMMAND"],
+      sourcePath: "./data/context/meet-recordings",
+      ingestCommand: "${MEETINGS_INGEST_COMMAND}",
+      indexCommand: "qmd index meet-recordings",
+      freshnessThresholdMinutes: 360,
+      qmdCollection: "meet-recordings",
+      safeAnswerPolicy: "source_required" as const,
+    };
+    const localFile = path.join(dir, "local.json");
+    fs.writeFileSync(localFile, JSON.stringify({ sources: [newSource] }));
+
+    const prevConfig = process.env.CONTEXT_SOURCES_CONFIG;
+    const prevLocal = process.env.CONTEXT_SOURCES_LOCAL_CONFIG;
+    process.env.CONTEXT_SOURCES_CONFIG = baseFile;
+    process.env.CONTEXT_SOURCES_LOCAL_CONFIG = localFile;
+
+    try {
+      const result = loadContextSourceContracts();
+      expect(result.sources).toHaveLength(2);
+      expect(result.sources[0].id).toBe("spark");
+      expect(result.sources[1].id).toBe("meet-recordings");
+    } finally {
+      if (prevConfig == null) delete process.env.CONTEXT_SOURCES_CONFIG;
+      else process.env.CONTEXT_SOURCES_CONFIG = prevConfig;
+      if (prevLocal == null) delete process.env.CONTEXT_SOURCES_LOCAL_CONFIG;
+      else process.env.CONTEXT_SOURCES_LOCAL_CONFIG = prevLocal;
+      fs.rmSync(dir, { force: true, recursive: true });
+    }
+  });
+
+  it("respects CONTEXT_SOURCES_LOCAL_CONFIG env var path instead of default", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "memroos-overlay-"));
+    const baseFile = writeBaseConfig(dir);
+    const customLocalFile = path.join(dir, "my-custom-local.json");
+    fs.writeFileSync(customLocalFile, JSON.stringify({ sources: [{ id: "spark", enabled: true }] }));
+
+    const prevConfig = process.env.CONTEXT_SOURCES_CONFIG;
+    const prevLocal = process.env.CONTEXT_SOURCES_LOCAL_CONFIG;
+    process.env.CONTEXT_SOURCES_CONFIG = baseFile;
+    process.env.CONTEXT_SOURCES_LOCAL_CONFIG = customLocalFile;
+
+    try {
+      const result = loadContextSourceContracts();
+      // env var path was used; spark.enabled should be overridden to true
+      expect(result.sources[0].enabled).toBe(true);
+    } finally {
+      if (prevConfig == null) delete process.env.CONTEXT_SOURCES_CONFIG;
+      else process.env.CONTEXT_SOURCES_CONFIG = prevConfig;
+      if (prevLocal == null) delete process.env.CONTEXT_SOURCES_LOCAL_CONFIG;
+      else process.env.CONTEXT_SOURCES_LOCAL_CONFIG = prevLocal;
+      fs.rmSync(dir, { force: true, recursive: true });
+    }
+  });
+});
