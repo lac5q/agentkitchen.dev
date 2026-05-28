@@ -47,3 +47,24 @@ This project is indexed by GitNexus as **memroos** (9917 symbols, 17207 relation
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->
+
+## Agent Bootstrap Convention
+
+At session start, every agent should call the skill catalog to load auto-loading skills:
+
+```
+knowledge_workspace_call("skill-packs", "catalog", {"filter": "auto-load"})
+```
+
+For each skill returned, inline its content into your working context by calling:
+
+```
+knowledge_workspace_call("skill-packs", "read", {"name": "<skill-name>"})
+```
+
+Skills with `auto-load: true` in their frontmatter are intended to be loaded
+automatically. Skills without this field default to `auto-load: false` and are
+available on demand via the `catalog` and `read` actions.
+
+Private skills in `~/.memroos/skills/` are merged into catalog results and never
+committed to the repo. They take precedence over public skills with the same name.
