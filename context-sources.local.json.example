@@ -1,0 +1,10 @@
+{
+  "_comment": "Copy to ~/.memroos/context-sources.local.json (never commit). Deep-merged over context-sources.config.json per deployment. Set CONTEXT_SOURCES_LOCAL_CONFIG env var to override the default path for testing.",
+  "sources": [
+    {
+      "id": "meet-recordings",
+      "enabled": true,
+      "_comment": "Circleback.ai provider wired via MEETINGS_INGEST_COMMAND. Set MEETINGS_INGEST_COMMAND=~/.memroos/scripts/circleback-ingest.sh in ~/.memroos/memroos-runtime.env"
+    }
+  ]
+}

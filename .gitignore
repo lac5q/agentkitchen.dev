@@ -69,6 +69,9 @@ services/**/logs/
 # Private client recall contracts
 evals/memory-recall/critical-anchors.local.json
 
+# Private context-sources overlay (never commit; copy from context-sources.local.json.example)
+context-sources.local.json
+
 # Local workspace memory; public repos should ship examples/docs instead.
 /SOUL.md
 /USER.md
