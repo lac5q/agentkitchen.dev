@@ -14,10 +14,16 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
+      // Defense against password managers that bypass React events (1Password on iOS)
+      const emailEl = document.getElementById("email") as HTMLInputElement;
+      const passwordEl = document.getElementById("password") as HTMLInputElement;
+      const submitEmail = email || emailEl?.value || "";
+      const submitPassword = password || passwordEl?.value || "";
+
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: submitEmail, password: submitPassword }),
         credentials: "include",
       });
       if (!res.ok) {
@@ -98,6 +104,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  onInput={(e) => setEmail((e.target as HTMLInputElement).value)}
                   className="mt-2 w-full border px-3 py-2.5 text-sm outline-none transition"
                   style={{ background: NOC.fog, borderColor: NOC.ruleStrong, color: NOC.ink }}
                 />
@@ -112,6 +119,7 @@ export default function LoginPage() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
                   className="mt-2 w-full border px-3 py-2.5 text-sm outline-none transition"
                   style={{ background: NOC.fog, borderColor: NOC.ruleStrong, color: NOC.ink }}
                 />
